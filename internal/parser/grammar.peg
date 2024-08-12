@@ -1,0 +1,730 @@
+{
+package parser
+
+// NB: including all the imports make the parser generator run a bit more quickly.
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"io"
+	"math"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"unicode"
+	"unicode/utf8"
+
+	"github.com/playbymail/ottomap/internal/compass"
+	"github.com/playbymail/ottomap/internal/direction"
+	"github.com/playbymail/ottomap/internal/edges"
+	"github.com/playbymail/ottomap/internal/items"
+	"github.com/playbymail/ottomap/internal/resources"
+	"github.com/playbymail/ottomap/internal/terrain"
+	"github.com/playbymail/ottomap/internal/unit_movement"
+	"github.com/playbymail/ottomap/internal/winds"
+)
+
+type Date_t struct {
+    Year  int
+    Month int
+    Day   int
+}
+
+func (d Date_t) IsZero() bool {
+    return d == Date_t{}
+}
+
+type TurnInfo_t struct {
+    CurrentTurn Date_t
+    NextTurn    Date_t
+}
+
+func bdup(src []byte) []byte {
+    dst := make([]byte, len(src))
+    copy(dst, src)
+    return dst
+}
+
+func toAnySlice(v any) []any {
+    if v == nil {
+        return nil
+    }
+    return v.([]any)
+}
+
+}
+
+Noop <- EOF {
+    return true, nil
+}
+
+AdminNote <- "Map Testing" {
+    return true, nil
+}
+
+CrowsNestObservation <- cs:CROWSIGHTING SP "-" SP cp:COMPASSPOINT EOF{
+    return FarHorizon_t{
+        Point: cp.(compass.Point_e),
+        Terrain: cs.(terrain.Terrain_e),
+    }, nil
+}
+
+DeckObservation <- d:DIRECTION SP t:TERRAIN_CODE {
+    return NearHorizon_t{
+        Point: d.(direction.Direction_e),
+        Terrain: t.(terrain.Terrain_e),
+    }, nil
+}
+
+EdgeType <- "Ford" {
+    return edges.Ford, nil
+} / "Pass" {
+    return edges.Pass, nil
+} / "River" {
+    return edges.River, nil
+} / "Stone Road" {
+    return edges.StoneRoad, nil
+}
+
+FleetMovement <- ws:WINDSTRENGTH SP d:DIRECTION SP "Fleet Movement:" _ results:ToEOL EOF {
+    mt := Movement_t{Type: unit_movement.Fleet}
+    mt.Winds.Strength = ws.(winds.Strength_e)
+    mt.Winds.From = d.(direction.Direction_e)
+    if results != nil {
+        mt.Text = bdup(results.([]byte))
+    }
+    return mt, nil
+}
+
+Location <- ("Courier" / "Element" / "Fleet" / "Garrison" / "Tribe") SP u:UNIT_ID "," SP AdminNote? "," SP "Current Hex =" SP ch:COORDS "," SP "(Previous Hex =" SP ph:COORDS ")" _ EOF {
+    return Location_t {
+        UnitId:      u.(UnitId_t),
+        CurrentHex:  ch.(string),
+        PreviousHex: ph.(string),
+    }, nil
+}
+
+Longhouse <- szi:(DIGIT+) SP+ "Longhouse" SP+ idi:(LETTER DIGIT+) {
+    if szi == nil || idi == nil {
+        return nil, fmt.Errorf("longhouse: szi and idi are nil")
+    }
+    var lh Longhouse_t
+
+    for _, digitsi := range toAnySlice(szi) {
+        switch digits := digitsi.(type) {
+        case []uint8:
+            lh.Capacity = lh.Capacity * 10 + int(digits[0]-'0')
+        default:
+            panic(fmt.Errorf("longhouse: capacity: digits: unknown type %T", digits))
+        }
+    }
+
+    var idBuf []byte
+    id := idi.([]any)
+    switch letters := id[0].(type) {
+        case []uint8:
+            idBuf = append(idBuf, letters...)
+        default:
+            panic(fmt.Errorf("longhouse: id: letters: unknown type %T", letters))
+    }
+    for _, digitsi := range toAnySlice(id[1]) {
+        switch digits := digitsi.(type) {
+            case []uint8:
+                idBuf = append(idBuf, digits...)
+            default:
+                panic(fmt.Errorf("longhouse: id: digits: unknown type %T", digits))
+        }
+    }
+    lh.Id = string(idBuf)
+
+    return lh, nil
+}
+
+ObviousNeighboringTerrainCode <- "HSM"i {
+    return terrain.HighSnowyMountains, nil
+} / "LCM"i {
+    return terrain.LowConiferMountains, nil
+} / "LJM"i {
+    return terrain.LowJungleMountains, nil
+} / "LSM"i {
+    return terrain.LowSnowyMountains, nil
+} / "L" {
+    return terrain.Lake, nil
+} / "O" {
+    return terrain.Ocean, nil
+}
+
+ProhibitedBy <- "Lake" {
+    return terrain.Lake, nil
+} / "Ocean" {
+    return terrain.Ocean, nil
+}
+
+ScoutMovement <- "Scout" SP no:[1-8] ":" _ results:ToEOL EOF {
+    mt := Movement_t{Type: unit_movement.Scouts}
+    switch v := no.(type) {
+    case []uint8:
+        if len(v) != 1 {
+            return nil, fmt.Errorf("invalid scout number")
+        }
+        mt.ScoutNo = int(v[0] - '0')
+    default:
+        panic(fmt.Errorf("scoutMovement: unknown type %T", v))
+    }
+    if results != nil {
+        mt.Text = bdup(results.([]byte))
+    }
+    return mt, nil
+}
+
+SpaceDirection <- SP d:DIRECTION {
+    return d, nil
+}
+
+SpaceUnitID <- SP u:UNIT_ID {
+    return u, nil
+}
+
+StatusLine <- u:UNIT_ID SP "Status:" _ results:ToEOL EOF {
+    mt := Movement_t{
+        Type: unit_movement.Status,
+        UnitId: u.(UnitId_t),
+    }
+    if results != nil {
+        mt.Text = bdup(results.([]byte))
+    }
+    return mt, nil
+}
+
+Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
+    return DirectionTerrain_t{
+        Direction: d.(direction.Direction_e),
+        Terrain:   t.(terrain.Terrain_e),
+    }, nil
+} / [Cc] "an't Move on" SP t:ProhibitedBy SP "to" SP d:DIRECTION SP "of HEX" EOF {
+    return &ProhibitedFrom_t{
+        Direction: d.(direction.Direction_e),
+        Terrain:   t.(terrain.Terrain_e),
+    }, nil
+} / "Group did not return" EOF {
+    return DidNotReturn_t{}, nil
+} / "Find" SP r:RESOURCE EOF {
+    return r, nil
+} / "Find" SP n:NUMBER SP i:ITEM EOF {
+    return FoundItem_t{
+        Quantity: n.(int),
+        Item :    i.(items.Item_e),
+    }, nil
+} / [Nn] "o Ford on River to" SP d:DIRECTION SP "of HEX" EOF {
+    return &BlockedByEdge_t{
+        Direction: d.(direction.Direction_e),
+        Edge:      edges.River,
+    }, nil
+} / "No groups found" EOF {
+    return NoGroupsFound_t{}, nil
+} / "No River Adjacent to Hex to" SP d:DIRECTION SP "of HEX" {
+    return MissingEdge_t{
+        Direction: d.(direction.Direction_e),
+    }, nil
+} / [Nn] "ot enough M.P's to move to" SP d:DIRECTION SP "into" SP t:TERRAIN EOF {
+    return &Exhausted_t{
+        Direction: d.(direction.Direction_e),
+        Terrain:   t.(terrain.Terrain_e),
+    }, nil
+} / [Nn] "othing of interest found" EOF {
+    return FoundNothing_t{}, nil
+} / "Patrolled and found" SP u:UNIT_ID sui:SpaceUnitID* EOF {
+    found := []FoundUnit_t{{Id: u.(UnitId_t)}}
+    for _, su := range toAnySlice(sui) {
+        switch v := su.(type) {
+        case UnitId_t:
+            found = append(found, FoundUnit_t{Id: v})
+        default:
+            panic(fmt.Errorf("unexpected type %T", v))
+        }
+    }
+    return found, nil
+} / t:ObviousNeighboringTerrainCode SP+ d:DIRECTION sdi:SpaceDirection* EOF {
+    kind := t.(terrain.Terrain_e)
+    neighbors := []*Neighbor_t{{
+        Direction: d.(direction.Direction_e),
+        Terrain:   kind,
+    }}
+    for _, sd := range toAnySlice(sdi) {
+        switch v := sd.(type) {
+        case direction.Direction_e:
+            neighbors = append(neighbors, &Neighbor_t{Direction: v, Terrain: kind})
+        default:
+            panic(fmt.Errorf("unexpected type %T", v))
+        }
+    }
+    return neighbors, nil
+} / et:EdgeType SP d:DIRECTION edi:SpaceDirection* EOF {
+    kind := et.(edges.Edge_e)
+    edges := []*Edge_t{&Edge_t{Direction: d.(direction.Direction_e), Edge: kind}}
+    for _, ed := range toAnySlice(edi) {
+        switch v := ed.(type) {
+        case direction.Direction_e:
+            edges = append(edges, &Edge_t{Direction: v, Edge: kind})
+        default:
+            panic(fmt.Errorf("unexpected type %T", v))
+        }
+    }
+    return edges, nil
+} / n:NUMBER SP i:ITEM EOF {
+    return FoundItem_t{
+        Quantity: n.(int),
+        Item:     i.(items.Item_e),
+    }, nil
+} / u:UNIT_ID sui:SpaceUnitID* EOF {
+    found := []FoundUnit_t{{Id: u.(UnitId_t)}}
+    for _, su := range toAnySlice(sui) {
+        switch v := su.(type) {
+        case UnitId_t:
+            found = append(found, FoundUnit_t{Id: v})
+        default:
+            panic(fmt.Errorf("unexpected type %T", v))
+        }
+    }
+    return found, nil
+} / lh:Longhouse EOF {
+    return lh, nil
+} / r:RESOURCE EOF {
+    return r, nil
+} / d:DIRECTION EOF {
+    return d, nil
+} / t:TERRAIN EOF {
+    return t, nil
+}
+
+TribeFollows <- "Tribe Follows" SP u:UNIT_ID _ EOF {
+    mt := Movement_t{Type: unit_movement.Follows, Follows: u.(UnitId_t)}
+    return mt, nil
+}
+
+TribeGoesTo <- "Tribe Goes to" SP h:COORDS _ EOF {
+    mt := Movement_t{Type: unit_movement.GoesTo, GoesTo: h.(string)}
+    return mt, nil
+}
+
+TribeMovement <- "Tribe Movement:" _ results:ToEOL EOF {
+    mt := Movement_t{Type: unit_movement.Tribe}
+    if results != nil {
+        mt.Text = bdup(results.([]byte))
+    }
+    return mt, nil
+}
+
+TurnInfo <- cd:CurrentTurn "," SP TurnSeason "," SP TurnWeather nt:NextTurn? _ EOF {
+    if nt != nil {
+        return TurnInfo_t{
+            CurrentTurn: cd.(Date_t),
+            NextTurn: nt.(Date_t),
+        }, nil
+    }
+
+    return TurnInfo_t{
+        CurrentTurn: cd.(Date_t),
+    }, nil
+}
+
+CurrentTurn <- "Current Turn" _ cd:YearMonth _ "(#" DIGIT+ ")" {
+    return cd, nil
+}
+
+NextTurn <- SP "Next Turn" _ nd:YearMonth _ "(#" DIGIT+ ")," _ ReportDate {
+    return nd, nil
+}
+
+ReportDate <- DIGIT DIGIT? "/" DIGIT DIGIT? "/" DIGIT DIGIT DIGIT DIGIT {
+    //log.Printf("reportDate %q\n", c.text)
+    return c.text, nil
+}
+
+ToEOL <- .* EOF {
+    return c.text, nil
+}
+
+TurnSeason <- [A-Z][A-Za-z]+ {
+    //log.Printf("turnSeason %q\n", c.text)
+    return c.text, nil
+}
+
+TurnWeather <- [A-Z][A-Za-z-]+ {
+    //log.Printf("turnWeather %q\n", c.text)
+    return c.text, nil
+}
+
+YearMonth <- y:YEAR "-" m:MONTH {
+    return Date_t {
+        Year:  y.(int),
+        Month: m.(int),
+    }, nil
+}
+
+COMPASSPOINT <- "NE/NE" {
+    return compass.NorthEast, nil
+} / "NE/SE" {
+    return compass.East, nil
+} / "NW/NW" {
+    return compass.NorthWest, nil
+} / "N/NE" {
+    return compass.NorthNorthEast, nil
+} / "N/NW" {
+    return compass.NorthNorthWest, nil
+} / "N/N" {
+    return compass.North, nil
+} / "SE/SE" {
+    return compass.SouthEast, nil
+} / "SW/NW" {
+    return compass.West, nil
+} / "SW/SW" {
+    return compass.SouthWest, nil
+} / "S/SE" {
+    return compass.SouthSouthEast, nil
+} / "S/SW" {
+    return compass.SouthSouthWest, nil
+} / "S/S" {
+    return compass.South, nil
+}
+
+COORDS <- "N/A" {
+    return "N/A", nil
+} / "##" SP DIGIT DIGIT DIGIT DIGIT {
+    return string(c.text), nil
+} / LETTER LETTER SP DIGIT DIGIT DIGIT DIGIT {
+    return string(c.text), nil
+}
+
+CROWSIGHTING <- "Sight Land" {
+    return terrain.UnknownLand, nil
+} / "Sight Water" {
+    return terrain.UnknownWater, nil
+}
+
+DIRECTION <- "NE" {
+    return direction.NorthEast, nil
+} / "SE" {
+    return direction.SouthEast, nil
+} / "SW" {
+    return direction.SouthWest, nil
+} / "NW" {
+    return direction.NorthWest, nil
+} / "N" {
+    return direction.North, nil
+} / "S" {
+    return direction.South, nil
+}
+
+ITEM <- "adze"i         { return items.Adze, nil
+} /		"arbalest"i     { return items.Arbalest, nil
+} /		"arrows"i       { return items.Arrows, nil
+} /		"axes"i         { return items.Axes, nil
+} /		"backpack"i     { return items.Backpack, nil
+} /		"ballistae"i    { return items.Ballistae, nil
+} /		"bark"i         { return items.Bark, nil
+} /		"barrel"i       { return items.Barrel, nil
+} /		"bladder"i      { return items.Bladder, nil
+} /		"blubber"i      { return items.Blubber, nil
+} /		"boat"i         { return items.Boat, nil
+} /		"bonearmour"i   { return items.BoneArmour, nil
+} /		"bones"i        { return items.Bones, nil
+} /		"bows"i         { return items.Bows, nil
+} /		"bread"i        { return items.Bread, nil
+} /		"breastplate"i  { return items.Breastplate, nil
+} /		"candle"i       { return items.Candle, nil
+} /		"canoes"i       { return items.Canoes, nil
+} /		"carpets"i      { return items.Carpets, nil
+} /		"catapult"i     { return items.Catapult, nil
+} /		"cattle"i       { return items.Cattle, nil
+} /		"cauldrons"i    { return items.Cauldrons, nil
+} /		"chain"i        { return items.Chain, nil
+} /		"china"i        { return items.China, nil
+} /		"clay"i         { return items.Clay, nil
+} /		"cloth"i        { return items.Cloth, nil
+} /		"clubs"i        { return items.Clubs, nil
+} /		"coal"i         { return items.Coal, nil
+} /		"coffee"i       { return items.Coffee, nil
+} /		"coins"i        { return items.Coins, nil
+} /		"cotton"i       { return items.Cotton, nil
+} /		"cuirass"i      { return items.Cuirass, nil
+} /		"cuirboilli"i   { return items.Cuirboilli, nil
+} /		"diamond"i      { return items.Diamond, nil
+} /		"diamonds"i     { return items.Diamonds, nil
+} /		"drum"i         { return items.Drum, nil
+} /		"elephant"i     { return items.Elephant, nil
+} /		"falchion"i     { return items.Falchion, nil
+} /		"fish"i         { return items.Fish, nil
+} /		"flax"i         { return items.Flax, nil
+} /		"flour"i        { return items.Flour, nil
+} /		"flute"i        { return items.Flute, nil
+} /		"fodder"i       { return items.Fodder, nil
+} /		"frame"i        { return items.Frame, nil
+} /		"frankincense"i { return items.Frankincense, nil
+} /		"fur"i          { return items.Fur, nil
+} /		"glasspipe"i    { return items.Glasspipe, nil
+} /		"goats"i        { return items.Goats, nil
+} /		"gold"i         { return items.Gold, nil
+} /		"grain"i        { return items.Grain, nil
+} /		"grape"i        { return items.Grape, nil
+} /		"gut"i          { return items.Gut, nil
+} /		"hbow"i         { return items.HBow, nil
+} /		"harp"i         { return items.Harp, nil
+} /		"haube"i        { return items.Haube, nil
+} /		"heaters"i      { return items.Heaters, nil
+} /		"helm"i         { return items.Helm, nil
+} /		"herbs"i        { return items.Herbs, nil
+} /		"hive"i         { return items.Hive, nil
+} /		"hoe"i          { return items.Hoe, nil
+} /		"honey"i        { return items.Honey, nil
+} /		"hood"i         { return items.Hood, nil
+} /		"horn"i         { return items.Horn, nil
+} /		"horses"i       { return items.Horses, nil
+} /		"jade"i         { return items.Jade, nil
+} /		"jerkin"i       { return items.Jerkin, nil
+} /		"kayak"i        { return items.Kayak, nil
+} /		"ladder"i       { return items.Ladder, nil
+} /		"leather"i      { return items.Leather, nil
+} /		"logs"i         { return items.Logs, nil
+} /		"lute"i         { return items.Lute, nil
+} /		"mace"i         { return items.Mace, nil
+} /		"mattock"i      { return items.Mattock, nil
+} /		"metal"i        { return items.Metal, nil
+} /		"millstone"i    { return items.MillStone, nil
+} /		"musk"i         { return items.Musk, nil
+} /		"net"i          { return items.Net, nil
+} /		"oar"i          { return items.Oar, nil
+} /		"oil"i          { return items.Oil, nil
+} /		"olives"i       { return items.Olives, nil
+} /		"opium"i        { return items.Opium, nil
+} /		"ores"i         { return items.Ores, nil
+} /		"paddle"i       { return items.Paddle, nil
+} /		"palanquin"i    { return items.Palanquin, nil
+} /		"parchment"i    { return items.Parchment, nil
+} /		"pavis"i        { return items.Pavis, nil
+} /		"pearls"i       { return items.Pearls, nil
+} /		"pellets"i      { return items.Pellets, nil
+} /		"people"i       { return items.People, nil
+} /		"pewter"i       { return items.Pewter, nil
+} /		"picks"i        { return items.Picks, nil
+} /		"plows"i        { return items.Plows, nil
+} /		"provisions"i   { return items.Provisions, nil
+} /		"quarrel"i      { return items.Quarrel, nil
+} /		"rake"i         { return items.Rake, nil
+} /		"ram"i          { return items.Ram, nil
+} /		"ramp"i         { return items.Ramp, nil
+} /		"ring"i         { return items.Ring, nil
+} /		"rope"i         { return items.Rope, nil
+} /		"rug"i          { return items.Rug, nil
+} /		"saddle"i       { return items.Saddle, nil
+} /		"saddlebag"i    { return items.Saddlebag, nil
+} /		"salt"i         { return items.Salt, nil
+} /		"sand"i         { return items.Sand, nil
+} /		"scale"i        { return items.Scale, nil
+} /		"sculpture"i    { return items.Sculpture, nil
+} /		"scutum"i       { return items.Scutum, nil
+} /		"scythe"i       { return items.Scythe, nil
+} /		"shackle"i      { return items.Shackle, nil
+} /		"shaft"i        { return items.Shaft, nil
+} /		"shield"i       { return items.Shield, nil
+} /		"shovel"i       { return items.Shovel, nil
+} /		"silk"i         { return items.Silk, nil
+} /		"silver"i       { return items.Silver, nil
+} /		"skin"i         { return items.Skin, nil
+} /		"slaves"i       { return items.Slaves, nil
+} /		"slings"i       { return items.Slings, nil
+} /		"snare"i        { return items.Snare, nil
+} /		"spear"i        { return items.Spear, nil
+} /		"spetum"i       { return items.Spetum, nil
+} /		"spice"i        { return items.Spice, nil
+} /		"statue"i       { return items.Statue, nil
+} /		"stave"i        { return items.Stave, nil
+} /		"stones"i       { return items.Stones, nil
+} /		"string"i       { return items.String, nil
+} /		"sugar"i        { return items.Sugar, nil
+} /		"sword"i        { return items.Sword, nil
+} /		"tapestries"i   { return items.Tapestries, nil
+} /		"tea"i          { return items.Tea, nil
+} /		"tobacco"i      { return items.Tobacco, nil
+} /		"trap"i         { return items.Trap, nil
+} /		"trews"i        { return items.Trews, nil
+} /		"trinket"i      { return items.Trinket, nil
+} /		"trumpet"i      { return items.Trumpet, nil
+} /		"urn"i          { return items.Urn, nil
+} /		"wagons"i       { return items.Wagons, nil
+} /		"wax"i          { return items.Wax, nil}
+
+MONTH <- DIGIT DIGIT? {
+    n, _ := strconv.Atoi(string(c.text))
+    return int(n), nil
+}
+
+NUMBER <- [0-9]+ {
+    n, _ := strconv.Atoi(string(c.text))
+    return int(n), nil
+}
+
+RESOURCE <- "Coal"i {
+    return resources.Coal, nil
+} / "Copper Ore"i {
+    return resources.CopperOre, nil
+} / "Diamond"i {
+    return resources.Diamond, nil
+} / "Frankincense"i {
+    return resources.Frankincense, nil
+} / "Gold"i {
+    return resources.Gold, nil
+} / "Iron Ore"i {
+    return resources.IronOre, nil
+} / "Jade"i {
+    return resources.Jade, nil
+} / "Kaolin"i {
+    return resources.Kaolin, nil
+} / "Lead Ore"i {
+    return resources.LeadOre, nil
+} / "Limestone"i {
+    return resources.Limestone, nil
+} / "Nickel Ore"i {
+    return resources.NickelOre, nil
+} / "Pearls"i {
+    return resources.Pearls, nil
+} / "Pyrite"i {
+    return resources.Pyrite, nil
+} / "Rubies"i {
+    return resources.Rubies, nil
+} / "Salt"i {
+    return resources.Salt, nil
+} / "Silver"i {
+    return resources.Silver, nil
+} / "Sulphur"i {
+    return resources.Sulphur, nil
+} / "Tin Ore"i {
+    return resources.TinOre, nil
+} / "Vanadium Ore"i {
+    return resources.VanadiumOre, nil
+} / "Zinc Ore"i {
+    return resources.ZincOre, nil
+}
+
+TERRAIN <- "ALPS" {
+    return terrain.Alps, nil
+} / "ARID TUNDRA" {
+    return terrain.AridTundra, nil
+} / "ARID" {
+    return terrain.AridHills, nil
+} / "BRUSH FLAT" {
+    return terrain.BrushFlat, nil
+} / "BRUSH HILLS" {
+    return terrain.BrushHills, nil
+} / "BRUSH" {
+    return terrain.BrushFlat, nil
+} / "CONIFER HILLS" {
+    return terrain.ConiferHills, nil
+} / "DECIDUOUS FOREST" {
+    return terrain.Deciduous, nil
+} / "DECIDUOUS HILLS" {
+    return terrain.DeciduousHills, nil
+} / "DECIDUOUS" {
+    return terrain.Deciduous, nil
+} / "DESERT" {
+    return terrain.Desert, nil
+} / "GRASSY HILLS PLATEAU" {
+    return terrain.GrassyHillsPlateau, nil
+} / "GRASSY HILLS" {
+    return terrain.GrassyHills, nil
+} / "HIGH SNOWY MOUNTAINS" {
+    return terrain.HighSnowyMountains, nil
+} / "JUNGLE HILLS" {
+    return terrain.JungleHills, nil
+} / "JUNGLE" {
+    return terrain.Jungle, nil
+} / "LAKE" {
+    return terrain.Lake, nil
+} / "LOW ARID MOUNTAINS" {
+    return terrain.LowAridMountains, nil
+} / "LOW CONIFER MOUNTAINS" {
+    return terrain.LowConiferMountains, nil
+} / "LOW JUNGLE MOUNTAINS" {
+    return terrain.LowJungleMountains, nil
+} / "LOW SNOWY MOUNTAINS" {
+    return terrain.LowSnowyMountains, nil
+} / "LOW VOLCANIC MOUNTAINS" {
+    return terrain.LowVolcanicMountains, nil
+} / "OCEAN" {
+    return terrain.Ocean, nil
+} / "PLATEAU GRASSY HILLS" {
+    return terrain.GrassyHillsPlateau, nil
+} / "PLATEAU PRAIRIE" {
+    return terrain.PrairiePlateau, nil
+} / "POLAR ICE" {
+    return terrain.PolarIce, nil
+} / "PRAIRIE" {
+    return terrain.Prairie, nil
+} / "ROCKY HILLS" {
+    return terrain.RockyHills, nil
+} / "SNOWY HILLS" {
+    return terrain.SnowyHills, nil
+} / "SWAMP" {
+    return terrain.Swamp, nil
+} / "TUNDRA" {
+    return terrain.Tundra, nil
+}
+
+TERRAIN_CODE <- "ALPS" {    return terrain.Alps, nil
+} / "GHP" { return terrain.GrassyHillsPlateau, nil
+} / "HSM" { return terrain.HighSnowyMountains, nil
+} / "LAM" { return terrain.LowAridMountains, nil
+} / "LCM" { return terrain.LowConiferMountains, nil
+} / "LJM" { return terrain.LowJungleMountains, nil
+} / "LSM" { return terrain.LowSnowyMountains, nil
+} / "LVM" { return terrain.LowVolcanicMountains, nil
+} / "PGH" { return terrain.GrassyHillsPlateau, nil
+} / "PPR" { return terrain.PrairiePlateau, nil
+} / "AH" { return terrain.AridHills, nil
+} / "AR" { return terrain.AridTundra, nil
+} / "BF" { return terrain.BrushFlat, nil
+} / "BH" { return terrain.BrushHills, nil
+} / "CH" { return terrain.ConiferHills, nil
+} / "DE" { return terrain.Desert, nil
+} / "DH" { return terrain.DeciduousHills, nil
+} / "GH" { return terrain.GrassyHills, nil
+} / "JG" { return terrain.Jungle, nil
+} / "JH" { return terrain.JungleHills, nil
+} / "PI" { return terrain.PolarIce, nil
+} / "PR" { return terrain.Prairie, nil
+} / "RH" { return terrain.RockyHills, nil
+} / "SH" { return terrain.SnowyHills, nil
+} / "SW" { return terrain.Swamp, nil
+} / "TU" { return terrain.Tundra, nil
+} / "D" { return terrain.Deciduous, nil
+} / "L" { return terrain.Lake, nil
+} / "O" { return terrain.Ocean, nil
+}
+
+UNIT_ID <- DIGIT DIGIT DIGIT DIGIT ([cefg] [1-9])? {
+    return UnitId_t(c.text), nil
+}
+
+WINDSTRENGTH <- "CALM" {
+    return winds.Calm, nil
+} / "MILD" {
+    return winds.Mild, nil
+} / "STRONG" {
+    return winds.Strong, nil
+} / "GALE" {
+    return winds.Gale, nil
+}
+
+YEAR <- DIGIT DIGIT DIGIT DIGIT? {
+    n, _ := strconv.Atoi(string(c.text))
+    return int(n), nil
+}
+
+
+EOF    = !.
+DIGIT  = [0-9]
+LETTER = [A-Z]
+SP     = [ \t]+
+_      = [ \t]*

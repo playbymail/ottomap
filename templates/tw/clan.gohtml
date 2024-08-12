@@ -1,0 +1,30 @@
+{{define "content"}}{{- /*gotype:github.com/playbymail/ottomap/templates/tw.Clan_t*/ -}}
+<h2>Clan {{.Id}}</h2>
+<p>
+    The purpose of this page is to show the details of a clan.
+    This includes links to the clan's reports and the list of turns that have been uploaded.
+    We should also have a button to delete the entire clan.
+</p>
+
+<h3>Turns</h3>
+<p>
+    This section should list the turns that have data, with the report and map for the turn.
+</p>
+
+{{with .Turns}}
+    {{range .}}{{- /*gotype:github.com/playbymail/ottomap/templates/tw.Turn_t*/ -}}
+        <h4>Turn {{.Id}}</h4>
+    {{end}}
+{{else}}
+    <p>
+        It looks like you have not uploaded any turn reports for this clan.
+        We should probably tell you how to do that.
+    </p>
+{{end}}
+
+<footer>
+    <p>
+        TBD
+    </p>
+</footer>
+{{end}}

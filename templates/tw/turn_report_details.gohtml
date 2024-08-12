@@ -1,0 +1,39 @@
+{{define "content"}}{{- /*gotype:github.com/playbymail/ottomap/templates/tw.TurnReportDetails_t*/ -}}
+<h2>Turn Report Details</h2>
+<p>
+    The purpose of this page is to show the details of a turn report.
+    We should include a link to the turn that includes this report.
+    If there is a map, we should include a link to the map.
+    We should also have a button to delete the turn report.
+</p>
+<h3>Turn {{.Id}}</h3>
+<h4>Clan {{.Clan}}</h4>
+    {{if .Map}}<p><a href="/tn3/{{.Id}}/{{.Clan}}/{{.Id}}.{{.Clan}}.wxx">Map {{.Map}}</a></p>{{end}}
+<h5>Sections</h5>
+{{if .Units}}
+    <table border="2">
+        <thead>
+        <tr>
+            <td>Unit</td>
+            <td>Current Hex</td>
+            <td>Previous Hex</td>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .Units}}{{- /*gotype:github.com/playbymail/ottomap/templates/tw.UnitDetails_t*/ -}}
+        <tr>
+            <td>{{.Id}}</td>
+            <td>{{.CurrentHex}}</td>
+            <td>{{.PreviousHex}}</td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+{{else}}
+    <p>No sections found.</p>
+{{end}}
+
+<footer>
+    <p>Back to <a href="/tn3/{{.Id}}">turn</a>.</p>
+</footer>
+{{end}}

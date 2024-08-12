@@ -1,0 +1,67 @@
+= OttoMap User's Manual
+
+== Introduction
+
+OttoMap is a tool that translates TribeNet turn report files into JSON data and generates maps. This manual provides detailed instructions for using OttoMap from the command line.
+
+== Installation
+
+. Ottomap currently requires you to download the source and build it on your computer.
+
+== Basic Commands
+
+=== version
+
+Displays the current version of OttoMap.
+
+----
+ottomap version
+----
+
+=== render
+
+Generates maps from the turn report files in the `data/input` directory.
+
+----
+ottomap render --turn 901-12 --clan-id 0991 --show-grid-coords
+----
+
+== File Naming Convention
+
+Turn report files must be named in the format `YYYY-MM.CLAN.report.txt`:
+- `YYYY` is the turn year (e.g., 0901).
+- `MM` is the month (e.g., 02).
+- `CLAN` is the clan code (e.g., 0991).
+
+== Running OttoMap
+
+=== Preparation
+
+. Store Turn Report Files:
+* Save the text files in the `data/input` directory.
+
+=== Generating Maps
+
+. Run the `render` Command:
+* Specify the clan for which you want to generate a map.
+
+----
+ottomap render --clan-id 0991 --show-grid-coords
+----
+
+== Error Handling
+
+=== Common Errors
+
+* Parsing Errors: If the report files contain typos, they need to be updated. Refer to the `docs/ERRORS.md` file for examples.
+
+=== Troubleshooting
+
+* Ensure that the turn report files follow the correct naming convention.
+* Verify that the files are stored in the `data/input` directory.
+
+== Conclusion
+
+OttoMap is a powerful tool for generating maps from TribeNet turn reports. By following this manual, you can effectively utilize its capabilities to create detailed maps for your reports.
+
+For more information, visit the official documentation or contact support.

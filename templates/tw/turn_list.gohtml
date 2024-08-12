@@ -1,0 +1,12 @@
+{{define "content"}}{{- /*gotype:github.com/playbymail/ottomap/templates/tw.TurnList*/ -}}
+<h2>Turn List</h2>
+{{with .Turns}}
+    <ul>
+        {{range .}}
+            <li><a href="/tn3/{{.}}">Turn {{.}}</a></li>
+        {{end}}
+    </ul>
+{{else}}
+    <p>No turns found.</p>
+{{end}}
+{{end}}

@@ -1,0 +1,12 @@
+{{define "rightmenu"}}{{- /*gotype:github.com/playbymail/ottomap/templates/htmx.RightMenu*/ -}}
+<div class="right">
+{{range .Items}}{{- /*gotype:github.com/playbymail/ottomap/templates/htmx.MenuItem*/ -}}
+    <h2>{{.Label}}</h2>
+    <ul {{with .Class}}class="{{.}}"{{end}}>
+    {{range .Children}}{{- /*gotype:github.com/playbymail/ottomap/templates/htmx/helper.MenuItem*/ -}}
+        <li {{with .Current}}class="current"{{end}}><a href="{{.Link}}">{{.Label}}</a></li>
+    {{end}}
+    </ul>
+{{end}}
+</div>
+{{end}}

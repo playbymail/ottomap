@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{.Page.Title}}</title>
+    <script src="/js/htmx-1.9.12.min.js"></script>
+</head>
+<body>
+<h1>Reports Queued for {{.Clan}}</h1>
+
+<h2>Reports Queued</h2>
+{{if .NoQueuedReports}}
+    <p>There are no reports in your queue.</p>
+{{else}}
+    <table border="2">
+        <thead>
+        <tr>
+            <th>Updated</th>
+            <th>Clan</th>
+            <th>Status</th>
+            <th>Uploaded</th>
+            <th>Link</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .Queue}}
+            <tr>
+                <td>{{.Updated}}</td>
+                <td>{{.Clan}}</td>
+                <td>{{.Status}}</td>
+                <td>{{.Created}}</td>
+                <td><a href="{{.URL}}">Link</a></td>
+            </tr>
+        {{end}}
+        </tbody>
+    </table>
+{{end}}
+
+</body>
+</html>

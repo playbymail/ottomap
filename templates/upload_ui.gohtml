@@ -1,0 +1,57 @@
+{{define "upload_ui"}}
+    <div id="upload-ui-div">
+        {{if eq .Status "waiting"}}
+            <h2>Upload New Turn Report</h2>
+            <form id="upload-ui-form" hx-post="{{.UploadURL}}" hx-target="#upload-ui-div" hx-swap="outerHTML" enctype="multipart/form-data">
+                <div>
+                    <label for="turn-report">
+                        Choose a turn report file to upload...<br/>
+                    </label>
+                    <input type="file" id="turn-report" name="turn-report" accept=".txt"/>
+                    <br/>
+                    <button type="submit" disabled>
+                        Upload Turn Report
+                    </button>
+                </div>
+            </form>
+            <script>
+                const form = document.querySelector('#upload-ui-form');
+                const submitButton = form.querySelector('[type="submit"]');
+                const inputFile = form.querySelector('[type="file"]');
+                inputFile.addEventListener('change', () => {
+                    submitButton.disabled = !inputFile.files.length;
+                });
+            </script>
+        {{else if eq .Status "queued"}}
+            <div hx-get="{{.StatusURL}}" hx-trigger="load delay:500ms">
+                <label for="upload-progress-bar">Parsing Turn Report</label>
+                <progress id="upload-progress-bar" value="{{.PctComplete}}" max="100">{{.PctComplete}} %</progress>
+                <p>
+                    {{.Message}}
+                </p>
+            </div>
+        {{else if eq .Status "parsing"}}
+            <div hx-get="{{.StatusURL}}" hx-trigger="load delay:500ms">
+                <label for="upload-progress-bar">Parsing Turn Report</label>
+                <progress id="upload-progress-bar" value="{{.PctComplete}}" max="100">{{.PctComplete}} %</progress>
+                <p>
+                    {{.Message}}
+                </p>
+            </div>
+        {{else if eq .Status "complete"}}
+            <p>
+                {{.Message}}
+            </p>
+        {{else if eq .Status "bad-request"}}
+        <p>
+            {{.Message}}
+        </p>
+        {{else}}
+            <p>
+                {{.Message}}
+                <br/>
+                {{.Status}}
+            </p>
+        {{end}}
+    </div>
+{{end}}

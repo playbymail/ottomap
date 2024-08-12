@@ -1,0 +1,24 @@
+{{ define "layout" }}<!DOCTYPE html>{{- /*gotype:github.com/playbymail/ottomap/templates/htmx.Layout*/ -}}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your description goes here">
+    <meta name="keywords" content="your,keywords,goes,here">
+    <meta name="author" content="Your Name">
+    <link rel="stylesheet" type="text/css" href="css/daleri-mega.css" title="Daleri Mega" media="screen,projection" />
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0">
+    <title>{{ .Site.Title }}</title>
+</head>
+<body>
+{{ template "banner" .Banner }}
+<div id="wrap">
+    {{ template "mainmenu" .MainMenu }}
+    {{ template "content" .Content }}
+    {{ template "sidebar" .Sidebar }}
+    <hr class="clear" />
+</div>
+{{ template "footer" .Footer }}
+</body>
+</html>
+{{ end }}

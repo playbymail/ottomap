@@ -1,0 +1,21 @@
+{{define "mainmenu"}}{{- /*gotype:github.com/playbymail/ottomap/templates/htmx.MainMenu*/ -}}
+<div id="mainmenu">
+    {{range .Items}}{{- /*gotype:github.com/playbymail/ottomap/templates/htmx.MenuItem*/ -}}
+        <dl class="nav">
+            <dt><a href="{{.Link}}">{{.Label}}</a></dt>
+            {{range .Children}}
+                <dd><a href="{{.Link}}">{{.Label}}</a></dd>
+            {{end}}
+        </dl>
+    {{end}}
+    <dl class="introduction">
+    {{with .Releases}}{{- /*gotype:github.com/playbymail/ottomap/templates/htmx.Releases*/ -}}
+        <dt><a href="{{.DT.Link}}" {{with .DT.Target}}target="{{.}}"{{end}}>{{.DT.Label}}</a></dt>
+        {{range .DDs}}
+        <dd><a href="{{.Link}}" {{with .Target}}target="{{.}}"{{end}}>{{.Label}}</a></dd>
+        {{end}}
+    {{end}}
+    </dl>
+    <hr class="clear" />
+</div>
+{{end}}

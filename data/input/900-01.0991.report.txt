@@ -1,0 +1,190 @@
+Tribe 0991, , Current Hex = ## 1113, (Previous Hex = ## 0714)
+Current Turn 900-01 (#1), Spring, FINE	Next Turn 900-02 (#2), 12/11/2023
+Received: $0, Cost: $ 8.9	Credit: $ 191.1
+Goods Tribe: No GT
+
+Desired Commodities: (1) Coffee, (2) Frankincense
+
+Int used 01 900.
+
+Locals tell you there is Iron Ore at 0902 on the mapsheet you are on.
+Tribe Activities: 40 people Skin\gut\bone 60 Goat,  11113  people hunted 30672 provs, Skins Cured 20, 100 people made 100 Sling (using 100 Leather), Skins Tanned 40 (using 100 Bark, 40 Skin), 275 herders allocated, 272 Max Herders required prior to modifiers, 272 actual herders required,  Bred ( Cattle 32,  Goat 284,  Horses  21 )
+
+Final Activities:
+
+Transfer goods to 0991e1: 25 WARRIORS,  25 ACTIVES,  50 HORSE,  100 PROVS,  8400 SILVER, To 1138: 100 WARRIORS,  100 ACTIVES,  100 INACTIVES,  600 PROVS, To 1991e1: 25 WARRIORS,  25 ACTIVES,  50 HORSE,  100 PROVS,
+
+Tribe Movement: Move SE-GH, \NE-GHP, River SE\NE-PR, River S\NE-PPR, \Not enough M.P's to move to NE into ROCKY HILLS
+
+0991 Status: PRAIRIE, 0991
+
+Humans
+People	17270
+Warriors 	5740	Actives 	5740	Inactives 	5790
+
+Animals
+Cattle 	532	Goat 	3924	Horse 	321
+Minerals
+Brass 	500	Bronze 	400	Coal 	3000	Iron 	400	Silver 	1000
+War Equipment
+Club 	500	Jerkin 	200	Shield 	30	Sword 	30
+Finished Goods
+Provs 	62842	Sling 	400	Trap 	500	Wagon 	300
+Raw Materials
+Bark 	900	Bone 	620	Gut 	615	Leather 	60	Log 	100	Skin 	118
+Wax 	20
+Ships
+None
+
+Skills:
+Adm 4, BnW 1, Bon 1, Cour 1, Cur 1, Dip 3, Eco 5, For 2, Garr 1, Gut 1, Herd 3, Hunt 2, Int 3, Ldr 2, Ltr 3, Min 2, Qry 2, Sct 2, Skn 2, Tan 1,
+
+Morale : 	1.01
+
+Weight: 659,331
+
+ 
+Element 0991e1, , Current Hex = ## 1013, (Previous Hex = ## 0714)
+Current Turn 900-01 (#1), Spring, FINE
+Goods Tribe: No GT
+
+Tribe Activities:
+
+Final Activities:
+
+Receive goods from 0991: 25 WARRIORS,  25 ACTIVES,  50 HORSE,  100 PROVS,  8400 SILVER,
+
+Tribe Movement: Move SE-GH, \NE-PR, River SE\NE-PR, River S\
+
+Scout 1:Scout SE-RH, River SE S SW\NE-PR, River S\SE-PR, River SE S SW, 1190\NE-PR, River S\ not enough M.P's to move to SE into PRAIRIE, nothing of interest found
+Scout 2:Scout SE-RH, River SE S SW\ no Ford on River to SE of HEX, nothing of interest found
+Scout 3:Scout SE-RH, River SE S SW\ no Ford on River to SE of HEX, nothing of interest found
+Scout 4:Scout NE-PR,  0991\NE-RH, \NE-RH, \ not enough M.P's to move to NE into SWAMP, nothing of interest found
+Scout 5:Scout N-PR, \N-PR, \N-PR, \N-PR,  O NW\N-PR,  O SW, NW\ not enough M.P's to move to N into PRAIRIE, nothing of interest found
+Scout 6:Scout N-PR, \NE-PR, \NE-PR, \NE-PR, \NE-PR, River SE\ not enough M.P's to move to NE into PRAIRIE, nothing of interest found
+Scout 7:Scout N-PR, \NW-PR, \N-PR, \N-PR,  O N\ can't Move on Ocean to N of HEX, nothing of interest found
+Scout 8:Scout SE-RH, River SE S SW\NE-PR, River S\NE-PR, \NE-PR, \ not enough M.P's to move to NE into ROCKY HILLS, nothing of interest found
+
+0991e1 Status: PRAIRIE,River S, 0991e1
+
+Humans
+People	50
+Warriors 	25	Actives 	25	Inactives 	0
+
+Animals
+Horse 	50
+Minerals
+Silver 	8400
+War Equipment
+None
+Finished Goods
+Provs 	50
+Raw Materials
+None
+Ships
+None
+
+Skills:
+
+Morale : 	1.01
+
+Weight: 1,340
+
+ 
+Tribe 1991, , Current Hex = ## 0616, (Previous Hex = ## 0714)
+Current Turn 900-01 (#1), Spring, FINE
+Goods Tribe: No GT
+
+Receive goods from 0991: 100 WARRIORS,  100 ACTIVES,  100 INACTIVES,  600 PROVS,
+
+Tribe Movement: Move S-PR, \S-PR,  O S, Ford SE\SE-DE,  O SE, SW, S, Ford NW\
+
+1991 Status: DESERT, O SE, SW, S, Ford NW, 1991, 1991e1
+
+Humans
+People	300
+Warriors 	100	Actives 	100	Inactives 	100
+
+Animals
+None
+Minerals
+None
+War Equipment
+None
+Finished Goods
+Provs 	300
+Raw Materials
+None
+Ships
+None
+
+Skills:
+Adm 2, Eng 6, ShB 4, ShW 8, Wd 8,
+
+Morale : 	1
+
+Weight: 3,000
+
+ 
+Element 1991e1, , Current Hex = ## 0616, (Previous Hex = ## 0714)
+Current Turn 900-01 (#1), Spring, FINE
+Goods Tribe: No GT
+
+Receive goods from 0991: 25 WARRIORS,  25 ACTIVES,  50 HORSE,  100 PROVS,
+
+Tribe Movement: Move S-PR, \S-PR,  O S,River SE\SW-LCM,  O SE, SW, S\
+
+Scout 1:Scout NW-LCM,  O SW, S\NW-LCM,  O SW, S\ not enough M.P's to move to NW into LOW CONIFER MOUNTAINS, nothing of interest found
+Scout 2:Scout,  can't Move on Ocean to SW of HEX, Patrolled and found 1991
+Scout 3:Scout,  can't Move on Ocean to SW of HEX, Patrolled and found 1991
+Scout 4:Scout,  can't Move on Ocean to SW of HEX, Patrolled and found 1991
+Scout 5:Scout,  can't Move on Ocean to SW of HEX, Patrolled and found 1991
+Scout 6:Scout,  can't Move on Ocean to SW of HEX, Patrolled and found 1991
+Scout 7:Scout NW-LCM,  O SW, S\NW-LCM,  O SW, S\ not enough M.P's to move to NW into LOW CONIFER MOUNTAINS, nothing of interest found
+Scout 8:Scout,  can't Move on Ocean to SW of HEX, Patrolled and found 1991
+
+1991e1 Status: LOW CONIFER MOUNTAINS, O SE, SW, S, 1991, 1991e1
+
+Humans
+People	50
+Warriors 	25	Actives 	25	Inactives 	0
+
+Animals
+Horse 	50
+Minerals
+None
+War Equipment
+None
+Finished Goods
+Provs 	50
+Raw Materials
+None
+Ships
+None
+
+Skills:
+
+Morale : 	1
+
+Weight: 500
+
+Transfers
+From	To	Item	Requested	Actual	Message
+0991	0991e1	WARRIORS	25	 	Transfer in same hex
+0991	0991e1	ACTIVES	25	 	Transfer in same hex
+0991	0991e1	HORSE	50	 	Transfer in same hex
+0991	0991e1	PROVS	100	 	Transfer in same hex
+0991	0991e1	SILVER	8400	 	Transfer in same hex
+0991	1991	WARRIORS	100	 	Transfer in same hex
+0991	1991	ACTIVES	100	 	Transfer in same hex
+0991	1991	INACTIVES	100	 	Transfer in same hex
+0991	1991	PROVS	600	 	Transfer in same hex
+0991	1991e1	WARRIORS	25	 	Transfer in same hex
+0991	1991e1	ACTIVES	25	 	Transfer in same hex
+0991	1991e1	HORSE	50	 	Transfer in same hex
+0991	1991e1	PROVS	100	 	Transfer in same hex
+
+ 
+Settlements
+Hex Code	Name	Note	Type	Subtype
+
