@@ -33,6 +33,7 @@ var argsRender struct {
 	render              wxx.RenderConfig
 	clanId              string
 	originGrid          string
+	autoEOL             bool
 	noWarnOnInvalidGrid bool
 	quitOnInvalidGrid   bool
 	warnOnInvalidGrid   bool
@@ -179,8 +180,14 @@ var cmdRender = &cobra.Command{
 			data, err := os.ReadFile(i.Path)
 			if err != nil {
 				log.Fatalf("error: read: %v\n", err)
+			} else if len(data) == 0 {
+				log.Printf("warn: %q: empty file\n", i.Path)
+				continue
 			}
-			if argsRender.experimental.stripCR {
+			if argsRender.autoEOL {
+				data = bytes.ReplaceAll(data, []byte{'\r', '\n'}, []byte{'\n'})
+				data = bytes.ReplaceAll(data, []byte{'\r'}, []byte{'\n'})
+			} else if argsRender.experimental.stripCR {
 				data = bytes.ReplaceAll(data, []byte{'\r', '\n'}, []byte{'\n'})
 			}
 			if i.Turn.Year < 899 || i.Turn.Year > 9999 || i.Turn.Month < 1 || i.Turn.Month > 12 {

@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 15, Patch: 0}
+	version = semver.Version{Major: 0, Minor: 16, Patch: 0}
 )
 
 func main() {
@@ -29,6 +29,7 @@ func main() {
 func Execute() error {
 	cmdRoot.AddCommand(cmdRender, cmdServe, cmdVersion)
 
+	cmdRender.Flags().BoolVar(&argsRender.autoEOL, "auto-eol", false, "automatically convert line endings")
 	cmdRender.Flags().BoolVar(&argsRender.debug.dumpAllTiles, "debug-dump-all-tiles", false, "dump all tiles")
 	cmdRender.Flags().BoolVar(&argsRender.debug.dumpAllTurns, "debug-dump-all-turns", false, "dump all turns")
 	cmdRender.Flags().BoolVar(&argsRender.debug.maps, "debug-maps", false, "enable maps debugging")
