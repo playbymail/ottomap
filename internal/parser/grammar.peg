@@ -208,6 +208,11 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
         Direction: d.(direction.Direction_e),
         Terrain:   t.(terrain.Terrain_e),
     }, nil
+} / "Cannot Move Wagons into Swamp/Jungle Hill to" SP d:DIRECTION SP "of HEX" EOF {
+    return &ProhibitedFrom_t{
+        Direction: d.(direction.Direction_e),
+        Terrain:   terrain.JungleHills,
+    }, nil
 } / "Group did not return" EOF {
     return DidNotReturn_t{}, nil
 } / "Find" SP r:RESOURCE EOF {
