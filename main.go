@@ -13,13 +13,20 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 16, Patch: 1}
+	version = semver.Version{Major: 0, Minor: 16, Patch: 2}
 )
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.Ltime)
 
-	// todo: detect when a unit is created as an after-move action
+	// todo: detect when a unit is created as before and after-move action
+
+	// todo: can we use this office package if we fix the tab issue?
+	//	if s, err := office.ToStr("input/899-12.0138.Turn-Report.docx"); err != nil {
+	//		log.Fatal(err)
+	//	} else {
+	//		log.Println(s)
+	//	}
 
 	if err := Execute(); err != nil {
 		log.Fatal(err)
