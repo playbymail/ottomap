@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 16, Patch: 2}
+	version = semver.Version{Major: 0, Minor: 16, Patch: 3}
 )
 
 func main() {
@@ -35,6 +35,7 @@ func main() {
 
 func Execute() error {
 	cmdRoot.AddCommand(cmdRender, cmdServe, cmdVersion)
+	cmdServe.AddCommand(cmdServeHtmx, cmdServeRest)
 
 	cmdRender.Flags().BoolVar(&argsRender.autoEOL, "auto-eol", false, "automatically convert line endings")
 	cmdRender.Flags().BoolVar(&argsRender.debug.dumpAllTiles, "debug-dump-all-tiles", false, "dump all tiles")
@@ -62,11 +63,15 @@ func Execute() error {
 	cmdRender.Flags().StringVar(&argsRender.originGrid, "origin-grid", "", "grid id to substitute for ##")
 	cmdRender.Flags().StringVar(&argsRender.maxTurn.id, "max-turn", "", "last turn to map (yyyy-mm format)")
 
-	cmdServe.Flags().StringVar(&argsServe.paths.assets, "assets", "assets", "path to public assets")
-	cmdServe.Flags().StringVar(&argsServe.paths.data, "data", "userdata", "path to root of user data files")
-	cmdServe.Flags().StringVar(&argsServe.paths.templates, "templates", "templates", "path to template files")
-	cmdServe.Flags().StringVar(&argsServe.server.host, "host", "localhost", "host to serve on")
-	cmdServe.Flags().StringVar(&argsServe.server.port, "port", "29631", "port to bind to")
+	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.paths.assets, "assets", "assets", "path to public assets")
+	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.paths.data, "data", "userdata", "path to root of user data files")
+	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.paths.templates, "templates", "templates", "path to template files")
+	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.server.host, "host", "localhost", "host to serve on")
+	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.server.port, "port", "29631", "port to bind to")
+
+	cmdServeRest.Flags().StringVar(&argsServeRest.paths.database, "db-path", "userdata/ottomap.db", "path to database file")
+	cmdServeRest.Flags().StringVar(&argsServeRest.server.host, "host", "localhost", "host to serve on")
+	cmdServeRest.Flags().StringVar(&argsServeRest.server.port, "port", "29642", "port to bind to")
 
 	return cmdRoot.Execute()
 }
@@ -97,6 +102,16 @@ func isdir(path string) (bool, error) {
 	if err != nil {
 		return false, err
 	} else if !sb.IsDir() {
+		return false, nil
+	}
+	return true, nil
+}
+
+func isfile(path string) (bool, error) {
+	sb, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	} else if sb.IsDir() || !sb.Mode().IsRegular() {
 		return false, nil
 	}
 	return true, nil

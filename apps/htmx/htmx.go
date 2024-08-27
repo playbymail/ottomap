@@ -5,6 +5,7 @@ package htmx
 import (
 	"fmt"
 	"github.com/playbymail/ottomap/internal/stores/ffs"
+	"github.com/playbymail/ottomap/stores/sqlite"
 	"os"
 )
 
@@ -13,6 +14,9 @@ type App struct {
 		assets    string
 		data      string
 		templates string
+	}
+	db struct {
+		db *sqlite.DB
 	}
 	store *ffs.Store
 }

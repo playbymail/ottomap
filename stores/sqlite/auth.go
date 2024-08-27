@@ -23,7 +23,7 @@ func (db *DB) AuthenticateUser(email, plainTextPassword string) (domains.ID, err
 	row, err := db.q.GetUserByEmail(db.ctx, email)
 	if err != nil {
 		return 0, err
-	} else if !checkPassword(plainTextPassword, row.HashedPassword) {
+	} else if !CheckPassword(plainTextPassword, row.HashedPassword) {
 		return 0, domains.ErrUnauthorized
 	}
 
@@ -31,6 +31,14 @@ func (db *DB) AuthenticateUser(email, plainTextPassword string) (domains.ID, err
 	_ = db.q.UpdateUserLastLogin(db.ctx, row.UserID)
 
 	return domains.ID(row.UserID), nil
+}
+
+func (db *DB) CreateOperator(plainTextSecret string) error {
+	hashedPassword, err := HashPassword(plainTextSecret)
+	if err != nil {
+		return err
+	}
+	return db.q.CreateOperator(db.ctx, hashedPassword)
 }
 
 func (db *DB) CreateUser(email, plainTextSecret, clan, role string, timezone *time.Location) (domains.ID, error) {
@@ -50,7 +58,7 @@ func (db *DB) CreateUser(email, plainTextSecret, clan, role string, timezone *ti
 	// adapt values and provide defaults as needed
 
 	// hash the password. can fail if the password is too long.
-	if hashedPassword, err := hashPassword(plainTextSecret); err != nil {
+	if hashedPassword, err := HashPassword(plainTextSecret); err != nil {
 		return 0, err
 	} else {
 		parms.HashedPassword = hashedPassword
@@ -148,14 +156,14 @@ func (db *DB) GetUser(userID domains.ID) (*domains.User, error) {
 
 // simple password functions inspired by https://www.gregorygaines.com/blog/how-to-properly-hash-and-salt-passwords-in-golang-bcrypt/
 
-// checkPassword returns true if the plain text password matches the hashed password.
-func checkPassword(plainTextPassword, hashedPassword string) bool {
+// CheckPassword returns true if the plain text password matches the hashed password.
+func CheckPassword(plainTextPassword, hashedPassword string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainTextPassword)) == nil
 }
 
-// hashPassword uses the cheapest bcrypt cost to hash the password because we are not going to use
+// HashPassword uses the cheapest bcrypt cost to hash the password because we are not going to use
 // it for anything other than authentication in non-production environments.
-func hashPassword(plainTextPassword string) (string, error) {
+func HashPassword(plainTextPassword string) (string, error) {
 	hashedPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(plainTextPassword), bcrypt.MinCost)
 	if err != nil {
 		return "", err

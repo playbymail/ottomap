@@ -33,6 +33,19 @@ func (q *Queries) AuthenticateUser(ctx context.Context, arg AuthenticateUserPara
 	return user_id, err
 }
 
+const createOperator = `-- name: CreateOperator :exec
+INSERT INTO users (email, timezone, is_active, hashed_password, clan, role, last_login)
+VALUES ('operator', 'UTC', 1, ?1, '0000', 'operator', '')
+ON CONFLICT (email) DO UPDATE SET is_active       = 1,
+                                  hashed_password = ?1
+`
+
+// CreateOperator creates a new operator or updates an existing one.
+func (q *Queries) CreateOperator(ctx context.Context, hashedPassword string) error {
+	_, err := q.db.ExecContext(ctx, createOperator, hashedPassword)
+	return err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (email, timezone, is_active, hashed_password, clan, role, last_login)
 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)

@@ -9,6 +9,14 @@ INSERT INTO users (email, timezone, is_active, hashed_password, clan, role, last
 VALUES (:email, :timezone, :is_active, :hashed_password, :clan, :role, :last_login)
 RETURNING user_id;
 
+-- CreateOperator creates a new operator or updates an existing one.
+--
+-- name: CreateOperator :exec
+INSERT INTO users (email, timezone, is_active, hashed_password, clan, role, last_login)
+VALUES ('operator', 'UTC', 1, ?1, '0000', 'operator', '')
+ON CONFLICT (email) DO UPDATE SET is_active       = 1,
+                                  hashed_password = ?1;
+
 -- AuthenticateUser authenticates a user with the given email address and password.
 -- Returns the user's id if the authentication is successful.
 -- Authentication will fail if the user is not active.

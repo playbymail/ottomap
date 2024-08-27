@@ -16,3 +16,11 @@ type DB struct {
 	ctx context.Context
 	q   *sqlc.Queries
 }
+
+func NewStore(db *sql.DB, ctx context.Context) *DB {
+	return &DB{
+		db:  db,
+		ctx: ctx,
+		q:   sqlc.New(db),
+	}
+}
