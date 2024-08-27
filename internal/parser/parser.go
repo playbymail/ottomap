@@ -927,11 +927,15 @@ type FoundUnit_t struct {
 	Id UnitId_t
 }
 
+type InsufficientCapacity_t struct{}
+
 type Location_t struct {
 	UnitId      UnitId_t
 	Message     string
 	CurrentHex  string
 	PreviousHex string
 }
+
+type NoDirection_t struct{}
 
 type NoGroupsFound_t struct{}

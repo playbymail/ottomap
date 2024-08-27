@@ -222,6 +222,15 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
         Quantity: n.(int),
         Item :    i.(items.Item_e),
     }, nil
+} / "Horses not allowed into MANGROVE SWAMP to" SP d:DIRECTION SP "of HEX" EOF {
+    return &ProhibitedFrom_t{
+        Direction: d.(direction.Direction_e),
+        Terrain:   terrain.Swamp,
+    }, nil
+} / "Insufficient capacity to carry" EOF {
+    return InsufficientCapacity_t{}, nil
+} / "NO DIRECTION" EOF {
+    return NoDirection_t{}, nil
 } / [Nn] "o Ford on River to" SP d:DIRECTION SP "of HEX" EOF {
     return &BlockedByEdge_t{
         Direction: d.(direction.Direction_e),
@@ -229,6 +238,11 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
     }, nil
 } / "No groups found" EOF {
     return NoGroupsFound_t{}, nil
+} / "No Pass into Mountain to" SP d:DIRECTION SP "of HEX" EOF {
+    return &ProhibitedFrom_t{
+        Direction: d.(direction.Direction_e),
+        Terrain:   terrain.HighSnowyMountains,
+    }, nil
 } / "No River Adjacent to Hex to" SP d:DIRECTION SP "of HEX" {
     return MissingEdge_t{
         Direction: d.(direction.Direction_e),
