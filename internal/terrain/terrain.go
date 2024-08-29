@@ -41,6 +41,7 @@ const (
 	SnowyHills
 	Swamp
 	Tundra
+	UnknownJungleSwamp
 	UnknownLand
 	UnknownMountain
 	UnknownWater
@@ -57,6 +58,14 @@ func (e Terrain_e) IsAnyMountain() bool {
 		e == LowJungleMountains ||
 		e == LowSnowyMountains ||
 		e == LowVolcanicMountains
+}
+
+func (e Terrain_e) IsJungle() bool {
+	return e == Jungle || e == JungleHills
+}
+
+func (e Terrain_e) IsSwamp() bool {
+	return e == Swamp
 }
 
 // MarshalJSON implements the json.Marshaler interface.
@@ -123,6 +132,7 @@ var (
 		SnowyHills:           "SH",
 		Swamp:                "SW",
 		Tundra:               "TU",
+		UnknownJungleSwamp:   "UJS",
 		UnknownLand:          "UL",
 		UnknownMountain:      "UM",
 		UnknownWater:         "UW",
@@ -158,6 +168,7 @@ var (
 		"SH":   SnowyHills,
 		"SW":   Swamp,
 		"TU":   Tundra,
+		"UJS":  UnknownJungleSwamp,
 		"UL":   UnknownLand,
 		"UM":   UnknownMountain,
 		"UW":   UnknownWater,
@@ -196,6 +207,7 @@ var (
 		SnowyHills:           "Flat Snowfields",
 		Swamp:                "Flat Swamp",
 		Tundra:               "Flat Steppe",
+		UnknownJungleSwamp:   "Flat Forest Wetlands",
 		UnknownLand:          "Flat Moss",
 		UnknownMountain:      "Mountain Forest Mixed",
 		UnknownWater:         "Water Reefs",

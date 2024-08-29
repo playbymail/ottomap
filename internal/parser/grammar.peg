@@ -211,7 +211,7 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
 } / "Cannot Move Wagons into Swamp/Jungle Hill to" SP d:DIRECTION SP "of HEX" EOF {
     return &ProhibitedFrom_t{
         Direction: d.(direction.Direction_e),
-        Terrain:   terrain.JungleHills,
+        Terrain:   terrain.UnknownJungleSwamp,
     }, nil
 } / "Group did not return" EOF {
     return DidNotReturn_t{}, nil
@@ -225,7 +225,7 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
 } / "Horses not allowed into MANGROVE SWAMP to" SP d:DIRECTION SP "of HEX" EOF {
     return &ProhibitedFrom_t{
         Direction: d.(direction.Direction_e),
-        Terrain:   terrain.Swamp,
+        Terrain:   terrain.UnknownJungleSwamp,
     }, nil
 } / "Insufficient capacity to carry" EOF {
     return InsufficientCapacity_t{}, nil

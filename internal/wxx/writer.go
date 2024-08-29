@@ -377,7 +377,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 					//w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="90.0" />`, labelXY.X, labelXY.Y)
 					//w.Printf("X")
 					//w.Printf("</label>/n")
-					if t.Terrain == terrain.UnknownMountain {
+					if t.Terrain == terrain.UnknownJungleSwamp || t.Terrain == terrain.UnknownMountain {
 						labelXY := points[0].Translate(unknownLabel.OffsetFromCenter)
 						w.Printf(`<label  mapLayer="Tribenet Visited" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, notVisitedLabel.R, notVisitedLabel.G, notVisitedLabel.B)
 						w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="50.0" />`, labelXY.X, labelXY.Y)

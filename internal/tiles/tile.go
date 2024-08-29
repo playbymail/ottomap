@@ -200,9 +200,25 @@ func (t *Tile_t) MergeTerrain(n terrain.Terrain_e) {
 		return
 	}
 
+	// if the new terrain is unknown jungle/swamp and the existing terrain is any type of jungle or swamp,
+	// then we want to keep the existing terrain and not report an error. likewise, if the new terrain is
+	// any type of jungle or swamp and the existing terrain is unknown jungle/swamp, we want to use the new
+	// terrain and not report an error
+	if n == terrain.UnknownJungleSwamp && (t.Terrain.IsJungle() || t.Terrain.IsSwamp()) {
+		return
+	} else if (n.IsJungle() || n.IsSwamp()) && t.Terrain == terrain.UnknownJungleSwamp {
+		t.Terrain = n
+		return
+	}
+
 	// if the new terrain is unknown mountain and the existing terrain is any type of mountain,
-	// then we want to keep the existing terrain and not report an error
+	// then we want to keep the existing terrain and not report an error. likewise, if the new terrain is
+	// any type of mountain and the existing terrain is unknown mountain, we want to use the new
+	// terrain and not report an error
 	if n == terrain.UnknownMountain && t.Terrain.IsAnyMountain() {
+		return
+	} else if n.IsAnyMountain() && t.Terrain == terrain.UnknownMountain {
+		t.Terrain = n
 		return
 	}
 

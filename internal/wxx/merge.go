@@ -21,7 +21,7 @@ func (w *WXX) MergeHex(hex *Hex) error {
 		t.Terrain = hex.Terrain
 		t.Elevation = 1
 		switch t.Terrain {
-		case terrain.Blank, terrain.UnknownLand, terrain.UnknownMountain, terrain.UnknownWater:
+		case terrain.Blank, terrain.UnknownJungleSwamp, terrain.UnknownLand, terrain.UnknownMountain, terrain.UnknownWater:
 			t.Elevation = 0
 		case terrain.Alps,
 			terrain.AridHills,
