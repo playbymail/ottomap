@@ -82,6 +82,12 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 	if scoutedLabel.R, scoutedLabel.G, scoutedLabel.B, err = hexToRGB("#000000"); err != nil {
 		panic(err)
 	}
+	unknownLabel := niceLabel{
+		OffsetFromCenter: Point{X: -2, Y: 45},
+	}
+	if unknownLabel.R, unknownLabel.G, unknownLabel.B, err = hexToRGB("#ffff00"); err != nil {
+		panic(err)
+	}
 
 	if cfg.Show.Grid.Coords {
 		for _, t := range w.tiles {
@@ -371,11 +377,19 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 					//w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="90.0" />`, labelXY.X, labelXY.Y)
 					//w.Printf("X")
 					//w.Printf("</label>/n")
-					labelXY := points[0].Translate(notVisitedLabel.OffsetFromCenter)
-					w.Printf(`<label  mapLayer="Tribenet Visited" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, notVisitedLabel.R, notVisitedLabel.G, notVisitedLabel.B)
-					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="50.0" />`, labelXY.X, labelXY.Y)
-					w.Printf("X")
-					w.Printf("</label>/n")
+					if t.Terrain == terrain.UnknownMountain {
+						labelXY := points[0].Translate(unknownLabel.OffsetFromCenter)
+						w.Printf(`<label  mapLayer="Tribenet Visited" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, notVisitedLabel.R, notVisitedLabel.G, notVisitedLabel.B)
+						w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="50.0" />`, labelXY.X, labelXY.Y)
+						w.Printf("?")
+						w.Printf("</label>/n")
+					} else {
+						labelXY := points[0].Translate(notVisitedLabel.OffsetFromCenter)
+						w.Printf(`<label  mapLayer="Tribenet Visited" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, notVisitedLabel.R, notVisitedLabel.G, notVisitedLabel.B)
+						w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="50.0" />`, labelXY.X, labelXY.Y)
+						w.Printf("X")
+						w.Printf("</label>/n")
+					}
 				}
 				if t.WasScouted {
 					labelXY := points[0].Translate(scoutedLabel.OffsetFromCenter)

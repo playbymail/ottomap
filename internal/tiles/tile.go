@@ -200,6 +200,12 @@ func (t *Tile_t) MergeTerrain(n terrain.Terrain_e) {
 		return
 	}
 
+	// if the new terrain is unknown mountain and the existing terrain is any type of mountain,
+	// then we want to keep the existing terrain and not report an error
+	if n == terrain.UnknownMountain && t.Terrain.IsAnyMountain() {
+		return
+	}
+
 	// at this point, we know that t.Terrain != terrain.Blank.
 	// we want to make sure that we don't overwrite the terrain with a fleet observation.
 	isFleetObservation := n == terrain.UnknownLand || n == terrain.UnknownWater

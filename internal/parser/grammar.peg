@@ -241,7 +241,7 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
 } / "No Pass into Mountain to" SP d:DIRECTION SP "of HEX" EOF {
     return &ProhibitedFrom_t{
         Direction: d.(direction.Direction_e),
-        Terrain:   terrain.HighSnowyMountains,
+        Terrain:   terrain.UnknownMountain,
     }, nil
 } / "No River Adjacent to Hex to" SP d:DIRECTION SP "of HEX" {
     return MissingEdge_t{

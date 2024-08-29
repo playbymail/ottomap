@@ -42,11 +42,22 @@ const (
 	Swamp
 	Tundra
 	UnknownLand
+	UnknownMountain
 	UnknownWater
 )
 
 // NumberOfTerrainTypes must be updated if we add new terrain types
 const NumberOfTerrainTypes = int(UnknownWater + 1)
+
+func (e Terrain_e) IsAnyMountain() bool {
+	return e == Alps ||
+		e == HighSnowyMountains ||
+		e == LowAridMountains ||
+		e == LowConiferMountains ||
+		e == LowJungleMountains ||
+		e == LowSnowyMountains ||
+		e == LowVolcanicMountains
+}
 
 // MarshalJSON implements the json.Marshaler interface.
 func (e Terrain_e) MarshalJSON() ([]byte, error) {
@@ -113,6 +124,7 @@ var (
 		Swamp:                "SW",
 		Tundra:               "TU",
 		UnknownLand:          "UL",
+		UnknownMountain:      "UM",
 		UnknownWater:         "UW",
 	}
 	// StringToEnum is a helper map for unmarshalling the enum
@@ -147,6 +159,7 @@ var (
 		"SW":   Swamp,
 		"TU":   Tundra,
 		"UL":   UnknownLand,
+		"UM":   UnknownMountain,
 		"UW":   UnknownWater,
 	}
 	// TileTerrainNames is the map for tile terrain name matching. the text values
@@ -184,6 +197,7 @@ var (
 		Swamp:                "Flat Swamp",
 		Tundra:               "Flat Steppe",
 		UnknownLand:          "Flat Moss",
+		UnknownMountain:      "Mountain Forest Mixed",
 		UnknownWater:         "Water Reefs",
 	}
 )
