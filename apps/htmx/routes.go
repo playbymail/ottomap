@@ -3,17 +3,9 @@
 package htmx
 
 import (
-	"bytes"
-	"fmt"
-	tmpls "github.com/playbymail/ottomap/templates/htmx"
-	"github.com/playbymail/ottomap/templates/tw"
-	"html/template"
-	"io"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -50,74 +42,75 @@ func (a *App) Routes() (*http.ServeMux, error) {
 }
 
 func (a *App) getClan() http.HandlerFunc {
-	templateFiles := []string{
-		filepath.Join(a.paths.templates, "layout.gohtml"),
-		filepath.Join(a.paths.templates, "clan.gohtml"),
-	}
+	//templateFiles := []string{
+	//	filepath.Join(a.paths.templates, "layout.gohtml"),
+	//	filepath.Join(a.paths.templates, "clan.gohtml"),
+	//}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s: %s: entered\n", r.Method, r.URL.Path)
+		panic("not implemented")
 
-		clan := r.PathValue("clanId")
-		log.Printf("%s: %s: clan %q\n", r.Method, r.URL.Path, clan)
-
-		sess := a.store.GetSession(r)
-		if !sess.IsAuthenticated() {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-		log.Printf("%s: %s: session: id %q\n", r.Method, r.URL.Path, sess.Id)
-		log.Printf("%s: %s: session: %+v\n", r.Method, r.URL.Path, sess)
-
-		// the clan in the path must match the user's clan
-		if clan != sess.Clan {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-
-		var payload tw.Layout_t
-
-		var content tw.Clan_t
-		c, err := a.store.GetClan(sess.Uid)
-		if err != nil {
-			log.Printf("%s: %s: store: %v", r.Method, r.URL.Path, err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		content.Id = c.Id
-
-		log.Printf("%s: %s: clan: %d turns\n", r.Method, r.URL.Path, len(c.Turns))
-		for _, turn := range c.Turns {
-			content.Turns = append(content.Turns, &tw.Turn_t{
-				Id: turn.Id,
-				// todo: get turn details
-			})
-		}
-
-		payload.Content = content
-
-		// Parse the template file
-		tmpl, err := template.ParseFiles(templateFiles...)
-		if err != nil {
-			log.Printf("%s: %s: template: %v", r.Method, r.URL.Path, err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		// create a buffer to write the response to. we need to do this to capture errors in a nice way.
-		buf := &bytes.Buffer{}
-
-		// execute the template with our payload
-		err = tmpl.ExecuteTemplate(buf, "layout", payload)
-		if err != nil {
-			log.Printf("%s: %s: template: %v", r.Method, r.URL.Path, err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(buf.Bytes())
+		//clan := r.PathValue("clanId")
+		//log.Printf("%s: %s: clan %q\n", r.Method, r.URL.Path, clan)
+		//
+		//sess := a.store.GetSession(r)
+		//if !sess.IsAuthenticated() {
+		//	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		//	return
+		//}
+		//log.Printf("%s: %s: session: id %q\n", r.Method, r.URL.Path, sess.Id)
+		//log.Printf("%s: %s: session: %+v\n", r.Method, r.URL.Path, sess)
+		//
+		//// the clan in the path must match the user's clan
+		//if clan != sess.Clan {
+		//	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		//	return
+		//}
+		//
+		//var payload tw.Layout_t
+		//
+		//var content tw.Clan_t
+		//c, err := a.store.GetClan(sess.Uid)
+		//if err != nil {
+		//	log.Printf("%s: %s: store: %v", r.Method, r.URL.Path, err)
+		//	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		//	return
+		//}
+		//content.Id = c.Id
+		//
+		//log.Printf("%s: %s: clan: %d turns\n", r.Method, r.URL.Path, len(c.Turns))
+		//for _, turn := range c.Turns {
+		//	content.Turns = append(content.Turns, &tw.Turn_t{
+		//		Id: turn.Id,
+		//		// todo: get turn details
+		//	})
+		//}
+		//
+		//payload.Content = content
+		//
+		//// Parse the template file
+		//tmpl, err := template.ParseFiles(templateFiles...)
+		//if err != nil {
+		//	log.Printf("%s: %s: template: %v", r.Method, r.URL.Path, err)
+		//	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		//	return
+		//}
+		//
+		//// create a buffer to write the response to. we need to do this to capture errors in a nice way.
+		//buf := &bytes.Buffer{}
+		//
+		//// execute the template with our payload
+		//err = tmpl.ExecuteTemplate(buf, "layout", payload)
+		//if err != nil {
+		//	log.Printf("%s: %s: template: %v", r.Method, r.URL.Path, err)
+		//	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		//	return
+		//}
+		//
+		//w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		//w.WriteHeader(http.StatusOK)
+		//_, _ = w.Write(buf.Bytes())
 	}
 }
 
@@ -148,163 +141,164 @@ func (a *App) getHomePage(debug, debugAssets bool) http.HandlerFunc {
 		if r.URL.Path == "/" {
 			r.URL.Path = "/index.html"
 		}
+		panic("not implemented")
 
-		sess := a.store.GetSession(r)
-
-		if r.URL.Path == "/index.html" && sess.IsAuthenticated() {
-			http.Redirect(w, r, fmt.Sprintf("/clan/%s", sess.Clan), http.StatusSeeOther)
-			return
-		}
-
-		// this is stupid, but Go treats "GET /" as a wild-card not-found match.
-		if r.URL.Path != "/" {
-			file := filepath.Join(a.paths.assets, filepath.Clean(strings.TrimPrefix(r.URL.Path, "")))
-			if debugAssets {
-				log.Printf("%s: %s: assets\n", r.Method, r.URL.Path)
-			}
-
-			stat, err := os.Stat(file)
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-				return
-			}
-
-			// only serve regular files, never directories or directory listings.
-			if stat.IsDir() || !stat.Mode().IsRegular() {
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-				return
-			}
-
-			// pretty sure that we have a regular file at this point.
-			rdr, err := os.Open(file)
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-				return
-			}
-			defer func(r io.ReadCloser) {
-				_ = r.Close()
-			}(rdr)
-
-			// let Go serve the file. it does magic things like content-type, etc.
-			http.ServeContent(w, r, file, stat.ModTime(), rdr)
-			return
-		}
-
-		// otherwise, this route is an alias for index.html. send them there
-
-		// Parse the template file
-		tmpl, err := template.ParseFiles(anonTemplateFiles...)
-		if err != nil {
-			log.Printf("%s: %s: template: %v", r.Method, r.URL.Path, err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		var payload tmpls.Layout
-		payload.Banner = tmpls.Banner{
-			Title: "Ottomap",
-			Slug:  "trying to map the right thing...",
-		}
-		payload.MainMenu = tmpls.MainMenu{
-			Items: []tmpls.MenuItem{
-				{Label: "Main pages", Link: "#",
-					Children: []tmpls.MenuItem{
-						{Label: "Blog", Link: "#"},
-						{Label: "Archives", Link: "#"},
-						{Label: "Categories", Link: "#"},
-					},
-				},
-				{Label: "Blog topics", Link: "#",
-					Children: []tmpls.MenuItem{
-						{Label: "Web design", Link: "#"},
-						{Label: "Accessibility", Link: "#"},
-						{Label: "CMS solutions", Link: "#"},
-					},
-				},
-				{Label: "Extras", Link: "#",
-					Children: []tmpls.MenuItem{
-						{Label: "Music archive", Link: "#"},
-						{Label: "Photo gallery", Link: "#"},
-						{Label: "Poems and lyrics", Link: "#"},
-					},
-				},
-				{Label: "Community", Link: "#",
-					Children: []tmpls.MenuItem{
-						{Label: "Guestbook", Link: "#"},
-						{Label: "Members", Link: "#"},
-						{Label: "Link collections", Link: "#"},
-					},
-				},
-			},
-			Releases: tmpls.Releases{
-				DT: tmpls.Link{Label: "Releases", Link: "https://github.com/playbymail/ottomap/releases", Target: "_blank"},
-				DDs: []tmpls.Link{
-					{Label: "v0.13.8", Link: "https://github.com/playbymail/ottomap/releases/tag/v0.13.8", Target: "_blank"},
-				},
-			},
-		}
-		payload.Sidebar.LeftMenu = tmpls.LeftMenu{
-			Items: []tmpls.MenuItem{
-				{Label: "Left menu", Class: "sidemenu",
-					Children: []tmpls.MenuItem{
-						{Label: "First page", Link: "#"},
-						{Label: "Second page", Link: "#"},
-						{Label: "Third page with subs", Link: "#",
-							Children: []tmpls.MenuItem{
-								{Label: "First subpage", Link: "#"},
-								{Label: "Second subpage", Link: "#"},
-							}},
-						{Label: "Fourth page", Link: "#"},
-					},
-				},
-			},
-		}
-		payload.Sidebar.RightMenu = tmpls.RightMenu{
-			Items: []tmpls.MenuItem{
-				{Label: "Right menu", Class: "sidemenu",
-					Children: []tmpls.MenuItem{
-						{Label: "Sixth page", Link: "#"},
-						{Label: "Seventh page", Link: "#"},
-						{Label: "Another page", Link: "#"},
-						{Label: "The last one", Link: "#"},
-					},
-				},
-				{Label: "Sample links",
-					Children: []tmpls.MenuItem{
-						{Label: "Sample link 1", Link: "#"},
-						{Label: "Sample link 2", Link: "#"},
-						{Label: "Sample link 3", Link: "#"},
-						{Label: "Sample link 4", Link: "#"},
-					},
-				},
-			},
-		}
-		payload.Sidebar.Notice = &tmpls.Notice{
-			Label: "Account",
-			Lines: []string{
-				"You aren't logged in. Please use your secret link to log in.",
-				"If you don't have an account, please visit the Discord server to request an account.",
-			},
-		}
-		payload.Footer = tmpls.Footer{
-			Author:        "Michael D Henderson",
-			CopyrightYear: "2024",
-		}
-
-		// create a buffer to write the response to. we need to do this to capture errors in a nice way.
-		buf := &bytes.Buffer{}
-
-		// execute the template with our payload
-		err = tmpl.ExecuteTemplate(buf, "layout", payload)
-		if err != nil {
-			log.Printf("%s: %s: template: %v", r.Method, r.URL.Path, err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(buf.Bytes())
+		//sess := a.store.GetSession(r)
+		//
+		//if r.URL.Path == "/index.html" && sess.IsAuthenticated() {
+		//	http.Redirect(w, r, fmt.Sprintf("/clan/%s", sess.Clan), http.StatusSeeOther)
+		//	return
+		//}
+		//
+		//// this is stupid, but Go treats "GET /" as a wild-card not-found match.
+		//if r.URL.Path != "/" {
+		//	file := filepath.Join(a.paths.assets, filepath.Clean(strings.TrimPrefix(r.URL.Path, "")))
+		//	if debugAssets {
+		//		log.Printf("%s: %s: assets\n", r.Method, r.URL.Path)
+		//	}
+		//
+		//	stat, err := os.Stat(file)
+		//	if err != nil {
+		//		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		//		return
+		//	}
+		//
+		//	// only serve regular files, never directories or directory listings.
+		//	if stat.IsDir() || !stat.Mode().IsRegular() {
+		//		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		//		return
+		//	}
+		//
+		//	// pretty sure that we have a regular file at this point.
+		//	rdr, err := os.Open(file)
+		//	if err != nil {
+		//		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		//		return
+		//	}
+		//	defer func(r io.ReadCloser) {
+		//		_ = r.Close()
+		//	}(rdr)
+		//
+		//	// let Go serve the file. it does magic things like content-type, etc.
+		//	http.ServeContent(w, r, file, stat.ModTime(), rdr)
+		//	return
+		//}
+		//
+		//// otherwise, this route is an alias for index.html. send them there
+		//
+		//// Parse the template file
+		//tmpl, err := template.ParseFiles(anonTemplateFiles...)
+		//if err != nil {
+		//	log.Printf("%s: %s: template: %v", r.Method, r.URL.Path, err)
+		//	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		//	return
+		//}
+		//
+		//var payload tmpls.Layout
+		//payload.Banner = tmpls.Banner{
+		//	Title: "Ottomap",
+		//	Slug:  "trying to map the right thing...",
+		//}
+		//payload.MainMenu = tmpls.MainMenu{
+		//	Items: []tmpls.MenuItem{
+		//		{Label: "Main pages", Link: "#",
+		//			Children: []tmpls.MenuItem{
+		//				{Label: "Blog", Link: "#"},
+		//				{Label: "Archives", Link: "#"},
+		//				{Label: "Categories", Link: "#"},
+		//			},
+		//		},
+		//		{Label: "Blog topics", Link: "#",
+		//			Children: []tmpls.MenuItem{
+		//				{Label: "Web design", Link: "#"},
+		//				{Label: "Accessibility", Link: "#"},
+		//				{Label: "CMS solutions", Link: "#"},
+		//			},
+		//		},
+		//		{Label: "Extras", Link: "#",
+		//			Children: []tmpls.MenuItem{
+		//				{Label: "Music archive", Link: "#"},
+		//				{Label: "Photo gallery", Link: "#"},
+		//				{Label: "Poems and lyrics", Link: "#"},
+		//			},
+		//		},
+		//		{Label: "Community", Link: "#",
+		//			Children: []tmpls.MenuItem{
+		//				{Label: "Guestbook", Link: "#"},
+		//				{Label: "Members", Link: "#"},
+		//				{Label: "Link collections", Link: "#"},
+		//			},
+		//		},
+		//	},
+		//	Releases: tmpls.Releases{
+		//		DT: tmpls.Link{Label: "Releases", Link: "https://github.com/playbymail/ottomap/releases", Target: "_blank"},
+		//		DDs: []tmpls.Link{
+		//			{Label: "v0.13.8", Link: "https://github.com/playbymail/ottomap/releases/tag/v0.13.8", Target: "_blank"},
+		//		},
+		//	},
+		//}
+		//payload.Sidebar.LeftMenu = tmpls.LeftMenu{
+		//	Items: []tmpls.MenuItem{
+		//		{Label: "Left menu", Class: "sidemenu",
+		//			Children: []tmpls.MenuItem{
+		//				{Label: "First page", Link: "#"},
+		//				{Label: "Second page", Link: "#"},
+		//				{Label: "Third page with subs", Link: "#",
+		//					Children: []tmpls.MenuItem{
+		//						{Label: "First subpage", Link: "#"},
+		//						{Label: "Second subpage", Link: "#"},
+		//					}},
+		//				{Label: "Fourth page", Link: "#"},
+		//			},
+		//		},
+		//	},
+		//}
+		//payload.Sidebar.RightMenu = tmpls.RightMenu{
+		//	Items: []tmpls.MenuItem{
+		//		{Label: "Right menu", Class: "sidemenu",
+		//			Children: []tmpls.MenuItem{
+		//				{Label: "Sixth page", Link: "#"},
+		//				{Label: "Seventh page", Link: "#"},
+		//				{Label: "Another page", Link: "#"},
+		//				{Label: "The last one", Link: "#"},
+		//			},
+		//		},
+		//		{Label: "Sample links",
+		//			Children: []tmpls.MenuItem{
+		//				{Label: "Sample link 1", Link: "#"},
+		//				{Label: "Sample link 2", Link: "#"},
+		//				{Label: "Sample link 3", Link: "#"},
+		//				{Label: "Sample link 4", Link: "#"},
+		//			},
+		//		},
+		//	},
+		//}
+		//payload.Sidebar.Notice = &tmpls.Notice{
+		//	Label: "Account",
+		//	Lines: []string{
+		//		"You aren't logged in. Please use your secret link to log in.",
+		//		"If you don't have an account, please visit the Discord server to request an account.",
+		//	},
+		//}
+		//payload.Footer = tmpls.Footer{
+		//	Author:        "Michael D Henderson",
+		//	CopyrightYear: "2024",
+		//}
+		//
+		//// create a buffer to write the response to. we need to do this to capture errors in a nice way.
+		//buf := &bytes.Buffer{}
+		//
+		//// execute the template with our payload
+		//err = tmpl.ExecuteTemplate(buf, "layout", payload)
+		//if err != nil {
+		//	log.Printf("%s: %s: template: %v", r.Method, r.URL.Path, err)
+		//	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		//	return
+		//}
+		//
+		//w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		//w.WriteHeader(http.StatusOK)
+		//_, _ = w.Write(buf.Bytes())
 	}
 }
 
@@ -326,62 +320,65 @@ func (a *App) getLogin(debug bool) http.HandlerFunc {
 			return
 		}
 
-		if sess := a.store.GetSession(r); sess.IsAuthenticated() {
-			// user is already logged in.
-			if sess.Clan == clan {
-				// they're logged in as this clan, so we can just redirect them to the main page.
-				http.Redirect(w, r, fmt.Sprintf("/clan/%s", sess.Clan), http.StatusSeeOther)
-				return
-			}
-			// they're not logging in as the same clan, so we must log them out and start a new session.
-			_ = a.store.DeleteSession(sess.Id)
-			// delete any cookies that might be set.
-			http.SetCookie(w, &http.Cookie{
-				Path:    "/",
-				Name:    "ottomap",
-				Expires: time.Unix(0, 0),
-			})
-		}
+		panic("not implemented")
 
-		// attempt to authenticate the clan and create a new session.
-		// if we can't authenticate, then we'll just return an error.
-		sess, err := a.store.CreateSession(clan, magicKey)
-		if err != nil {
-			log.Printf("%s: %s: %v\n", r.Method, r.URL.Path, err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		} else if !sess.IsAuthenticated() {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-
-		// user has authenticated, so we'll set a new cookie with the session id.
-		http.SetCookie(w, &http.Cookie{
-			Path:    "/",
-			Name:    "ottomap",
-			Value:   sess.Id,
-			Expires: sess.ExpiresAt,
-		})
-
-		http.Redirect(w, r, fmt.Sprintf("/clan/%s", sess.Clan), http.StatusSeeOther)
+		//if sess := a.store.GetSession(r); sess.IsAuthenticated() {
+		//	// user is already logged in.
+		//	if sess.Clan == clan {
+		//		// they're logged in as this clan, so we can just redirect them to the main page.
+		//		http.Redirect(w, r, fmt.Sprintf("/clan/%s", sess.Clan), http.StatusSeeOther)
+		//		return
+		//	}
+		//	// they're not logging in as the same clan, so we must log them out and start a new session.
+		//	_ = a.store.DeleteSession(sess.Id)
+		//	// delete any cookies that might be set.
+		//	http.SetCookie(w, &http.Cookie{
+		//		Path:    "/",
+		//		Name:    "ottomap",
+		//		Expires: time.Unix(0, 0),
+		//	})
+		//}
+		//
+		//// attempt to authenticate the clan and create a new session.
+		//// if we can't authenticate, then we'll just return an error.
+		//sess, err := a.store.CreateSession(clan, magicKey)
+		//if err != nil {
+		//	log.Printf("%s: %s: %v\n", r.Method, r.URL.Path, err)
+		//	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		//	return
+		//} else if !sess.IsAuthenticated() {
+		//	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		//	return
+		//}
+		//
+		//// user has authenticated, so we'll set a new cookie with the session id.
+		//http.SetCookie(w, &http.Cookie{
+		//	Path:    "/",
+		//	Name:    "ottomap",
+		//	Value:   sess.Id,
+		//	Expires: sess.ExpiresAt,
+		//})
+		//
+		//http.Redirect(w, r, fmt.Sprintf("/clan/%s", sess.Clan), http.StatusSeeOther)
 	}
 }
 
 func (a *App) getLogout() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s: %s: entered\n", r.Method, r.URL.Path)
+		panic("not implemented")
 
-		// delete the session (this is safe to call even if the session doesn't exist)
-		_ = a.store.DeleteSession(a.store.GetSession(r).Id)
-
-		// delete any cookies that might be set.
-		http.SetCookie(w, &http.Cookie{
-			Path:    "/",
-			Name:    "ottomap",
-			Expires: time.Unix(0, 0),
-		})
-
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+		//// delete the session (this is safe to call even if the session doesn't exist)
+		//_ = a.store.DeleteSession(a.store.GetSession(r).Id)
+		//
+		//// delete any cookies that might be set.
+		//http.SetCookie(w, &http.Cookie{
+		//	Path:    "/",
+		//	Name:    "ottomap",
+		//	Expires: time.Unix(0, 0),
+		//})
+		//
+		//http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
 

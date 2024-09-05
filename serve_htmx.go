@@ -3,8 +3,7 @@
 package main
 
 import (
-	"github.com/playbymail/ottomap/apps/htmx"
-	"github.com/playbymail/ottomap/internal/server"
+	"github.com/playbymail/ottomap/internal/servers/htmx"
 	"github.com/spf13/cobra"
 	"log"
 	"net/http"
@@ -12,9 +11,9 @@ import (
 
 var argsServeHtmx struct {
 	paths struct {
-		assets    string
-		data      string
-		templates string
+		assets    string // directory containing the assets files
+		data      string // directory containing the data files
+		templates string // directory containing the templates files
 	}
 	server struct {
 		host string
@@ -89,33 +88,20 @@ var cmdServeHtmx = &cobra.Command{
 		log.Printf("data     : %s\n", argsServeHtmx.paths.data)
 		log.Printf("templates: %s\n", argsServeHtmx.paths.templates)
 
-		appOptions := htmx.Options{
+		s, err := htmx.New(
 			htmx.WithAssets(argsServeHtmx.paths.assets),
-			htmx.WithData(argsServeHtmx.paths.data),
 			htmx.WithTemplates(argsServeHtmx.paths.templates),
-		}
-		app, err := htmx.New(appOptions...)
+		)
 		if err != nil {
-			log.Printf("error: %v\n", err)
-			return
+			log.Fatalf("error: %v\n", err)
 		}
 
-		srvOptions := server.Options{
-			server.WithApp(app),
-			server.WithHost(argsServeHtmx.server.host),
-			server.WithPort(argsServeHtmx.server.port),
-		}
-		s, err := server.New(srvOptions...)
-		if err != nil {
-			log.Printf("error: %v\n", err)
-			return
-		}
 		s.ShowMeSomeRoutes()
+
 		log.Printf("serve: listening on %s\n", s.BaseURL())
-		if err := http.ListenAndServe(s.Addr, s.Router()); err != nil {
+		err = http.ListenAndServe(s.Addr, s.Router())
+		if err != nil {
 			log.Fatal(err)
 		}
-		log.Printf("serving on %s\n", s.BaseURL())
-		log.Fatal(s.ListenAndServe())
 	},
 }
