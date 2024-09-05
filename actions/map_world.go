@@ -27,7 +27,7 @@ type MapConfig struct {
 	}
 }
 
-func MapWorld(allTiles *tiles.Map_t, clan parser.UnitId_t, cfg MapConfig) (*wxx.WXX, error) {
+func MapWorld(allTiles *tiles.Map_t, clan parser.UnitId_t, cfg MapConfig, options ...wxx.Option) (*wxx.WXX, error) {
 	if allTiles.Length() == 0 {
 		log.Fatalf("error: no tiles to map\n")
 	}
@@ -42,7 +42,10 @@ func MapWorld(allTiles *tiles.Map_t, clan parser.UnitId_t, cfg MapConfig) (*wxx.
 		//}
 	}
 
-	consolidatedMap := wxx.NewWXX()
+	consolidatedMap, err := wxx.NewWXX(options...)
+	if err != nil {
+		log.Fatalf("error: wxx: %v\n", err)
+	}
 
 	// create an offset that will shift the map to about 4 hexes from the upper left.
 	var renderOffset coords.Map

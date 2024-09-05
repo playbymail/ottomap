@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 16, Patch: 8}
+	version = semver.Version{Major: 0, Minor: 16, Patch: 9}
 )
 
 func main() {
@@ -50,6 +50,9 @@ func Execute() error {
 	cmdDbUpdate.Flags().StringVarP(&argsDb.paths.templates, "templates", "t", "", "new path to the templates directory")
 	cmdDbUpdate.Flags().StringVarP(&argsDb.secret, "secret", "s", "", "new secret for signing tokens")
 	cmdDbUpdate.Flags().BoolVar(&argsDb.randomSecret, "random-secret", false, "generate a new random secret for signing tokens")
+
+	cmdRoot.AddCommand(cmdDump)
+	cmdDump.Flags().BoolVar(&argsDump.defaultTileMap, "default-tile-map", false, "dump the default tile map")
 
 	cmdRoot.AddCommand(cmdRender)
 	cmdRender.Flags().BoolVar(&argsRender.autoEOL, "auto-eol", false, "automatically convert line endings")
