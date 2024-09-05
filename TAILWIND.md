@@ -62,3 +62,7 @@ npm install -D @tailwindcss/forms
 
 npx tailwindcss -i public/css/input.css -o public/css/tailwind.css --watch
 ```
+
+Or for the HTMx server
+
+npx tailwindcss -i internal/servers/htmx/assets/css/tailwind-input.css -o internal/servers/htmx/assets/css/tailwind.css --watch

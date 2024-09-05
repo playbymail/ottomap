@@ -56,6 +56,7 @@ func New(options ...Option) (*Store, error) {
 	} else if !sb.IsDir() {
 		return nil, fmt.Errorf("%s: not a directory", s.path)
 	}
+
 	s.file = filepath.Join(s.path, "store.db")
 	log.Printf("ffs: store: %s\n", s.file)
 	_ = os.Remove(s.file)

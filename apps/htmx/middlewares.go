@@ -15,14 +15,7 @@ import (
 func (a *App) authonly(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s: %s: authonly: entered\n", r.Method, r.URL.Path)
-
-		sess := a.store.GetSession(r)
-		log.Printf("%s: %s: authonly: session %+v\n", r.Method, r.URL.Path, sess)
-		if !sess.IsAuthenticated() {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-		next(w, r)
+		panic("not implemented")
 	}
 }
 

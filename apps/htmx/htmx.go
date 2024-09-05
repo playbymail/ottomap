@@ -4,8 +4,6 @@ package htmx
 
 import (
 	"fmt"
-	"github.com/playbymail/ottomap/internal/stores/ffs"
-	"github.com/playbymail/ottomap/stores/sqlite"
 	"os"
 )
 
@@ -15,10 +13,6 @@ type App struct {
 		data      string
 		templates string
 	}
-	db struct {
-		db *sqlite.DB
-	}
-	store *ffs.Store
 }
 
 func New(options ...Option) (*App, error) {
@@ -48,12 +42,6 @@ func New(options ...Option) (*App, error) {
 		return nil, err
 	} else if !sb.IsDir() {
 		return nil, fmt.Errorf("%s: not a directory", a.paths.templates)
-	}
-
-	var err error
-	a.store, err = ffs.New(ffs.WithPath(a.paths.data))
-	if err != nil {
-		return nil, err
 	}
 
 	return a, nil

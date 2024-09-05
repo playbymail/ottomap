@@ -1,0 +1,107 @@
+= OttoMap CLI Commands
+
+== Database Commands
+
+=== Initialize Database
+
+* *Command*: `ottomap db init`
+* *Description*: Initializes the database and sets up required paths. All paths are converted to absolute paths and verified before initializing the database. Any errors will end the process without creating the database.
+* *Example*:
+
+[source,bash]
+----
+ottomap db init --assets /path/to/assets --templates /path/to/templates --data /path/to/data --secret mysecrettoken
+----
+
+* *Flags*:
+** `--path, -p`: Path for database location (defaults to current path).
+** `--force, -f`: Force the creation even if the database exists.
+** `--assets, -a`: Path to the assets directory (defaults to ./assets).
+** `--data, -d`: Path to the data files directory (defaults to ./data).
+** `--templates, -t`: Path to the templates directory (defaults to ./templates).
+** `--secret, -s`: Secret for signing tokens (defaults to a random value).
+
+=== Update Database Configuration
+
+* *Command*: `ottomap db update`
+* *Description*: Updates the database configuration. Only provided parameters will be updated. Paths are converted to absolute paths and verified before updating. Any errors will roll back all the changes.
+* *Example*:
+
+[source,bash]
+----
+ottomap db update --assets /new/path/to/assets --templates /new/path/to/templates
+----
+
+* *Flags*:
+** `--path, -p`: Optional path for database location.
+** `--assets, -a`: New path to the assets directory (optional).
+** `--templates, -t`: New path to the templates directory (optional).
+** `--data, -d`: New path to the data files directory (optional).
+** `--secret, -s`: New secret for signing tokens (optional).
+** `--random-secret`: Generate a new random secret for signing tokens (optional).
+
+== User Commands
+
+=== Create User
+
+* *Command*: `ottomap user create`
+* *Description*: Creates a new user in the system.
+* *Example*:
+
+[source,bash]
+----
+ottomap user create --clan 0138 --email alice@example.com --password secret
+----
+
+* *Flags*:
+** `--clan, -c`: Clan for the new user (mandatory, four digits, must be unique).
+** `--email, -e`: Email address (mandatory).
+** `--password, -p`: Password for the new user (defaults to random value).
+** `--role, -r`: User role, e.g., admin, user, etc. (defaults to user).
+
+=== Update User
+
+* *Command*: `ottomap user update`
+* *Description*: Updates user details.
+* *Example*:
+
+[source,bash]
+----
+ottomap user update --clan 0138 --email new@example.com
+----
+
+* *Flags*:
+** `--clan, -c`: Clan of the user to update (mandatory).
+** `--email, -e`: New email address (optional).
+** `--password, -p`: New password (optional).
+** `--role, -r`: New role (optional).
+
+=== Delete User
+
+* *Command*: `ottomap user delete`
+* *Description*: Deletes a user from the system.
+* *Example*:
+
+[source,bash]
+----
+ottomap user delete --clan 0138
+----
+
+* *Flags*:
+** `--clan, -c`: Clan of the user to delete (mandatory).
+** `--force, -f`: Force deletion without confirmation.
+
+=== List Users
+
+* *Command*: `ottomap user list`
+* *Description*: Lists all users in the system.
+* *Example*:
+
+[source,bash]
+----
+ottomap user list
+----
+
+* *Flags*:
+** `--role, -r`: Filter users by role (optional).
+** `--limit, -l`: Limit the number of results (optional).

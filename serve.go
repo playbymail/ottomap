@@ -8,6 +8,6 @@ import (
 
 var cmdServe = &cobra.Command{
 	Use:   "serve",
-	Short: "serve the application",
+	Short: "Serve the application",
 	Long:  `Serve the application`,
 }
