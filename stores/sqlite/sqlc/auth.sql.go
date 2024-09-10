@@ -10,6 +10,24 @@ import (
 	"time"
 )
 
+const addUserRole = `-- name: AddUserRole :exec
+INSERT INTO user_roles (user_id, role_id)
+SELECT ?1, role_id
+FROM roles
+WHERE role = ?2
+`
+
+type AddUserRoleParams struct {
+	UserID int64
+	Role   string
+}
+
+// AddUserRole adds the given role to the given user.
+func (q *Queries) AddUserRole(ctx context.Context, arg AddUserRoleParams) error {
+	_, err := q.db.ExecContext(ctx, addUserRole, arg.UserID, arg.Role)
+	return err
+}
+
 const authenticateUser = `-- name: AuthenticateUser :one
 SELECT user_id
 FROM users
@@ -33,22 +51,9 @@ func (q *Queries) AuthenticateUser(ctx context.Context, arg AuthenticateUserPara
 	return user_id, err
 }
 
-const createOperator = `-- name: CreateOperator :exec
-INSERT INTO users (email, timezone, is_active, hashed_password, clan, role, last_login)
-VALUES ('operator', 'UTC', 1, ?1, '0000', 'operator', '')
-ON CONFLICT (email) DO UPDATE SET is_active       = 1,
-                                  hashed_password = ?1
-`
-
-// CreateOperator creates a new operator or updates an existing one.
-func (q *Queries) CreateOperator(ctx context.Context, hashedPassword string) error {
-	_, err := q.db.ExecContext(ctx, createOperator, hashedPassword)
-	return err
-}
-
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (email, timezone, is_active, hashed_password, clan, role, last_login)
-VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+INSERT INTO users (email, timezone, is_active, hashed_password, clan, last_login)
+VALUES (?1, ?2, ?3, ?4, ?5, ?6)
 RETURNING user_id
 `
 
@@ -58,7 +63,6 @@ type CreateUserParams struct {
 	IsActive       int64
 	HashedPassword string
 	Clan           string
-	Role           string
 	LastLogin      time.Time
 }
 
@@ -66,7 +70,6 @@ type CreateUserParams struct {
 // The email must be lowercase and unique.
 // Timezone is the user's timezone. Use UTC if unknown.
 // The password is stored as a bcrypt hash.
-// Role should be one of "user", "admin", or "operator". Other values are accepted but ignored.
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, createUser,
 		arg.Email,
@@ -74,7 +77,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, 
 		arg.IsActive,
 		arg.HashedPassword,
 		arg.Clan,
-		arg.Role,
 		arg.LastLogin,
 	)
 	var user_id int64
@@ -86,7 +88,6 @@ const deleteUser = `-- name: DeleteUser :exec
 UPDATE users
 SET is_active       = 0,
     hashed_password = 'deleted',
-    role            = 'deleted',
     updated_at      = CURRENT_TIMESTAMP
 WHERE user_id = ?1
 `
@@ -103,7 +104,6 @@ const deleteUserByEmail = `-- name: DeleteUserByEmail :exec
 UPDATE users
 SET is_active       = 0,
     hashed_password = 'deleted',
-    role            = 'deleted',
     updated_at      = CURRENT_TIMESTAMP
 WHERE email = ?1
 `
@@ -117,7 +117,7 @@ func (q *Queries) DeleteUserByEmail(ctx context.Context, email string) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT email, timezone, is_active, clan, role
+SELECT email, timezone, is_active, clan
 FROM users
 WHERE is_active = 1
   AND user_id = ?1
@@ -128,7 +128,6 @@ type GetUserRow struct {
 	Timezone string
 	IsActive int64
 	Clan     string
-	Role     string
 }
 
 // GetUser returns the user with the given id.
@@ -141,7 +140,6 @@ func (q *Queries) GetUser(ctx context.Context, userID int64) (GetUserRow, error)
 		&i.Timezone,
 		&i.IsActive,
 		&i.Clan,
-		&i.Role,
 	)
 	return i, err
 }
@@ -167,6 +165,51 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 	return i, err
 }
 
+const getUserHashedPassword = `-- name: GetUserHashedPassword :one
+SELECT hashed_password
+FROM users
+WHERE user_id = ?1
+`
+
+// GetUserHashedPassword returns the hashed password for user with the given id.
+func (q *Queries) GetUserHashedPassword(ctx context.Context, userID int64) (string, error) {
+	row := q.db.QueryRowContext(ctx, getUserHashedPassword, userID)
+	var hashed_password string
+	err := row.Scan(&hashed_password)
+	return hashed_password, err
+}
+
+const getUserRoles = `-- name: GetUserRoles :many
+SELECT role
+FROM user_roles
+         JOIN roles ON user_roles.role_id = roles.role_id
+WHERE user_roles.user_id = ?1
+`
+
+// GetUserRoles returns the roles for user with the given id.
+func (q *Queries) GetUserRoles(ctx context.Context, userID int64) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getUserRoles, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var role string
+		if err := rows.Scan(&role); err != nil {
+			return nil, err
+		}
+		items = append(items, role)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateUserLastLogin = `-- name: UpdateUserLastLogin :exec
 UPDATE users
 SET last_login = CURRENT_TIMESTAMP
@@ -182,20 +225,22 @@ func (q *Queries) UpdateUserLastLogin(ctx context.Context, userID int64) error {
 const updateUserPassword = `-- name: UpdateUserPassword :exec
 UPDATE users
 SET hashed_password = ?1,
+    is_active       = ?2,
     updated_at      = CURRENT_TIMESTAMP
 WHERE is_active = 1
-  AND user_id = ?2
+  AND user_id = ?3
 `
 
 type UpdateUserPasswordParams struct {
 	HashedPassword string
+	IsActive       int64
 	UserID         int64
 }
 
-// UpdateUserPassword updates the password for the given user.
+// UpdateUserPassword updates the password and is_active flag for the given user.
 // Fails if the user is not active.
 func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
-	_, err := q.db.ExecContext(ctx, updateUserPassword, arg.HashedPassword, arg.UserID)
+	_, err := q.db.ExecContext(ctx, updateUserPassword, arg.HashedPassword, arg.IsActive, arg.UserID)
 	return err
 }
 

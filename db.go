@@ -3,6 +3,9 @@
 package main
 
 import (
+	"context"
+	"database/sql"
+	"github.com/playbymail/ottomap/stores/sqlite"
 	"github.com/spf13/cobra"
 	"log"
 	"os"
@@ -99,9 +102,27 @@ var cmdDbInit = &cobra.Command{
 			}
 			log.Printf("db: init: database %s: removed\n", argsDb.paths.database)
 		}
-		log.Printf("db: init: creating database...\n")
 
-		log.Fatal("not implemented")
+		// create the database.
+		log.Printf("db: init: creating database...\n")
+		db, err := sql.Open("sqlite", argsDb.paths.database)
+		if err != nil {
+			log.Fatalf("db: init: %v\n", err)
+		}
+		defer func() {
+			if db != nil {
+				_ = db.Close()
+			}
+		}()
+
+		store := sqlite.NewStore(db, context.Background())
+
+		log.Printf("db: init: creating schema...\n")
+		if err := store.CreateSchema(argsDb.paths.assets, argsDb.paths.templates); err != nil {
+			log.Fatalf("db: init: %v\n", err)
+		}
+
+		log.Printf("db: created %q\n", argsDb.paths.database)
 	},
 }
 

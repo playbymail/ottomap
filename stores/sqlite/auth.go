@@ -15,6 +15,88 @@ import (
 // This file should implement the store for the authentication domain.
 // Maybe someday I will understand how to do this.
 
+// UpdateAdministrator updates the administrator's password.
+// Like all functions, it assumes that the administrator has user_id of 1.
+func (db *DB) UpdateAdministrator(plainTextSecret string, isActive bool) error {
+	var err error
+	var hashedPassword string
+	if plainTextSecret == "" {
+		hashedPassword, err = db.q.GetUserHashedPassword(db.ctx, 1)
+	} else {
+		hashedPassword, err = HashPassword(plainTextSecret)
+		if err != nil {
+			return err
+		}
+	}
+	parms := sqlc.UpdateUserPasswordParams{
+		UserID:         1,
+		HashedPassword: hashedPassword,
+	}
+	if isActive {
+		parms.IsActive = 1
+	}
+	return db.q.UpdateUserPassword(db.ctx, parms)
+}
+
+func (db *DB) CreateUser(email, plainTextSecret, clan string, timezone *time.Location) (domains.ID, error) {
+	if strings.TrimSpace(email) != email {
+		return 0, domains.ErrInvalidEmail
+	} else if clanNo, err := strconv.Atoi(clan); err != nil || clanNo < 1 || clanNo > 999 {
+		return 0, domains.ErrInvalidClan
+	}
+
+	// hash the password. can fail if the password is too long.
+	hashedPassword, err := HashPassword(plainTextSecret)
+	if err != nil {
+		return 0, err
+	}
+
+	// lookup the timezone. not sure that can fail, but if it does, default to UTC.
+	var tz string
+	if timezone != nil {
+		tz = timezone.String()
+	}
+	if tz == "" {
+		tz = "UTC"
+	}
+
+	tx, err := db.db.BeginTx(db.ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+	qtx := db.q.WithTx(tx)
+
+	// note: we let LastLogin be the zero-value for time.Time, which means never logged in.
+	id, err := qtx.CreateUser(db.ctx, sqlc.CreateUserParams{
+		Email:          strings.ToLower(email),
+		HashedPassword: hashedPassword,
+		IsActive:       1,
+		Clan:           clan,
+		Timezone:       tz,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	// all users get the default role of "user".
+	err = qtx.AddUserRole(db.ctx, sqlc.AddUserRoleParams{
+		UserID: id,
+		Role:   "user",
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return 0, err
+	}
+	return domains.ID(id), nil
+}
+
 func (db *DB) AuthenticateUser(email, plainTextPassword string) (domains.ID, error) {
 	if strings.TrimSpace(email) != email {
 		return 0, domains.ErrInvalidEmail
@@ -33,51 +115,6 @@ func (db *DB) AuthenticateUser(email, plainTextPassword string) (domains.ID, err
 	return domains.ID(row.UserID), nil
 }
 
-func (db *DB) CreateOperator(plainTextSecret string) error {
-	hashedPassword, err := HashPassword(plainTextSecret)
-	if err != nil {
-		return err
-	}
-	return db.q.CreateOperator(db.ctx, hashedPassword)
-}
-
-func (db *DB) CreateUser(email, plainTextSecret, clan, role string, timezone *time.Location) (domains.ID, error) {
-	if strings.TrimSpace(email) != email {
-		return 0, domains.ErrInvalidEmail
-	} else if clanNo, err := strconv.Atoi(clan); err != nil || clanNo < 1 || clanNo > 999 {
-		return 0, domains.ErrInvalidClan
-	}
-
-	// note: we let LastLogin be the zero-value for time.Time, which means never logged in.
-	parms := sqlc.CreateUserParams{
-		Email:    strings.ToLower(email),
-		IsActive: 1,
-		Clan:     clan,
-	}
-
-	// adapt values and provide defaults as needed
-
-	// hash the password. can fail if the password is too long.
-	if hashedPassword, err := HashPassword(plainTextSecret); err != nil {
-		return 0, err
-	} else {
-		parms.HashedPassword = hashedPassword
-	}
-	if role == "admin" || role == "operator" {
-		parms.Role = role
-	} else {
-		parms.Role = "user"
-	}
-	if timezone == nil {
-		parms.Timezone = "UTC"
-	} else {
-		parms.Timezone = timezone.String()
-	}
-
-	id, err := db.q.CreateUser(db.ctx, parms)
-	return domains.ID(id), err
-}
-
 func (db *DB) GetUser(userID domains.ID) (*domains.User, error) {
 	row, err := db.q.GetUser(db.ctx, int64(userID))
 	if err != nil {
@@ -89,17 +126,18 @@ func (db *DB) GetUser(userID domains.ID) (*domains.User, error) {
 		return nil, err
 	}
 	isActive := row.IsActive == 1
+
 	roleMap := map[string]bool{"active": isActive, "authenticated": false}
 	if isActive {
-		switch row.Role {
-		case "admin":
-			roleMap["admin"] = true
-		case "operator":
-			roleMap["operator"] = true
-		case "user":
-			roleMap["user"] = true
+		roles, err := db.q.GetUserRoles(db.ctx, int64(userID))
+		if err != nil {
+			return nil, err
+		}
+		for _, role := range roles {
+			roleMap[role] = true
 		}
 	}
+
 	return &domains.User{
 		ID:       userID,
 		Email:    row.Email,

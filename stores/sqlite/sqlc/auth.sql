@@ -2,20 +2,12 @@
 -- The email must be lowercase and unique.
 -- Timezone is the user's timezone. Use UTC if unknown.
 -- The password is stored as a bcrypt hash.
--- Role should be one of "user", "admin", or "operator". Other values are accepted but ignored.
 --
 -- name: CreateUser :one
-INSERT INTO users (email, timezone, is_active, hashed_password, clan, role, last_login)
-VALUES (:email, :timezone, :is_active, :hashed_password, :clan, :role, :last_login)
+INSERT INTO users (email, timezone, is_active, hashed_password, clan, last_login)
+VALUES (:email, :timezone, :is_active, :hashed_password, :clan, :last_login)
 RETURNING user_id;
 
--- CreateOperator creates a new operator or updates an existing one.
---
--- name: CreateOperator :exec
-INSERT INTO users (email, timezone, is_active, hashed_password, clan, role, last_login)
-VALUES ('operator', 'UTC', 1, ?1, '0000', 'operator', '')
-ON CONFLICT (email) DO UPDATE SET is_active       = 1,
-                                  hashed_password = ?1;
 
 -- AuthenticateUser authenticates a user with the given email address and password.
 -- Returns the user's id if the authentication is successful.
@@ -28,7 +20,6 @@ WHERE is_active = 1
   AND email = :email
   AND hashed_password = :hashed_password;
 
-
 -- DeleteUser updates the user with the given id to inactive.
 -- We do not delete the user because we want to keep the history of the user.
 -- We also update the user's password and role to "deleted" to prevent them from logging in.
@@ -37,7 +28,6 @@ WHERE is_active = 1
 UPDATE users
 SET is_active       = 0,
     hashed_password = 'deleted',
-    role            = 'deleted',
     updated_at      = CURRENT_TIMESTAMP
 WHERE user_id = :user_id;
 
@@ -49,7 +39,6 @@ WHERE user_id = :user_id;
 UPDATE users
 SET is_active       = 0,
     hashed_password = 'deleted',
-    role            = 'deleted',
     updated_at      = CURRENT_TIMESTAMP
 WHERE email = :email;
 
@@ -57,7 +46,7 @@ WHERE email = :email;
 -- Fails if the user is not active.
 --
 -- name: GetUser :one
-SELECT email, timezone, is_active, clan, role
+SELECT email, timezone, is_active, clan
 FROM users
 WHERE is_active = 1
   AND user_id = :user_id;
@@ -71,6 +60,29 @@ FROM users
 WHERE is_active = 1
   AND email = :email;
 
+-- GetUserHashedPassword returns the hashed password for user with the given id.
+--
+-- name: GetUserHashedPassword :one
+SELECT hashed_password
+FROM users
+WHERE user_id = :user_id;
+
+-- AddUserRole adds the given role to the given user.
+--
+-- name: AddUserRole :exec
+INSERT INTO user_roles (user_id, role_id)
+SELECT :user_id, role_id
+FROM roles
+WHERE role = :role;
+
+-- GetUserRoles returns the roles for user with the given id.
+--
+-- name: GetUserRoles :many
+SELECT role
+FROM user_roles
+         JOIN roles ON user_roles.role_id = roles.role_id
+WHERE user_roles.user_id = :user_id;
+
 -- UpdateUserLastLogin updates the last login time for the given user.
 --
 -- name: UpdateUserLastLogin :exec
@@ -78,12 +90,13 @@ UPDATE users
 SET last_login = CURRENT_TIMESTAMP
 WHERE user_id = :user_id;
 
--- UpdateUserPassword updates the password for the given user.
+-- UpdateUserPassword updates the password and is_active flag for the given user.
 -- Fails if the user is not active.
 --
 -- name: UpdateUserPassword :exec
 UPDATE users
 SET hashed_password = :hashed_password,
+    is_active       = :is_active,
     updated_at      = CURRENT_TIMESTAMP
 WHERE is_active = 1
   AND user_id = :user_id;

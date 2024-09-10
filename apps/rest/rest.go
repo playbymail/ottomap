@@ -6,9 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/playbymail/ottomap/stores/sqlite"
-	"log"
 )
 
 type App struct {
@@ -38,13 +36,13 @@ func New(options ...Option) (*App, error) {
 		a.db.db = sqlite.NewStore(db, a.db.ctx)
 	}
 
-	// always create (or update) an operator with a random secret
-	operatorSecret := uuid.NewString()
-	if err := a.db.db.CreateOperator(operatorSecret); err != nil {
-		return nil, err
-	}
-	log.Printf("store: operator: %q", "operator")
-	log.Printf("store: secret::: %q", operatorSecret)
+	//// always create (or update) an operator with a random secret
+	//operatorSecret := uuid.NewString()
+	//if err := a.db.db.CreateOperator(operatorSecret); err != nil {
+	//	return nil, err
+	//}
+	//log.Printf("store: operator: %q", "operator")
+	//log.Printf("store: secret::: %q", operatorSecret)
 
 	return a, nil
 }
