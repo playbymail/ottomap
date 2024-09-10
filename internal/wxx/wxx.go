@@ -4,8 +4,10 @@ package wxx
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/terrain"
+	"log"
 	"sort"
 )
 
@@ -14,13 +16,12 @@ type WXX struct {
 
 	tiles map[coords.Map]*Tile
 
-	// terrainTileNames maps our terrain type to the name of a Worldographer tile.
-	terrainTileNames map[terrain.Terrain_e]string
+	// terrainTileName maps our terrain type to the name of a Worldographer tile.
+	terrainTileName map[terrain.Terrain_e]string
+
 	// terrainTileSlot maps our terrain type to a slot in the Worldographer tile map.
 	terrainTileSlot map[terrain.Terrain_e]int
 
-	// tileNameSlot maps the tile name to a slot in the Worldographer map.
-	tileNameSlot map[string]int
 	// tileNameList is the list of Worldographer terrain tile names that we output.
 	// this list is sorted, with "Blank" at index 0.
 	tileNameList []string
@@ -37,30 +38,71 @@ func NewWXX(options ...Option) (*WXX, error) {
 		}
 	}
 
-	if w.terrainTileNames == nil {
-		w.terrainTileNames = terrain.TileTerrainNames
+	if w.terrainTileName == nil {
+		w.terrainTileName = map[terrain.Terrain_e]string{}
+		for k, v := range terrain.TileTerrainNames {
+			w.terrainTileName[k] = v
+		}
 	}
 
-	// collect the terrain types into a list, sort them, and ensure that "Blank" is the first element.
-	w.tileNameSlot = map[string]int{"Blank": 0}
-	for k, v := range w.terrainTileNames {
-		if k == terrain.Blank {
-			continue
-		}
-		// if we haven't seen this terrain type before, add it to the list
-		if _, ok := w.tileNameSlot[v]; !ok {
-			w.tileNameSlot[v] = 0
-			w.tileNameList = append(w.tileNameList, v)
+	// set missing terrain names to "Floor Mexican Blue".
+	// this is a hack to ensure that the Worldographer tile map is complete.
+	// the choice is arbitrary but very noticeable.
+	for k := range terrain.TileTerrainNames {
+		if _, ok := w.terrainTileName[k]; !ok {
+			w.terrainTileName[k] = "Floor Mexican Blue"
 		}
 	}
-	sort.Strings(w.tileNameList)
-	w.tileNameList = append([]string{"Blank"}, w.tileNameList...)
-	for i, v := range w.tileNameList {
-		w.tileNameSlot[v] = i
+
+	// initialize tileNameList. this is the list of Worldographer terrain tile names that we output
+	// to the map file, ordered by slot. The "Blank" tile must always be the first element in the list.
+	if len(w.terrainTileName) != 0 {
+		// names is a map of every terrain name. we must ensure that it includes "Blank".
+		names := map[string]bool{"Blank": true}
+		for _, v := range w.terrainTileName {
+			names[v] = true
+		}
+		// copy the names into the list so that we can sort them and determine the slot number.
+		for k := range names {
+			w.tileNameList = append(w.tileNameList, k)
+		}
+		// sort the list, ensuring that "Blank" is the first element.
+		sort.Slice(w.tileNameList, func(i, j int) bool {
+			if w.tileNameList[i] == "Blank" {
+				return true
+			}
+			return w.tileNameList[i] < w.tileNameList[j]
+		})
+		// tileNameList is now initialized and contains the list of Worldographer terrain tile names.
+		// the location of the name in the list is the slot number we will use to render the tile.
 	}
+	if len(w.tileNameList) == 0 || w.tileNameList[0] != "Blank" {
+		panic("assert(tileSlot[0] == Blank)")
+	}
+	//for slot, tileName := range w.tileNameList {
+	//	log.Printf("debug: tile %-30q maps to slot %3d", tileName, slot)
+	//}
+
+	// initialize tileNameSlot. this is the map from the tile name to the slot number.
+	tileNameSlot := map[string]int{}
+	for n, v := range w.tileNameList {
+		tileNameSlot[v] = n
+	}
+
+	// initialize terrainTileSlot. this is the map from the terrain type to the slot number.
 	w.terrainTileSlot = map[terrain.Terrain_e]int{}
-	for k, v := range w.terrainTileNames {
-		w.terrainTileSlot[k] = w.tileNameSlot[v]
+	for k, v := range w.terrainTileName {
+		w.terrainTileSlot[k] = tileNameSlot[v]
+	}
+	var msgs []string
+	for terrainCode, slot := range w.terrainTileSlot {
+		tileName := w.tileNameList[slot]
+		msgs = append(msgs, fmt.Sprintf("%-7s %-32s %4d", terrainCode, tileName, slot))
+	}
+	sort.Strings(msgs)
+	log.Printf("terrain tile____________________________ slot\n")
+	for _, msg := range msgs {
+		log.Printf("%s\n", msg)
 	}
 
 	return w, nil

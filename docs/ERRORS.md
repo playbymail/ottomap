@@ -37,6 +37,21 @@ just restart the application.
 > I'm trying to get all the error messages to be consistent.
 > If you notice one that's wonky, please report it.
 
+## Expected Turn YYYY-MM
+
+The parser tries to match the year and month from the file name with the year and month from the first line in the turn report.
+If there's a mismatch, it will report an error and exit.
+
+If the error mentions turn "0000-00":
+
+```text
+render.go:219: error: expected turn "0901-10": got turn "0000-00"
+```
+
+Then the issue is probably with the line endings in the file.
+Please try running with the `--auto-eol` option.
+If that doesn't resolve this issue, please report it on the Discord server.
+
 ## Expected unit to have parent
 You will get an error when Otto can't determine which hex a unit was created in.
 

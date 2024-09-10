@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/mdhender/semver"
 	"github.com/playbymail/ottomap/cerrs"
 	"github.com/spf13/cobra"
@@ -168,6 +169,9 @@ func isdir(path string) (bool, error) {
 func isfile(path string) (bool, error) {
 	sb, err := os.Stat(path)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
 		return false, err
 	} else if sb.IsDir() || !sb.Mode().IsRegular() {
 		return false, nil

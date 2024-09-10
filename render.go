@@ -216,6 +216,11 @@ var cmdRender = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			} else if turnId != fmt.Sprintf("%04d-%02d", turn.Year, turn.Month) {
+				if turn.Year == 0 && turn.Month == 0 {
+					log.Printf("error: unable to locate turn information in file\n")
+					log.Printf("error: this is usually caused by unexpected line endings in the file\n")
+					log.Printf("error: try running with --auto-eol\n")
+				}
 				log.Fatalf("error: expected turn %q: got turn %q\n", turnId, fmt.Sprintf("%04d-%02d", turn.Year, turn.Month))
 			}
 			allTurns[turnId] = append(allTurns[turnId], turn)

@@ -195,6 +195,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				t = &Tile{}
 			}
 
+			// todo: this should be replaced with a call to terrainToTile() and then use the slot.
 			w.Printf("%d\t%d", int(t.Terrain), t.Elevation)
 			if t.IsIcy {
 				w.Printf("\t1")
