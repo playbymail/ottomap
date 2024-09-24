@@ -8,14 +8,6 @@ import (
 	"time"
 )
 
-type Role struct {
-	RoleID      int64
-	Role        string
-	Description string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-}
-
 type Server struct {
 	AssetsPath    string
 	TemplatesPath string
@@ -30,19 +22,16 @@ type Session struct {
 }
 
 type User struct {
-	UserID         int64
-	Email          string
-	Timezone       string
-	IsActive       int64
-	HashedPassword string
-	Clan           string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	LastLogin      time.Time
-}
-
-type UserRole struct {
-	UserID    int64
-	RoleID    int64
-	CreatedAt time.Time
+	UserID          int64
+	Email           string
+	Timezone        string
+	IsActive        int64
+	HashedPassword  string
+	Clan            string
+	IsAdministrator int64
+	IsOperator      int64
+	IsUser          int64
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	LastLogin       time.Time
 }

@@ -16,7 +16,7 @@ var (
 	schemaDDL string
 )
 
-func (db *DB) CreateSchema(assets, templates string) error {
+func (db *DB) CreateSchema(adminPassword, assets, templates string) error {
 	// we have to assume that the database already exists
 
 	// confirm that the database has foreign keys enabled
@@ -36,7 +36,15 @@ func (db *DB) CreateSchema(assets, templates string) error {
 		return errors.Join(domains.ErrCreateSchema, err)
 	}
 
-	// populate database with default data
+	if adminPassword != "" {
+		err := db.UpdateAdministrator(adminPassword, true)
+		if err != nil {
+			log.Printf("[sqldb] failed to update admin user\n")
+			log.Printf("[sqldb] %v\n", err)
+			return err
+		}
+		log.Printf("[sqldb] admin user updated\n")
+	}
 
 	return nil
 }

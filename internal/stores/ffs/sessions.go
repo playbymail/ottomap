@@ -6,14 +6,15 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"github.com/google/uuid"
+	"github.com/playbymail/ottomap/domains"
 	"github.com/playbymail/ottomap/internal/stores/ffs/sqlc"
 	"log"
 	"net/http"
 	"time"
 )
 
-func (s *Store) CreateSession(clan, magicKey string) (Session_t, error) {
-	var sess Session_t
+func (s *Store) CreateSession(clan, magicKey string) (domains.Session_t, error) {
+	var sess domains.Session_t
 
 	// todo: should use bcrypt, not a simple hash
 	hash := sha256.Sum256([]byte(magicKey))
@@ -30,13 +31,13 @@ func (s *Store) CreateSession(clan, magicKey string) (Session_t, error) {
 	err = s.queries.CreateSession(s.ctx, sqlc.CreateSessionParams{
 		ID:          sid,
 		Uid:         user.ID,
-		ExpiresDttm: time.Now().Add(2 * 7 * time.Hour),
+		ExpiresDttm: time.Now().Add(2 * 7 * 24 * time.Hour), // two weeks
 	})
 	if err != nil {
 		return sess, err
 	}
 
-	sess.Id, sess.Uid, sess.Clan = sid, user.ID, user.Clan
+	sess.Id, sess.UserId, sess.Clan = sid, domains.ID(user.ID), user.Clan
 
 	return sess, nil
 }

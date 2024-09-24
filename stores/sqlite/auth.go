@@ -6,6 +6,7 @@ import (
 	"github.com/playbymail/ottomap/domains"
 	"github.com/playbymail/ottomap/stores/sqlite/sqlc"
 	"golang.org/x/crypto/bcrypt"
+	"log"
 	_ "modernc.org/sqlite"
 	"strconv"
 	"strings"
@@ -28,6 +29,7 @@ func (db *DB) UpdateAdministrator(plainTextSecret string, isActive bool) error {
 			return err
 		}
 	}
+	log.Printf("db: auth: updateAdministrator: password %q: hashed %q\n", plainTextSecret, hashedPassword)
 	parms := sqlc.UpdateUserPasswordParams{
 		UserID:         1,
 		HashedPassword: hashedPassword,
@@ -38,17 +40,19 @@ func (db *DB) UpdateAdministrator(plainTextSecret string, isActive bool) error {
 	return db.q.UpdateUserPassword(db.ctx, parms)
 }
 
-func (db *DB) CreateUser(email, plainTextSecret, clan string, timezone *time.Location) (domains.ID, error) {
+func (db *DB) CreateUser(email, plainTextSecret, clan string, timezone *time.Location) (*domains.User_t, error) {
 	if strings.TrimSpace(email) != email {
-		return 0, domains.ErrInvalidEmail
-	} else if clanNo, err := strconv.Atoi(clan); err != nil || clanNo < 1 || clanNo > 999 {
-		return 0, domains.ErrInvalidClan
+		return nil, domains.ErrInvalidEmail
+	}
+	email = strings.ToLower(email)
+	if clanNo, err := strconv.Atoi(clan); err != nil || clanNo < 1 || clanNo > 999 {
+		return nil, domains.ErrInvalidClan
 	}
 
 	// hash the password. can fail if the password is too long.
 	hashedPassword, err := HashPassword(plainTextSecret)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	// lookup the timezone. not sure that can fail, but if it does, default to UTC.
@@ -60,41 +64,51 @@ func (db *DB) CreateUser(email, plainTextSecret, clan string, timezone *time.Loc
 		tz = "UTC"
 	}
 
-	tx, err := db.db.BeginTx(db.ctx, nil)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
-	qtx := db.q.WithTx(tx)
+	//tx, err := db.db.BeginTx(db.ctx, nil)
+	//if err != nil {
+	//	return 0, err
+	//}
+	//defer func() {
+	//	_ = tx.Rollback()
+	//}()
+	//qtx := db.q.WithTx(tx)
 
 	// note: we let LastLogin be the zero-value for time.Time, which means never logged in.
-	id, err := qtx.CreateUser(db.ctx, sqlc.CreateUserParams{
-		Email:          strings.ToLower(email),
+	id, err := db.q.CreateUser(db.ctx, sqlc.CreateUserParams{
+		Email:          email,
 		HashedPassword: hashedPassword,
 		IsActive:       1,
 		Clan:           clan,
 		Timezone:       tz,
 	})
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	// all users get the default role of "user".
-	err = qtx.AddUserRole(db.ctx, sqlc.AddUserRoleParams{
-		UserID: id,
-		Role:   "user",
-	})
-	if err != nil {
-		return 0, err
-	}
+	//err = tx.Commit()
+	//if err != nil {
+	//	return 0, err
+	//}
 
-	err = tx.Commit()
-	if err != nil {
-		return 0, err
-	}
-	return domains.ID(id), nil
+	return &domains.User_t{
+		ID:             domains.ID(id),
+		Email:          email,
+		Timezone:       timezone,
+		HashedPassword: hashedPassword,
+		Clan:           clan,
+		Roles: struct {
+			IsActive        bool
+			IsAdministrator bool
+			IsAuthenticated bool
+			IsOperator      bool
+			IsUser          bool
+		}{
+			IsActive: true,
+			IsUser:   true,
+		},
+		Created: time.Now(),
+		Updated: time.Now(),
+	}, nil
 }
 
 func (db *DB) AuthenticateUser(email, plainTextPassword string) (domains.ID, error) {
@@ -115,7 +129,7 @@ func (db *DB) AuthenticateUser(email, plainTextPassword string) (domains.ID, err
 	return domains.ID(row.UserID), nil
 }
 
-func (db *DB) GetUser(userID domains.ID) (*domains.User, error) {
+func (db *DB) GetUser(userID domains.ID) (*domains.User_t, error) {
 	row, err := db.q.GetUser(db.ctx, int64(userID))
 	if err != nil {
 		return nil, err
@@ -125,26 +139,27 @@ func (db *DB) GetUser(userID domains.ID) (*domains.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	isActive := row.IsActive == 1
 
-	roleMap := map[string]bool{"active": isActive, "authenticated": false}
-	if isActive {
-		roles, err := db.q.GetUserRoles(db.ctx, int64(userID))
-		if err != nil {
-			return nil, err
-		}
-		for _, role := range roles {
-			roleMap[role] = true
-		}
-	}
-
-	return &domains.User{
+	return &domains.User_t{
 		ID:       userID,
 		Email:    row.Email,
 		Timezone: loc,
-		IsActive: isActive,
 		Clan:     row.Clan,
-		Roles:    roleMap,
+		Roles: struct {
+			IsActive        bool
+			IsAdministrator bool
+			IsAuthenticated bool
+			IsOperator      bool
+			IsUser          bool
+		}{
+			IsActive:        row.IsActive == 1,
+			IsAdministrator: row.IsAdministrator == 1,
+			IsOperator:      row.IsOperator == 1,
+			IsUser:          row.IsUser == 1,
+		},
+		Created:   row.CreatedAt,
+		Updated:   row.UpdatedAt,
+		LastLogin: row.LastLogin,
 	}, nil
 }
 

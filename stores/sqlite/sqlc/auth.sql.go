@@ -10,24 +10,6 @@ import (
 	"time"
 )
 
-const addUserRole = `-- name: AddUserRole :exec
-INSERT INTO user_roles (user_id, role_id)
-SELECT ?1, role_id
-FROM roles
-WHERE role = ?2
-`
-
-type AddUserRoleParams struct {
-	UserID int64
-	Role   string
-}
-
-// AddUserRole adds the given role to the given user.
-func (q *Queries) AddUserRole(ctx context.Context, arg AddUserRoleParams) error {
-	_, err := q.db.ExecContext(ctx, addUserRole, arg.UserID, arg.Role)
-	return err
-}
-
 const authenticateUser = `-- name: AuthenticateUser :one
 SELECT user_id
 FROM users
@@ -52,8 +34,8 @@ func (q *Queries) AuthenticateUser(ctx context.Context, arg AuthenticateUserPara
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (email, timezone, is_active, hashed_password, clan, last_login)
-VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+INSERT INTO users (email, timezone, is_active, is_user, hashed_password, clan, last_login)
+VALUES (?1, ?2, ?3, 1, ?4, ?5, ?6)
 RETURNING user_id
 `
 
@@ -117,17 +99,32 @@ func (q *Queries) DeleteUserByEmail(ctx context.Context, email string) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT email, timezone, is_active, clan
+SELECT email,
+       timezone,
+       is_active,
+       is_administrator,
+       is_operator,
+       is_user,
+       clan,
+       created_at,
+       updated_at,
+       last_login
 FROM users
 WHERE is_active = 1
   AND user_id = ?1
 `
 
 type GetUserRow struct {
-	Email    string
-	Timezone string
-	IsActive int64
-	Clan     string
+	Email           string
+	Timezone        string
+	IsActive        int64
+	IsAdministrator int64
+	IsOperator      int64
+	IsUser          int64
+	Clan            string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	LastLogin       time.Time
 }
 
 // GetUser returns the user with the given id.
@@ -139,7 +136,13 @@ func (q *Queries) GetUser(ctx context.Context, userID int64) (GetUserRow, error)
 		&i.Email,
 		&i.Timezone,
 		&i.IsActive,
+		&i.IsAdministrator,
+		&i.IsOperator,
+		&i.IsUser,
 		&i.Clan,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastLogin,
 	)
 	return i, err
 }
@@ -179,35 +182,59 @@ func (q *Queries) GetUserHashedPassword(ctx context.Context, userID int64) (stri
 	return hashed_password, err
 }
 
-const getUserRoles = `-- name: GetUserRoles :many
-SELECT role
-FROM user_roles
-         JOIN roles ON user_roles.role_id = roles.role_id
-WHERE user_roles.user_id = ?1
+const getUserRoles = `-- name: GetUserRoles :one
+SELECT is_active, is_administrator, is_operator, is_user
+FROM users
+WHERE user_id = ?1
 `
 
+type GetUserRolesRow struct {
+	IsActive        int64
+	IsAdministrator int64
+	IsOperator      int64
+	IsUser          int64
+}
+
 // GetUserRoles returns the roles for user with the given id.
-func (q *Queries) GetUserRoles(ctx context.Context, userID int64) ([]string, error) {
-	rows, err := q.db.QueryContext(ctx, getUserRoles, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []string
-	for rows.Next() {
-		var role string
-		if err := rows.Scan(&role); err != nil {
-			return nil, err
-		}
-		items = append(items, role)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetUserRoles(ctx context.Context, userID int64) (GetUserRolesRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserRoles, userID)
+	var i GetUserRolesRow
+	err := row.Scan(
+		&i.IsActive,
+		&i.IsAdministrator,
+		&i.IsOperator,
+		&i.IsUser,
+	)
+	return i, err
+}
+
+const setUserRoles = `-- name: SetUserRoles :exec
+UPDATE users
+SET is_active        = ?1,
+    is_administrator = ?2,
+    is_operator      = ?3,
+    is_user          = ?4
+WHERE users.user_id = ?5
+`
+
+type SetUserRolesParams struct {
+	IsActive        int64
+	IsAdministrator int64
+	IsOperator      int64
+	IsUser          int64
+	UserID          int64
+}
+
+// SetUserRoles sets the roles for the given user.
+func (q *Queries) SetUserRoles(ctx context.Context, arg SetUserRolesParams) error {
+	_, err := q.db.ExecContext(ctx, setUserRoles,
+		arg.IsActive,
+		arg.IsAdministrator,
+		arg.IsOperator,
+		arg.IsUser,
+		arg.UserID,
+	)
+	return err
 }
 
 const updateUserLastLogin = `-- name: UpdateUserLastLogin :exec

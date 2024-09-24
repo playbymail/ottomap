@@ -4,8 +4,8 @@
 -- The password is stored as a bcrypt hash.
 --
 -- name: CreateUser :one
-INSERT INTO users (email, timezone, is_active, hashed_password, clan, last_login)
-VALUES (:email, :timezone, :is_active, :hashed_password, :clan, :last_login)
+INSERT INTO users (email, timezone, is_active, is_user, hashed_password, clan, last_login)
+VALUES (:email, :timezone, :is_active, 1, :hashed_password, :clan, :last_login)
 RETURNING user_id;
 
 
@@ -46,7 +46,16 @@ WHERE email = :email;
 -- Fails if the user is not active.
 --
 -- name: GetUser :one
-SELECT email, timezone, is_active, clan
+SELECT email,
+       timezone,
+       is_active,
+       is_administrator,
+       is_operator,
+       is_user,
+       clan,
+       created_at,
+       updated_at,
+       last_login
 FROM users
 WHERE is_active = 1
   AND user_id = :user_id;
@@ -67,21 +76,23 @@ SELECT hashed_password
 FROM users
 WHERE user_id = :user_id;
 
--- AddUserRole adds the given role to the given user.
---
--- name: AddUserRole :exec
-INSERT INTO user_roles (user_id, role_id)
-SELECT :user_id, role_id
-FROM roles
-WHERE role = :role;
-
 -- GetUserRoles returns the roles for user with the given id.
 --
--- name: GetUserRoles :many
-SELECT role
-FROM user_roles
-         JOIN roles ON user_roles.role_id = roles.role_id
-WHERE user_roles.user_id = :user_id;
+-- name: GetUserRoles :one
+SELECT is_active, is_administrator, is_operator, is_user
+FROM users
+WHERE user_id = :user_id;
+
+-- SetUserRoles sets the roles for the given user.
+--
+-- name: SetUserRoles :exec
+UPDATE users
+SET is_active        = :is_active,
+    is_administrator = :is_administrator,
+    is_operator      = :is_operator,
+    is_user          = :is_user
+WHERE users.user_id = :user_id;
+
 
 -- UpdateUserLastLogin updates the last login time for the given user.
 --

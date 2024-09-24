@@ -20,8 +20,11 @@ var argsDb struct {
 		data      string
 		templates string
 	}
-	randomSecret bool   // if true, generate a random secret for signing tokens
-	secret       string // secret for signing tokens
+	secrets struct {
+		useRandomSecret bool   // if true, generate a random secret for signing tokens
+		admin           string // plain text password for admin user
+		signing         string // secret for signing tokens
+	}
 }
 
 var cmdDb = &cobra.Command{
@@ -90,6 +93,9 @@ var cmdDbInit = &cobra.Command{
 		log.Printf("db: init: assets    %s\n", argsDb.paths.assets)
 		log.Printf("db: init: data      %s\n", argsDb.paths.data)
 		log.Printf("db: init: templates %s\n", argsDb.paths.templates)
+		if argsDb.secrets.admin != "" {
+			log.Printf("db: init: admin password %q\n", argsDb.secrets.admin)
+		}
 
 		// if the database exists, we need to check if we are allowed to overwrite it
 		if ok, err := isfile(argsDb.paths.database); err != nil {
@@ -118,7 +124,7 @@ var cmdDbInit = &cobra.Command{
 		store := sqlite.NewStore(db, context.Background())
 
 		log.Printf("db: init: creating schema...\n")
-		if err := store.CreateSchema(argsDb.paths.assets, argsDb.paths.templates); err != nil {
+		if err := store.CreateSchema(argsDb.secrets.admin, argsDb.paths.assets, argsDb.paths.templates); err != nil {
 			log.Fatalf("db: init: %v\n", err)
 		}
 

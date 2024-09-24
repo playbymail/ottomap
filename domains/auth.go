@@ -14,19 +14,45 @@ import (
 // We assume that the ID is never deleted or reused.
 type ID int64
 
-// User is the type for a user.
-type User struct {
+// Claim_t is the type for a claim.
+type Claim_t struct {
+	UserId ID     // unique identifier for the user
+	Clan   string // clan number, always 4 digits
+	Roles  struct {
+		IsActive        bool // true if the user is active
+		IsAdministrator bool // true if the user is an administrator
+		IsAuthenticated bool // true if the user is authenticated
+		IsOperator      bool // true if the user is an operator
+		IsUser          bool // true if the user is a user
+	}
+}
+
+// Session_t is the type for a session.
+type Session_t struct {
+	Id        string    // unique identifier for the session
+	CreatedAt time.Time // always UTC
+	ExpiresAt time.Time // always UTC
+
+	Claim_t // the claim for the session, embedded
+}
+
+// User_t is the type for a user.
+type User_t struct {
 	ID ID // unique identifier
 
-	Handle   string         // username, not the user's full name
 	Email    string         // email address
 	Timezone *time.Location // timezone, e.g. "America/New_York", should default to UTC
 
-	IsActive       bool   // true if the user is active
 	HashedPassword string // hashed password, recommended to use bcrypt
 
-	Clan  string
-	Roles map[string]bool
+	Clan  string // clan number, always 4 digits
+	Roles struct {
+		IsActive        bool // true if the user is active
+		IsAdministrator bool // true if the user is an administrator
+		IsAuthenticated bool // true if the user is authenticated
+		IsOperator      bool // true if the user is an operator
+		IsUser          bool // true if the user is a user
+	}
 
 	Created   time.Time // always UTC
 	Updated   time.Time // always UTC
@@ -36,8 +62,10 @@ type User struct {
 // authentication domain errors
 
 var (
-	ErrInvalidEmail  = errors.New("invalid email")
-	ErrInvalidHandle = errors.New("invalid handle")
-	ErrInvalidClan   = errors.New("invalid clan")
-	ErrUnauthorized  = errors.New("unauthorized")
+	ErrExpiredSession = errors.New("expired session")
+	ErrInvalidClan    = errors.New("invalid clan")
+	ErrInvalidEmail   = errors.New("invalid email")
+	ErrInvalidHandle  = errors.New("invalid handle")
+	ErrInvalidSession = errors.New("invalid session")
+	ErrUnauthorized   = errors.New("unauthorized")
 )

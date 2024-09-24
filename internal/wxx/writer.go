@@ -440,6 +440,30 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 
 	w.Println(`<shapes>`)
 
+	//	// unknown origins
+	//	w.Println(`
+	//<shape
+	//    type="Arc"
+	//    creationType="BASIC"
+	//    isWorld="true" isContinent="true" isKingdom="true" isProvince="true"
+	//    dsOffsetX="0.0" dsOffsetY="0.0" dsRadius="50.0" dsSpread="0.2" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0"
+	//    insOffsetX="0.0" insOffsetY="0.0" insRadius="50.0" insChoke="0.2" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0"
+	//    bbWidth="10.0" bbHeight="10.0" bbIterations="3"
+	//    mapLayer="Above Terrain"
+	//    strokeType="SIMPLE"
+	//    highestViewLevel="WORLD"
+	//    currentShapeViewLevel="WORLD"
+	//    lineCap="SQUARE" lineJoin="ROUND"
+	//    opacity="1.0"
+	//    strokeColor="1.0,0.0,0.0,1.0" strokeWidth="0.05"
+	//    length="360.0"
+	//    startAngle="0.0"
+	//    arcType="OPEN" >
+	// <p x="148" y="149"/>
+	// <p x="267" y="286"/>
+	//</shape>
+	//	`)
+
 	const riverWidth = 0.0625
 	for gridRow := 0; gridRow < tilesHigh; gridRow++ {
 		for gridColumn := 0; gridColumn < tilesWide; gridColumn++ {
