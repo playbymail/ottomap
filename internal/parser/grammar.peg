@@ -423,17 +423,17 @@ CROWSIGHTING <- "Sight Land" {
     return terrain.UnknownWater, nil
 }
 
-DIRECTION <- "NE" {
+DIRECTION <- "NE"i {
     return direction.NorthEast, nil
-} / "SE" {
+} / "SE"i {
     return direction.SouthEast, nil
-} / "SW" {
+} / "SW"i {
     return direction.SouthWest, nil
-} / "NW" {
+} / "NW"i {
     return direction.NorthWest, nil
-} / "N" {
+} / "N"i {
     return direction.North, nil
-} / "S" {
+} / "S"i {
     return direction.South, nil
 }
 
