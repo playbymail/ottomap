@@ -232,7 +232,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 
 			if t.Features.IsOrigin {
 				origin := points[0]
-				w.Printf(`<feature type="Three Dots" rotate="0.0" uuid="%s" mapLayer="Tribenet Origin" isFlipHorizontal="false" isFlipVertical="false" scale="-1.0" scaleHt="-1.0" tags="" color="0.800000011920929,0.800000011920929,0.800000011920929,1.0" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, uuid.New().String())
+				w.Printf(`<feature type="Three Dots" rotate="0.0" uuid="%s" mapLayer="Tribenet Origin" isFlipHorizontal="false" isFlipVertical="false" scale="-1.0" scaleHt="-1.0" tags="" color="0.800000011920929,0.800000011920929,0.800000011920929,1.0" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, uuid.NewString())
 				w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" />`, origin.X, origin.Y)
 				w.Printf(`<label  mapLayer="Tribenet Origin" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
 				w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="25.0" />`, origin.X, origin.Y)
@@ -242,7 +242,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 
 			if t.Terrain == terrain.PrairiePlateau {
 				origin := points[0]
-				w.Printf(`<feature type="Semi-Real Hill Jagged" rotate="0.0" uuid="%s" mapLayer="Features" isFlipHorizontal="false" isFlipVertical="false" scale="90.0" scaleHt="-1.0" tags="" color="0.800000011920929,0.800000011920929,0.800000011920929,1.0" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, uuid.New().String())
+				w.Printf(`<feature type="Semi-Real Hill Jagged" rotate="0.0" uuid="%s" mapLayer="Features" isFlipHorizontal="false" isFlipVertical="false" scale="90.0" scaleHt="-1.0" tags="" color="0.800000011920929,0.800000011920929,0.800000011920929,1.0" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, uuid.NewString())
 				w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" />`, origin.X, origin.Y)
 				w.Printf(`<label  mapLayer="Features" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
 				w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="25.0" />`, origin.X, origin.Y)
@@ -276,13 +276,13 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				origin := midpoint(center, edgePoint)
 				//var mapLayer, isFlipHorizontal, color string
 				if e.Friendly {
-					unitNotes[0].id = uuid.New().String()
+					unitNotes[0].id = uuid.NewString()
 					unitNotes[0].name = string(e.UnitId)
 					unitNotes[0].origin = origin
 					unitNotes[0].units = append(unitNotes[0].units, string(e.UnitId))
 					unitNotes[0].mapLayer, unitNotes[0].isFlipHorizontal, unitNotes[0].color = "Tribenet Clan Units", "false", "null"
 				} else {
-					unitNotes[1].id = uuid.New().String()
+					unitNotes[1].id = uuid.NewString()
 					unitNotes[1].name = string(e.UnitId)
 					unitNotes[1].origin = origin
 					unitNotes[1].units = append(unitNotes[1].units, string(e.UnitId))
@@ -331,7 +331,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 			for _, r := range t.Features.Resources {
 				if r != resources.None {
 					origin := points[0]
-					w.Printf(`<feature type="Resource Mines" rotate="0.0" uuid="%s" mapLayer="Tribenet Resources" isFlipHorizontal="false" isFlipVertical="false" scale="35.0" scaleHt="-1.0" tags="" color="null" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, uuid.New().String())
+					w.Printf(`<feature type="Resource Mines" rotate="0.0" uuid="%s" mapLayer="Tribenet Resources" isFlipHorizontal="false" isFlipVertical="false" scale="35.0" scaleHt="-1.0" tags="" color="null" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, uuid.NewString())
 					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" />`, origin.X, origin.Y)
 					w.Printf(`<label  mapLayer="Tribenet Resources" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
 					w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="12.5" />`, origin.X, origin.Y)
@@ -344,7 +344,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 			for _, s := range t.Features.Settlements {
 				if s != nil && s.Name != "" && !strings.HasPrefix(s.Name, "_") {
 					settlement := points[0]
-					w.Printf(`<feature type="Settlement City" rotate="0.0" uuid="%s" mapLayer="Tribenet Settlements" isFlipHorizontal="false" isFlipVertical="false" scale="35.0" scaleHt="-1.0" tags="" color="null" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false"><location viewLevel="WORLD" x="%f" y="%f" />`, uuid.New().String(), settlement.X, settlement.Y)
+					w.Printf(`<feature type="Settlement City" rotate="0.0" uuid="%s" mapLayer="Tribenet Settlements" isFlipHorizontal="false" isFlipVertical="false" scale="35.0" scaleHt="-1.0" tags="" color="null" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false"><location viewLevel="WORLD" x="%f" y="%f" />`, uuid.NewString(), settlement.X, settlement.Y)
 					w.Println(`</feature>`)
 					break
 				}

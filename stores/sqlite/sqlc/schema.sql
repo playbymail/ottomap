@@ -36,12 +36,12 @@ CREATE TABLE users
 
 CREATE TABLE sessions
 (
-    sess_id    TEXT      NOT NULL,
-    user_id    INTEGER   NOT NULL,
-    expires_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    sess_id    TEXT           NOT NULL,
+    user_id    INTEGER UNIQUE NOT NULL,
+    expires_at TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     -- columns for auditing
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (sess_id),
     FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE

@@ -63,10 +63,12 @@ type User_t struct {
 // authentication domain errors
 
 var (
-	ErrExpiredSession = errors.New("expired session")
-	ErrInvalidClan    = errors.New("invalid clan")
-	ErrInvalidEmail   = errors.New("invalid email")
-	ErrInvalidHandle  = errors.New("invalid handle")
-	ErrInvalidSession = errors.New("invalid session")
-	ErrUnauthorized   = errors.New("unauthorized")
+	ErrExpiredSession       = errors.New("expired session")
+	ErrInvalidClan          = errors.New("invalid clan")
+	ErrInvalidEmail         = errors.New("invalid email")
+	ErrInvalidHandle        = errors.New("invalid handle")
+	ErrSessionCookieInvalid = errors.New("session cookie invalid")
+	ErrSessionExpired       = errors.New("session expired")
+	ErrSessionInvalid       = errors.New("session invalid")
+	ErrUnauthorized         = errors.New("unauthorized")
 )

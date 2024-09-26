@@ -6,7 +6,7 @@ import (
 	//_ "embed"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
+	"github.com/playbymail/ottomap/domains"
 	"github.com/playbymail/ottomap/stores/sqlite"
 	"log"
 	"net"
@@ -43,6 +43,11 @@ type Server struct {
 		cookieName string
 		signingKey []byte
 	}
+	sessions struct {
+		cookieName string
+		maxAge     int // maximum age of a session cookie in seconds
+		ttl        time.Duration
+	}
 }
 
 func New(options ...Option) (*Server, error) {
@@ -54,6 +59,10 @@ func New(options ...Option) (*Server, error) {
 	}
 	s.jot.cookieName = "ottomap"
 	s.jot.signingKey = []byte(`your-256-bit-secret`)
+	s.sessions.cookieName = "ottomap_session"
+	s.sessions.ttl = 2 * 7 * 24 * time.Hour
+	s.sessions.maxAge = 2 * 7 * 24 * 60 * 60 // 2 weeks
+	log.Printf("server: New: ttl %+v\n", s.sessions.ttl)
 
 	//// gah. strip the "assets/" prefix from the embedded assets file system
 	//var err error
@@ -121,6 +130,14 @@ func WithPort(port string) Option {
 	}
 }
 
+func WithSessions(name string, ttl time.Duration) Option {
+	return func(s *Server) error {
+		s.sessions.cookieName = name
+		s.sessions.ttl = ttl
+		return nil
+	}
+}
+
 func WithStore(store *sqlite.DB) Option {
 	return func(s *Server) error {
 		s.store = store
@@ -157,6 +174,7 @@ func (s *Server) Router() http.Handler {
 	s.mux.HandleFunc("GET /calendar.html", s.getCalendar)
 	s.mux.HandleFunc("GET /dashboard.html", s.getDashboard)
 	s.mux.HandleFunc("GET /login/{clan_id}/{magic_link}", s.getMagicLink)
+	s.mux.HandleFunc("GET /logout.html", s.getLogout)
 	s.mux.HandleFunc("GET /projects.html", s.getProjects)
 	s.mux.HandleFunc("GET /team.html", s.getTeam)
 	s.mux.HandleFunc("POST /api/login", s.postLogin)
@@ -197,19 +215,63 @@ func (s *Server) getDashboard(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
-	clanId, err := s.extractClaims(r)
+
+	user, err := s.extractSession(r)
 	if err != nil {
 		log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
-	} else if clanId == "" {
+	} else if user == nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
-	log.Printf("%s %s: clan %q\n", r.Method, r.URL.Path, clanId)
+	log.Printf("%s %s: clan %q\n", r.Method, r.URL.Path, user.Clan)
 
 	// serve the dashboard page
 	http.ServeFile(w, r, filepath.Join(s.paths.assets, "dashboard.html"))
+}
+
+func (s *Server) getLogout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+	started := time.Now()
+	log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
+	defer func() {
+		log.Printf("%s %s: exited (%v)\n", r.Method, r.URL.Path, time.Since(started))
+	}()
+
+	// delete any existing session on the client
+	http.SetCookie(w, &http.Cookie{
+		Name:   s.sessions.cookieName,
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+
+	// delete any active sessions on the server
+	user, err := s.extractSession(r)
+	if err != nil {
+		// no session cookie, so no session to delete
+		http.Redirect(w, r, "/index.html", http.StatusSeeOther)
+		return
+	} else if user == nil {
+		// this should never happen
+		log.Printf("%s %s: user is nil\n", r.Method, r.URL.Path)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	log.Printf("%s %s: clan %q\n", r.Method, r.URL.Path, user.Clan)
+	err = s.store.DeleteUserSessions(user.ID)
+	if err != nil {
+		log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	log.Printf("%s %s: deleted sessions for clan %q\n", r.Method, r.URL.Path, user.Clan)
+
+	http.Redirect(w, r, "/index.html", http.StatusSeeOther)
 }
 
 func (s *Server) getMagicLink(w http.ResponseWriter, r *http.Request) {
@@ -217,6 +279,11 @@ func (s *Server) getMagicLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 		return
 	}
+	started := time.Now()
+	log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
+	defer func() {
+		log.Printf("%s %s: exited (%v)\n", r.Method, r.URL.Path, time.Since(started))
+	}()
 
 	loggedIn := false
 
@@ -225,7 +292,7 @@ func (s *Server) getMagicLink(w http.ResponseWriter, r *http.Request) {
 			log.Printf("%s %s: purging cookies\n", r.Method, r.URL.Path)
 			// delete any existing session on the client
 			http.SetCookie(w, &http.Cookie{
-				Name:   s.jot.cookieName,
+				Name:   s.sessions.cookieName,
 				Value:  "",
 				Path:   "/",
 				MaxAge: -1,
@@ -250,7 +317,8 @@ func (s *Server) getMagicLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	log.Printf("%s %s: clan %q magic link %q\n", r.Method, r.URL.Path, input.clan, input.magicLink)
+	log.Printf("%s %s: clan       %q\n", r.Method, r.URL.Path, input.clan)
+	log.Printf("%s %s: magic link %q\n", r.Method, r.URL.Path, input.magicLink)
 
 	// check the magic link against the database
 	user, err := s.store.GetUserByMagicLink(input.clan, input.magicLink)
@@ -259,25 +327,29 @@ func (s *Server) getMagicLink(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
+	log.Printf("%s %s: user %d\n", r.Method, r.URL.Path, user.ID)
 	loggedIn = user.Roles.IsActive
 
 	// if the check fails, send them back to the login page
 	if !loggedIn {
-		http.Redirect(w, r, "/login.html?authentication=invalid_credentials", http.StatusSeeOther)
+		http.Redirect(w, r, "/login.html?invalid_credentials=true", http.StatusSeeOther)
 		return
 	}
 
-	//log.Printf("%s %s: %+v", r.Method, r.URL.Path, input)
-	//log.Printf("%s %s: %q", r.Method, r.URL.Path, tokenString)
-
-	var sessionId string
-	sessionId = uuid.New().String()
+	sessionId, err := s.store.CreateSession(user.ID, s.sessions.ttl)
+	if err != nil {
+		log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	log.Printf("%s %s: session id %q (%d)\n", r.Method, r.URL.Path, sessionId, s.sessions.maxAge)
+	log.Printf("%s %s: session id %q (%v)\n", r.Method, r.URL.Path, sessionId, s.sessions.ttl)
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     s.jot.cookieName,
+		Name:     s.sessions.cookieName,
 		Value:    sessionId,
 		Path:     "/",
-		MaxAge:   14 * 24 * 60 * 60, // TTL set to 2 weeks
+		MaxAge:   s.sessions.maxAge,
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
@@ -336,10 +408,10 @@ func (s *Server) postLogin(w http.ResponseWriter, r *http.Request) {
 
 	defer func() {
 		if !loggedIn {
+			// delete any existing session cookie on the client
 			log.Printf("%s %s: purging cookies\n", r.Method, r.URL.Path)
-			// delete any existing session on the client
 			http.SetCookie(w, &http.Cookie{
-				Name:   s.jot.cookieName,
+				Name:   s.sessions.cookieName,
 				Value:  "",
 				Path:   "/",
 				MaxAge: -1,
@@ -372,6 +444,7 @@ func (s *Server) postLogin(w http.ResponseWriter, r *http.Request) {
 		default:
 			// is it wrong of me to reject unknown parameters?
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
 		}
 	}
 	if input.password == "" || input.email == "" {
@@ -379,38 +452,11 @@ func (s *Server) postLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: check the password against the database
-	loggedIn = true
+	//// TODO: check the password against the database
+	//loggedIn = true
+	time.Sleep(time.Millisecond * 123)
 
-	// create a new JWT with the clanId in the claims
-	var claims struct {
-		ClanID string `json:"clan_id"`
-		jwt.RegisteredClaims
-	}
-	claims.IssuedAt = jwt.NewNumericDate(time.Now())
-	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(14 * 24 * time.Hour)) // TTL set to 2 weeks
-	claims.ClanID = "0138"
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(s.jot.signingKey)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	//log.Printf("%s %s: %+v", r.Method, r.URL.Path, input)
-	//log.Printf("%s %s: %q", r.Method, r.URL.Path, tokenString)
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     s.jot.cookieName,
-		Value:    tokenString,
-		Path:     "/",
-		MaxAge:   14 * 24 * 60 * 60, // TTL set to 2 weeks
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	})
-
-	http.Redirect(w, r, "/dashboard.html", http.StatusSeeOther)
+	http.Redirect(w, r, "/login.html?invalid_credentials=true", http.StatusSeeOther)
 }
 
 func (s *Server) postLogout(w http.ResponseWriter, r *http.Request) {
@@ -421,16 +467,31 @@ func (s *Server) postLogout(w http.ResponseWriter, r *http.Request) {
 
 	// delete any existing session on the client
 	http.SetCookie(w, &http.Cookie{
-		Name:   s.jot.cookieName,
+		Name:   s.sessions.cookieName,
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1,
 	})
 
-	w.Header().Add("HX-Redirect", "/index.html")
-	w.WriteHeader(http.StatusOK)
+	// delete any active sessions on the server
+	user, err := s.extractSession(r)
+	if err != nil {
+		// no session cookie, so no session to delete
+	} else if user == nil {
+		// this should never happen
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	log.Printf("%s %s: clan %q\n", r.Method, r.URL.Path, user.Clan)
+	err = s.store.DeleteUserSessions(user.ID)
+	if err != nil {
+		log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	log.Printf("%s %s: deleted sessions for clan %q\n", r.Method, r.URL.Path, user.Clan)
 
-	//http.Redirect(w, r, "/index.html", http.StatusSeeOther)
+	http.Redirect(w, r, "/index.html", http.StatusSeeOther)
 }
 
 // extractClaims examines the request for a token.
@@ -460,6 +521,24 @@ func (s *Server) extractClaims(r *http.Request) (string, error) {
 		return "", fmt.Errorf("invalid clanId")
 	}
 	return clanId, nil
+}
+
+// extractSession extracts the session from the request.
+// Returns nil if there is no session, or it is invalid.
+func (s *Server) extractSession(r *http.Request) (*domains.User_t, error) {
+	cookie, err := r.Cookie(s.sessions.cookieName)
+	if err != nil {
+		return nil, err
+	} else if len(cookie.Value) == 0 {
+		return nil, domains.ErrSessionCookieInvalid
+	}
+
+	user, err := s.store.GetSession(cookie.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 // extractToken extracts the JOT from the request. Returns an empty string if there is no token.

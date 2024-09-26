@@ -27,7 +27,7 @@ func (s *Store) CreateSession(clan, magicKey string) (domains.Session_t, error) 
 		return sess, err
 	}
 
-	sid := uuid.New().String()
+	sid := uuid.NewString()
 	err = s.queries.CreateSession(s.ctx, sqlc.CreateSessionParams{
 		ID:          sid,
 		Uid:         user.ID,
