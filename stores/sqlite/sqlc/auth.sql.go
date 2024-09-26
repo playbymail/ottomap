@@ -35,8 +35,8 @@ func (q *Queries) AuthenticateUser(ctx context.Context, arg AuthenticateUserPara
 
 const createUser = `-- name: CreateUser :one
 
-INSERT INTO users (email, timezone, is_active, is_user, hashed_password, clan, last_login)
-VALUES (?1, ?2, ?3, 1, ?4, ?5, ?6)
+INSERT INTO users (email, timezone, is_active, is_user, hashed_password, magic_link, clan, last_login)
+VALUES (?1, ?2, ?3, 1, ?4, ?5, ?6, ?7)
 RETURNING user_id
 `
 
@@ -45,6 +45,7 @@ type CreateUserParams struct {
 	Timezone       string
 	IsActive       int64
 	HashedPassword string
+	MagicLink      string
 	Clan           string
 	LastLogin      time.Time
 }
@@ -61,6 +62,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, 
 		arg.Timezone,
 		arg.IsActive,
 		arg.HashedPassword,
+		arg.MagicLink,
 		arg.Clan,
 		arg.LastLogin,
 	)
@@ -188,17 +190,22 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEm
 }
 
 const getUserHashedPassword = `-- name: GetUserHashedPassword :one
-SELECT hashed_password
+SELECT hashed_password, magic_link
 FROM users
 WHERE user_id = ?1
 `
 
-// GetUserHashedPassword returns the hashed password for user with the given id.
-func (q *Queries) GetUserHashedPassword(ctx context.Context, userID int64) (string, error) {
+type GetUserHashedPasswordRow struct {
+	HashedPassword string
+	MagicLink      string
+}
+
+// GetUserSecrets returns the hashed password and magic link for user with the given id.
+func (q *Queries) GetUserHashedPassword(ctx context.Context, userID int64) (GetUserHashedPasswordRow, error) {
 	row := q.db.QueryRowContext(ctx, getUserHashedPassword, userID)
-	var hashed_password string
-	err := row.Scan(&hashed_password)
-	return hashed_password, err
+	var i GetUserHashedPasswordRow
+	err := row.Scan(&i.HashedPassword, &i.MagicLink)
+	return i, err
 }
 
 const getUserRoles = `-- name: GetUserRoles :one
@@ -265,6 +272,24 @@ WHERE user_id = ?1
 // UpdateUserLastLogin updates the last login time for the given user.
 func (q *Queries) UpdateUserLastLogin(ctx context.Context, userID int64) error {
 	_, err := q.db.ExecContext(ctx, updateUserLastLogin, userID)
+	return err
+}
+
+const updateUserMagicLink = `-- name: UpdateUserMagicLink :exec
+UPDATE users
+SET magic_link = ?1,
+    updated_at = CURRENT_TIMESTAMP
+WHERE user_id = ?2
+`
+
+type UpdateUserMagicLinkParams struct {
+	MagicLink string
+	UserID    int64
+}
+
+// UpdateUserMagicLink updates the magic link and is_active flag for the given user.
+func (q *Queries) UpdateUserMagicLink(ctx context.Context, arg UpdateUserMagicLinkParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserMagicLink, arg.MagicLink, arg.UserID)
 	return err
 }
 

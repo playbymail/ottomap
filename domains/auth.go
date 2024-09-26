@@ -43,7 +43,8 @@ type User_t struct {
 	Email    string         // email address
 	Timezone *time.Location // timezone, e.g. "America/New_York", should default to UTC
 
-	HashedPassword string // hashed password, recommended to use bcrypt
+	HashedPassword string // bcrypt hashed password
+	MagicLink      string // magic link, recommended to avoid using this
 
 	Clan  string // clan number, always 4 digits
 	Roles struct {

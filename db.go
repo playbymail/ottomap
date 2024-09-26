@@ -223,6 +223,7 @@ var cmdDbCreateUser = &cobra.Command{
 		if err != nil {
 			log.Fatalf("db: create user: %v\n", err)
 		}
+		log.Printf("db: create user: magic  %q\n", user.MagicLink)
 
 		log.Printf("db: create user: user %d created\n", int(user.ID))
 	},

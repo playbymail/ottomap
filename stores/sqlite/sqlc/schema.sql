@@ -20,6 +20,7 @@ CREATE TABLE users
     -- columns for authentication
     is_active        INTEGER     NOT NULL DEFAULT 0,
     hashed_password  TEXT        NOT NULL,
+    magic_link       TEXT UNIQUE NOT NULL DEFAULT '',
 
     -- columns for authorization
     clan             TEXT UNIQUE NOT NULL,

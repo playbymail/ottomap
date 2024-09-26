@@ -6,8 +6,8 @@
 -- The password is stored as a bcrypt hash.
 --
 -- name: CreateUser :one
-INSERT INTO users (email, timezone, is_active, is_user, hashed_password, clan, last_login)
-VALUES (:email, :timezone, :is_active, 1, :hashed_password, :clan, :last_login)
+INSERT INTO users (email, timezone, is_active, is_user, hashed_password, magic_link, clan, last_login)
+VALUES (:email, :timezone, :is_active, 1, :hashed_password, :magic_link, :clan, :last_login)
 RETURNING user_id;
 
 
@@ -83,10 +83,10 @@ FROM users
 WHERE is_active = 1
   AND email = :email;
 
--- GetUserHashedPassword returns the hashed password for user with the given id.
+-- GetUserSecrets returns the hashed password and magic link for user with the given id.
 --
 -- name: GetUserHashedPassword :one
-SELECT hashed_password
+SELECT hashed_password, magic_link
 FROM users
 WHERE user_id = :user_id;
 
@@ -107,12 +107,19 @@ SET is_active        = :is_active,
     is_user          = :is_user
 WHERE users.user_id = :user_id;
 
-
 -- UpdateUserLastLogin updates the last login time for the given user.
 --
 -- name: UpdateUserLastLogin :exec
 UPDATE users
 SET last_login = CURRENT_TIMESTAMP
+WHERE user_id = :user_id;
+
+-- UpdateUserMagicLink updates the magic link and is_active flag for the given user.
+--
+-- name: UpdateUserMagicLink :exec
+UPDATE users
+SET magic_link = :magic_link,
+    updated_at = CURRENT_TIMESTAMP
 WHERE user_id = :user_id;
 
 -- UpdateUserPassword updates the password and is_active flag for the given user.

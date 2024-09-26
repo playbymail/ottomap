@@ -27,6 +27,7 @@ type User struct {
 	Timezone        string
 	IsActive        int64
 	HashedPassword  string
+	MagicLink       string
 	Clan            string
 	IsAdministrator int64
 	IsOperator      int64

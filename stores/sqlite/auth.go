@@ -3,6 +3,7 @@
 package sqlite
 
 import (
+	"github.com/google/uuid"
 	"github.com/playbymail/ottomap/domains"
 	"github.com/playbymail/ottomap/stores/sqlite/sqlc"
 	"golang.org/x/crypto/bcrypt"
@@ -20,19 +21,19 @@ import (
 // Like all functions, it assumes that the administrator has user_id of 1.
 func (db *DB) UpdateAdministrator(plainTextSecret string, isActive bool) error {
 	var err error
-	var hashedPassword string
+	var row sqlc.GetUserHashedPasswordRow
 	if plainTextSecret == "" {
-		hashedPassword, err = db.q.GetUserHashedPassword(db.ctx, 1)
+		row, err = db.q.GetUserHashedPassword(db.ctx, 1)
 	} else {
-		hashedPassword, err = HashPassword(plainTextSecret)
+		row.HashedPassword, err = HashPassword(plainTextSecret)
 		if err != nil {
 			return err
 		}
 	}
-	log.Printf("db: auth: updateAdministrator: password %q: hashed %q\n", plainTextSecret, hashedPassword)
+	log.Printf("db: auth: updateAdministrator: password %q: hashed %q\n", plainTextSecret, row.HashedPassword)
 	parms := sqlc.UpdateUserPasswordParams{
 		UserID:         1,
-		HashedPassword: hashedPassword,
+		HashedPassword: row.HashedPassword,
 	}
 	if isActive {
 		parms.IsActive = 1
@@ -54,6 +55,8 @@ func (db *DB) CreateUser(email, plainTextSecret, clan string, timezone *time.Loc
 	if err != nil {
 		return nil, err
 	}
+
+	magicLink := uuid.NewString()
 
 	// lookup the timezone. not sure that can fail, but if it does, default to UTC.
 	var tz string
@@ -77,6 +80,7 @@ func (db *DB) CreateUser(email, plainTextSecret, clan string, timezone *time.Loc
 	id, err := db.q.CreateUser(db.ctx, sqlc.CreateUserParams{
 		Email:          email,
 		HashedPassword: hashedPassword,
+		MagicLink:      magicLink,
 		IsActive:       1,
 		Clan:           clan,
 		Timezone:       tz,
@@ -95,6 +99,7 @@ func (db *DB) CreateUser(email, plainTextSecret, clan string, timezone *time.Loc
 		Email:          email,
 		Timezone:       timezone,
 		HashedPassword: hashedPassword,
+		MagicLink:      magicLink,
 		Clan:           clan,
 		Roles: struct {
 			IsActive        bool
