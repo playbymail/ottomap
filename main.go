@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 16, Patch: 15}
+	version = semver.Version{Major: 0, Minor: 16, Patch: 16}
 )
 
 func main() {
@@ -61,6 +61,13 @@ func Execute() error {
 		log.Fatalf("error: secret: %v\n", err)
 	}
 	cmdDbCreateUser.Flags().StringVarP(&argsDb.data.user.timezone, "timezone", "t", "UTC", "timezone for user")
+
+	cmdDb.AddCommand(cmdDbDelete)
+	cmdDbDelete.AddCommand(cmdDbDeleteUser)
+	cmdDbDeleteUser.Flags().StringVarP(&argsDb.data.user.clan, "clan-id", "c", "", "clan number for user")
+	if err := cmdDbCreateUser.MarkFlagRequired("clan-id"); err != nil {
+		log.Fatalf("error: clan-id: %v\n", err)
+	}
 
 	cmdDb.AddCommand(cmdDbUpdate)
 	cmdDbUpdate.Flags().BoolVar(&argsDb.secrets.useRandomSecret, "use-random-secret", false, "generate a new random secret for signing tokens")

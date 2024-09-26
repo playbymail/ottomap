@@ -85,6 +85,22 @@ func (q *Queries) DeleteUser(ctx context.Context, userID int64) error {
 	return err
 }
 
+const deleteUserByClan = `-- name: DeleteUserByClan :exec
+UPDATE users
+SET is_active       = 0,
+    hashed_password = 'deleted',
+    updated_at      = CURRENT_TIMESTAMP
+WHERE clan = ?1
+`
+
+// DeleteUserByClan updates the user with the given clan to inactive.
+// We do not delete the user because we want to keep the history of the user.
+// We also update the user's password and role to "deleted" to prevent them from logging in.
+func (q *Queries) DeleteUserByClan(ctx context.Context, clan string) error {
+	_, err := q.db.ExecContext(ctx, deleteUserByClan, clan)
+	return err
+}
+
 const deleteUserByEmail = `-- name: DeleteUserByEmail :exec
 UPDATE users
 SET is_active       = 0,

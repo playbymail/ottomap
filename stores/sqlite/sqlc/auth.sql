@@ -33,6 +33,18 @@ SET is_active       = 0,
     updated_at      = CURRENT_TIMESTAMP
 WHERE user_id = :user_id;
 
+-- DeleteUserByClan updates the user with the given clan to inactive.
+-- We do not delete the user because we want to keep the history of the user.
+-- We also update the user's password and role to "deleted" to prevent them from logging in.
+--
+-- name: DeleteUserByClan :exec
+UPDATE users
+SET is_active       = 0,
+    hashed_password = 'deleted',
+    updated_at      = CURRENT_TIMESTAMP
+WHERE clan = :clan;
+
+
 -- DeleteUserByEmail updates the user with the given email address to inactive.
 -- We do not delete the user because we want to keep the history of the user.
 -- We also update the user's password and role to "deleted" to prevent them from logging in.

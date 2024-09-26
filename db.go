@@ -228,6 +228,69 @@ var cmdDbCreateUser = &cobra.Command{
 	},
 }
 
+var cmdDbDelete = &cobra.Command{
+	Use:   "delete",
+	Short: "Delete data-base objects",
+}
+
+var cmdDbDeleteUser = &cobra.Command{
+	Use:   "user",
+	Short: "Delete a user",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if argsDb.paths.database == "" {
+			argsDb.paths.database = "."
+		}
+		if path, err := filepath.Abs(argsDb.paths.database); err != nil {
+			log.Fatalf("database: %v\n", err)
+		} else if ok, err := isdir(path); err != nil {
+			log.Fatalf("database: %v\n", err)
+		} else if !ok {
+			log.Fatalf("database: %s: not a directory\n", path)
+		} else {
+			argsDb.paths.database = filepath.Join(path, "htmxdata.db")
+		}
+
+		if len(argsDb.data.user.clan) != 4 {
+			log.Fatalf("clan: must be 4 digits between 1 and 999\n")
+		} else if n, err := strconv.Atoi(argsDb.data.user.clan); err != nil {
+			log.Fatalf("clan: must be 4 digits between 1 and 999\n")
+		} else if n < 1 || n > 999 {
+			log.Fatalf("clan: must be 4 digits between 1 and 999\n")
+		}
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		log.Printf("db: delete user: db     %s\n", argsDb.paths.database)
+		// if the database exists, we need to check if we are allowed to overwrite it
+		if ok, err := isfile(argsDb.paths.database); err != nil {
+			log.Fatalf("db: delete user: %v\n", err)
+		} else if !ok {
+			log.Fatalf("db: delete user: database not found\n")
+		}
+
+		// open the database.
+		log.Printf("db: delete user: opening database...\n")
+		db, err := sql.Open("sqlite", argsDb.paths.database)
+		if err != nil {
+			log.Fatalf("db: delete user: %v\n", err)
+		}
+		defer func() {
+			if db != nil {
+				_ = db.Close()
+			}
+		}()
+
+		store := sqlite.NewStore(db, context.Background())
+
+		log.Printf("db: delete user: clan   %q\n", argsDb.data.user.clan)
+
+		if err := store.DeleteUserByClan(argsDb.data.user.clan); err != nil {
+			log.Fatalf("db: delete user: %v\n", err)
+		}
+
+		log.Printf("db: delete user: user deleted\n")
+	},
+}
+
 var cmdDbUpdate = &cobra.Command{
 	Use:   "update",
 	Short: "Update database configuration",

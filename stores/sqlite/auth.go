@@ -111,6 +111,14 @@ func (db *DB) CreateUser(email, plainTextSecret, clan string, timezone *time.Loc
 	}, nil
 }
 
+func (db *DB) DeleteUserByClan(clan string) error {
+	if clanNo, err := strconv.Atoi(clan); err != nil || clanNo < 1 || clanNo > 999 {
+		return domains.ErrInvalidClan
+	}
+
+	return db.q.DeleteUserByClan(db.ctx, clan)
+}
+
 func (db *DB) AuthenticateUser(email, plainTextPassword string) (domains.ID, error) {
 	if strings.TrimSpace(email) != email {
 		return 0, domains.ErrInvalidEmail
