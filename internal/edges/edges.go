@@ -12,6 +12,7 @@ type Edge_e int
 
 const (
 	None Edge_e = iota
+	Canal
 	Ford
 	Pass
 	River
@@ -47,6 +48,7 @@ var (
 	// EnumToString is a helper map for marshalling the enum
 	EnumToString = map[Edge_e]string{
 		None:      "",
+		Canal:     "Canal",
 		Ford:      "Ford",
 		Pass:      "Pass",
 		River:     "River",
@@ -55,6 +57,7 @@ var (
 	// StringToEnum is a helper map for unmarshalling the enum
 	StringToEnum = map[string]Edge_e{
 		"":           None,
+		"Canal":      Canal,
 		"Ford":       Ford,
 		"Pass":       Pass,
 		"River":      River,

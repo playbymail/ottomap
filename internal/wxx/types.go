@@ -65,6 +65,7 @@ func (t *Tile) addNumbers() {
 // Features are things to display on the map
 type Features struct {
 	Edges struct {
+		Canal     []direction.Direction_e
 		Ford      []direction.Direction_e
 		Pass      []direction.Direction_e
 		River     []direction.Direction_e

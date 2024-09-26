@@ -78,7 +78,9 @@ DeckObservation <- d:DIRECTION SP t:TERRAIN_CODE {
     }, nil
 }
 
-EdgeType <- "Ford" {
+EdgeType <- "Canal" {
+    return edges.Canal, nil
+} / "Ford" {
     return edges.Ford, nil
 } / "Pass" {
     return edges.Pass, nil
@@ -142,7 +144,9 @@ Longhouse <- szi:(DIGIT+) SP+ "Longhouse" SP+ idi:(LETTER DIGIT+) {
     return lh, nil
 }
 
-ObviousNeighboringTerrainCode <- "HSM"i {
+ObviousNeighboringTerrainCode <- "ALPS"i {
+    return terrain.Alps, nil
+} / "HSM"i {
     return terrain.HighSnowyMountains, nil
 } / "LCM"i {
     return terrain.LowConiferMountains, nil
@@ -691,7 +695,7 @@ TERRAIN <- "ALPS" {
     return terrain.Tundra, nil
 }
 
-TERRAIN_CODE <- "ALPS" {    return terrain.Alps, nil
+TERRAIN_CODE <- "ALPS" { return terrain.Alps, nil
 } / "GHP" { return terrain.GrassyHillsPlateau, nil
 } / "HSM" { return terrain.HighSnowyMountains, nil
 } / "LAM" { return terrain.LowAridMountains, nil

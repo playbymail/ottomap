@@ -90,6 +90,8 @@ func MapWorld(allTiles *tiles.Map_t, clan parser.UnitId_t, cfg MapConfig, option
 			for _, edge := range t.Edges[d] {
 				switch edge {
 				case edges.None:
+				case edges.Canal:
+					hex.Features.Edges.Canal = append(hex.Features.Edges.Canal, d)
 				case edges.Ford:
 					hex.Features.Edges.Ford = append(hex.Features.Edges.Ford, d)
 				case edges.Pass:
