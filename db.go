@@ -4,11 +4,9 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"github.com/playbymail/ottomap/stores/sqlite"
 	"github.com/spf13/cobra"
 	"log"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -48,19 +46,6 @@ var cmdDbInit = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize the database",
 	PreRun: func(cmd *cobra.Command, args []string) {
-		if argsDb.paths.database == "" {
-			argsDb.paths.database = "."
-		}
-		if path, err := filepath.Abs(argsDb.paths.database); err != nil {
-			log.Fatalf("database: %v\n", err)
-		} else if ok, err := isdir(path); err != nil {
-			log.Fatalf("database: %v\n", err)
-		} else if !ok {
-			log.Fatalf("database: %s: not a directory\n", path)
-		} else {
-			argsDb.paths.database = filepath.Join(path, "htmxdata.db")
-		}
-
 		if argsDb.paths.assets == "" {
 			argsDb.paths.assets = "assets"
 		}
@@ -87,6 +72,19 @@ var cmdDbInit = &cobra.Command{
 			argsDb.paths.data = path
 		}
 
+		if argsDb.paths.database == "" {
+			argsDb.paths.database = "."
+		}
+		if path, err := filepath.Abs(argsDb.paths.database); err != nil {
+			log.Fatalf("database: %v\n", err)
+		} else if ok, err := isdir(path); err != nil {
+			log.Fatalf("database: %v\n", err)
+		} else if !ok {
+			log.Fatalf("database: %s: not a directory\n", path)
+		} else {
+			argsDb.paths.database = path
+		}
+
 		if argsDb.paths.templates == "" {
 			argsDb.paths.templates = "templates"
 		}
@@ -109,31 +107,15 @@ var cmdDbInit = &cobra.Command{
 			log.Printf("db: init: admin password %q\n", argsDb.secrets.admin)
 		}
 
-		// if the database exists, we need to check if we are allowed to overwrite it
-		if ok, err := isfile(argsDb.paths.database); err != nil {
-			log.Fatalf("db: init: %v\n", err)
-		} else if ok {
-			if !argsDb.force {
-				log.Fatalf("db: init: database %s: already exists\n", argsDb.paths.database)
-			} else if err := os.Remove(argsDb.paths.database); err != nil {
-				log.Fatalf("db: init: %v\n", err)
-			}
-			log.Printf("db: init: database %s: removed\n", argsDb.paths.database)
-		}
-
-		// create the database.
-		log.Printf("db: init: creating database...\n")
-		db, err := sql.Open("sqlite", argsDb.paths.database)
+		// create the database
+		log.Printf("db: init: creating database in %s\n", argsDb.paths.database)
+		store, err := sqlite.CreateStore(argsDb.paths.database, argsDb.force, context.Background())
 		if err != nil {
 			log.Fatalf("db: init: %v\n", err)
 		}
 		defer func() {
-			if db != nil {
-				_ = db.Close()
-			}
+			_ = store.Close()
 		}()
-
-		store := sqlite.NewStore(db, context.Background())
 
 		log.Printf("db: init: creating schema...\n")
 		if err := store.CreateSchema(argsDb.secrets.admin, argsDb.paths.assets, argsDb.paths.templates, argsDb.secrets.salt); err != nil {
@@ -163,7 +145,7 @@ var cmdDbCreateUser = &cobra.Command{
 		} else if !ok {
 			log.Fatalf("database: %s: not a directory\n", path)
 		} else {
-			argsDb.paths.database = filepath.Join(path, "htmxdata.db")
+			argsDb.paths.database = path
 		}
 
 		if len(argsDb.data.user.clan) != 4 {
@@ -186,27 +168,15 @@ var cmdDbCreateUser = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Printf("db: create user: db     %s\n", argsDb.paths.database)
-		// if the database exists, we need to check if we are allowed to overwrite it
-		if ok, err := isfile(argsDb.paths.database); err != nil {
-			log.Fatalf("db: create user: %v\n", err)
-		} else if !ok {
-			log.Fatalf("db: create user: database not found\n")
-		}
-
-		// open the database.
-		log.Printf("db: create user: opening database...\n")
-		db, err := sql.Open("sqlite", argsDb.paths.database)
+		// open the database
+		log.Printf("db: create user: opening database%s\n", argsDb.paths.database)
+		store, err := sqlite.OpenStore(argsDb.paths.database, context.Background())
 		if err != nil {
 			log.Fatalf("db: create user: %v\n", err)
 		}
 		defer func() {
-			if db != nil {
-				_ = db.Close()
-			}
+			_ = store.Close()
 		}()
-
-		store := sqlite.NewStore(db, context.Background())
 
 		log.Printf("db: create user: clan   %q\n", argsDb.data.user.clan)
 		log.Printf("db: create user: email  %q\n", argsDb.data.user.email)
@@ -248,7 +218,7 @@ var cmdDbDeleteUser = &cobra.Command{
 		} else if !ok {
 			log.Fatalf("database: %s: not a directory\n", path)
 		} else {
-			argsDb.paths.database = filepath.Join(path, "htmxdata.db")
+			argsDb.paths.database = path
 		}
 
 		if len(argsDb.data.user.clan) != 4 {
@@ -260,27 +230,15 @@ var cmdDbDeleteUser = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Printf("db: delete user: db     %s\n", argsDb.paths.database)
-		// if the database exists, we need to check if we are allowed to overwrite it
-		if ok, err := isfile(argsDb.paths.database); err != nil {
-			log.Fatalf("db: delete user: %v\n", err)
-		} else if !ok {
-			log.Fatalf("db: delete user: database not found\n")
-		}
-
-		// open the database.
-		log.Printf("db: delete user: opening database...\n")
-		db, err := sql.Open("sqlite", argsDb.paths.database)
+		// open the database
+		log.Printf("db: delete user: opening database%s\n", argsDb.paths.database)
+		store, err := sqlite.OpenStore(argsDb.paths.database, context.Background())
 		if err != nil {
 			log.Fatalf("db: delete user: %v\n", err)
 		}
 		defer func() {
-			if db != nil {
-				_ = db.Close()
-			}
+			_ = store.Close()
 		}()
-
-		store := sqlite.NewStore(db, context.Background())
 
 		log.Printf("db: delete user: clan   %q\n", argsDb.data.user.clan)
 

@@ -74,6 +74,27 @@ FROM users
 WHERE is_active = 1
   AND user_id = :user_id;
 
+-- GetUserByClanAndMagicLink returns the user with the given clan and magic link.
+-- Fails if the user is not active or is an administrator.
+--
+-- name: GetUserByClanAndMagicLink :one
+SELECT user_id,
+       email,
+       timezone,
+       is_active,
+       is_administrator,
+       is_operator,
+       is_user,
+       clan,
+       created_at,
+       updated_at,
+       last_login
+FROM users
+WHERE is_active = 1
+  AND is_administrator = 0
+  AND clan = :clan_id
+  AND magic_link = :magic_link;
+
 -- GetUserByEmail returns the user id and hashed password for the given email address.
 -- Fails if the user is not active.
 --

@@ -168,6 +168,65 @@ func (q *Queries) GetUser(ctx context.Context, userID int64) (GetUserRow, error)
 	return i, err
 }
 
+const getUserByClanAndMagicLink = `-- name: GetUserByClanAndMagicLink :one
+SELECT user_id,
+       email,
+       timezone,
+       is_active,
+       is_administrator,
+       is_operator,
+       is_user,
+       clan,
+       created_at,
+       updated_at,
+       last_login
+FROM users
+WHERE is_active = 1
+  AND is_administrator = 0
+  AND clan = ?1
+  AND magic_link = ?2
+`
+
+type GetUserByClanAndMagicLinkParams struct {
+	ClanID    string
+	MagicLink string
+}
+
+type GetUserByClanAndMagicLinkRow struct {
+	UserID          int64
+	Email           string
+	Timezone        string
+	IsActive        int64
+	IsAdministrator int64
+	IsOperator      int64
+	IsUser          int64
+	Clan            string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	LastLogin       time.Time
+}
+
+// GetUserByClanAndMagicLink returns the user with the given clan and magic link.
+// Fails if the user is not active or is an administrator.
+func (q *Queries) GetUserByClanAndMagicLink(ctx context.Context, arg GetUserByClanAndMagicLinkParams) (GetUserByClanAndMagicLinkRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserByClanAndMagicLink, arg.ClanID, arg.MagicLink)
+	var i GetUserByClanAndMagicLinkRow
+	err := row.Scan(
+		&i.UserID,
+		&i.Email,
+		&i.Timezone,
+		&i.IsActive,
+		&i.IsAdministrator,
+		&i.IsOperator,
+		&i.IsUser,
+		&i.Clan,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastLogin,
+	)
+	return i, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT user_id, hashed_password
 FROM users

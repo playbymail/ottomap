@@ -176,6 +176,49 @@ func (db *DB) GetUser(userID domains.ID) (*domains.User_t, error) {
 	}, nil
 }
 
+func (db *DB) GetUserByMagicLink(clan, magicLink string) (*domains.User_t, error) {
+	if len(clan) == 0 || clan == "0000" {
+		return nil, domains.ErrUnauthorized
+	} else if magicLink == "" {
+		return nil, domains.ErrUnauthorized
+	}
+
+	row, err := db.q.GetUserByClanAndMagicLink(db.ctx, sqlc.GetUserByClanAndMagicLinkParams{
+		ClanID:    clan,
+		MagicLink: magicLink,
+	})
+	if err != nil {
+		return nil, err
+	}
+	// convert row.Timezone to a time.Location
+	loc, err := time.LoadLocation(row.Timezone)
+	if err != nil {
+		return nil, err
+	}
+
+	return &domains.User_t{
+		ID:       domains.ID(row.UserID),
+		Email:    row.Email,
+		Timezone: loc,
+		Clan:     row.Clan,
+		Roles: struct {
+			IsActive        bool
+			IsAdministrator bool
+			IsAuthenticated bool
+			IsOperator      bool
+			IsUser          bool
+		}{
+			IsActive:        row.IsActive == 1,
+			IsAdministrator: row.IsAdministrator == 1,
+			IsOperator:      row.IsOperator == 1,
+			IsUser:          row.IsUser == 1,
+		},
+		Created:   row.CreatedAt,
+		Updated:   row.UpdatedAt,
+		LastLogin: row.LastLogin,
+	}, nil
+}
+
 //type User struct {
 //	ID       int
 //	Username string

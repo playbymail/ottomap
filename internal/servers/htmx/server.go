@@ -6,11 +6,14 @@ import (
 	//_ "embed"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"github.com/playbymail/ottomap/stores/sqlite"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -28,6 +31,7 @@ type Server struct {
 	scheme, host, port string
 	mux                *http.ServeMux
 	router             http.Handler
+	store              *sqlite.DB
 	//assets             fs.FS
 	//templates          fs.FS
 	paths struct {
@@ -117,6 +121,13 @@ func WithPort(port string) Option {
 	}
 }
 
+func WithStore(store *sqlite.DB) Option {
+	return func(s *Server) error {
+		s.store = store
+		return nil
+	}
+}
+
 func WithTemplates(path string) Option {
 	return func(s *Server) error {
 		if sb, err := os.Stat(path); err != nil {
@@ -145,6 +156,7 @@ func (s *Server) Router() http.Handler {
 
 	s.mux.HandleFunc("GET /calendar.html", s.getCalendar)
 	s.mux.HandleFunc("GET /dashboard.html", s.getDashboard)
+	s.mux.HandleFunc("GET /login/{clan_id}/{magic_link}", s.getMagicLink)
 	s.mux.HandleFunc("GET /projects.html", s.getProjects)
 	s.mux.HandleFunc("GET /team.html", s.getTeam)
 	s.mux.HandleFunc("POST /api/login", s.postLogin)
@@ -198,6 +210,80 @@ func (s *Server) getDashboard(w http.ResponseWriter, r *http.Request) {
 
 	// serve the dashboard page
 	http.ServeFile(w, r, filepath.Join(s.paths.assets, "dashboard.html"))
+}
+
+func (s *Server) getMagicLink(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	loggedIn := false
+
+	defer func() {
+		if !loggedIn {
+			log.Printf("%s %s: purging cookies\n", r.Method, r.URL.Path)
+			// delete any existing session on the client
+			http.SetCookie(w, &http.Cookie{
+				Name:   s.jot.cookieName,
+				Value:  "",
+				Path:   "/",
+				MaxAge: -1,
+			})
+		}
+	}()
+
+	input := struct {
+		clan      string
+		magicLink string
+	}{
+		clan:      r.PathValue("clan_id"),
+		magicLink: r.PathValue("magic_link"),
+	}
+	if input.clan == "" || input.magicLink == "" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	} else if n, err := strconv.Atoi(input.clan); err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	} else if n < 1 || n > 999 {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	log.Printf("%s %s: clan %q magic link %q\n", r.Method, r.URL.Path, input.clan, input.magicLink)
+
+	// check the magic link against the database
+	user, err := s.store.GetUserByMagicLink(input.clan, input.magicLink)
+	if err != nil {
+		log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+	loggedIn = user.Roles.IsActive
+
+	// if the check fails, send them back to the login page
+	if !loggedIn {
+		http.Redirect(w, r, "/login.html?authentication=invalid_credentials", http.StatusSeeOther)
+		return
+	}
+
+	//log.Printf("%s %s: %+v", r.Method, r.URL.Path, input)
+	//log.Printf("%s %s: %q", r.Method, r.URL.Path, tokenString)
+
+	var sessionId string
+	sessionId = uuid.New().String()
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     s.jot.cookieName,
+		Value:    sessionId,
+		Path:     "/",
+		MaxAge:   14 * 24 * 60 * 60, // TTL set to 2 weeks
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	http.Redirect(w, r, "/dashboard.html", http.StatusSeeOther)
 }
 
 func (s *Server) getProjects(w http.ResponseWriter, r *http.Request) {

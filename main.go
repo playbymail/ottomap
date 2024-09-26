@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 16, Patch: 18}
+	version = semver.Version{Major: 0, Minor: 16, Patch: 19}
 )
 
 func main() {
@@ -112,6 +112,7 @@ func Execute() error {
 	cmdServe.AddCommand(cmdServeHtmx)
 	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.paths.assets, "assets", "assets", "path to public assets")
 	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.paths.data, "data", "userdata", "path to root of user data files")
+	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.paths.database, "database", "userdata", "path to folder containing database files")
 	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.paths.templates, "templates", "templates", "path to template files")
 	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.server.host, "host", "localhost", "host to serve on")
 	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.server.port, "port", "29631", "port to bind to")

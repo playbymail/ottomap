@@ -4,16 +4,15 @@ package rest
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"github.com/playbymail/ottomap/stores/sqlite"
 )
 
 type App struct {
 	db struct {
-		path string
-		ctx  context.Context
-		db   *sqlite.DB
+		path  string
+		ctx   context.Context
+		store *sqlite.DB
 	}
 }
 
@@ -30,19 +29,14 @@ func New(options ...Option) (*App, error) {
 		return nil, fmt.Errorf("missing database path")
 	} else if a.db.ctx == nil {
 		return nil, fmt.Errorf("missing database context")
-	} else if db, err := sql.Open("sqlite", a.db.path); err != nil {
+	} else if store, err := sqlite.OpenStore(a.db.path, a.db.ctx); err != nil {
 		return nil, err
 	} else {
-		a.db.db = sqlite.NewStore(db, a.db.ctx)
+		a.db.store = store
 	}
-
-	//// always create (or update) an operator with a random secret
-	//operatorSecret := uuid.NewString()
-	//if err := a.db.db.CreateOperator(operatorSecret); err != nil {
-	//	return nil, err
-	//}
-	//log.Printf("store: operator: %q", "operator")
-	//log.Printf("store: secret::: %q", operatorSecret)
+	defer func() {
+		_ = a.db.store.Close()
+	}()
 
 	return a, nil
 }
