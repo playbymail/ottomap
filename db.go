@@ -10,6 +10,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 )
 
 var argsDb struct {
@@ -25,6 +28,14 @@ var argsDb struct {
 		admin           string // plain text password for admin user
 		salt            string // salt for nothing (unused)
 		signing         string // secret for signing tokens
+	}
+	data struct {
+		user struct {
+			clan     string // clan number
+			email    string // email address for user
+			secret   string // secret to use for user
+			timezone string // timezone for user
+		}
 	}
 }
 
@@ -130,6 +141,90 @@ var cmdDbInit = &cobra.Command{
 		}
 
 		log.Printf("db: created %q\n", argsDb.paths.database)
+	},
+}
+
+var cmdDbCreate = &cobra.Command{
+	Use:   "create",
+	Short: "Create data-base objects",
+}
+
+var cmdDbCreateUser = &cobra.Command{
+	Use:   "user",
+	Short: "Create a new user",
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if argsDb.paths.database == "" {
+			argsDb.paths.database = "."
+		}
+		if path, err := filepath.Abs(argsDb.paths.database); err != nil {
+			log.Fatalf("database: %v\n", err)
+		} else if ok, err := isdir(path); err != nil {
+			log.Fatalf("database: %v\n", err)
+		} else if !ok {
+			log.Fatalf("database: %s: not a directory\n", path)
+		} else {
+			argsDb.paths.database = filepath.Join(path, "htmxdata.db")
+		}
+
+		if len(argsDb.data.user.clan) != 4 {
+			log.Fatalf("db: create user: clan must be 4 digits between 1 and 999\n")
+		} else if n, err := strconv.Atoi(argsDb.data.user.clan); err != nil {
+			log.Fatalf("db: create user: clan must be 4 digits between 1 and 999\n")
+		} else if n < 1 || n > 999 {
+			log.Fatalf("db: create user: clan must be 4 digits between 1 and 999\n")
+		}
+		if argsDb.data.user.email != strings.TrimSpace(argsDb.data.user.email) {
+			log.Fatalf("db: create user: email must not contain leading or trailing spaces\n")
+		}
+		if len(argsDb.data.user.secret) < 4 {
+			log.Fatalf("db: create user: secret must be at least 4 characters\n")
+		}
+		if argsDb.data.user.timezone == "" {
+			argsDb.data.user.timezone = "UTC"
+		} else if argsDb.data.user.timezone != strings.TrimSpace(argsDb.data.user.timezone) {
+			log.Fatalf("db: create user: timezone must not contain leading or trailing spaces\n")
+		}
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		log.Printf("db: create user: db     %s\n", argsDb.paths.database)
+		// if the database exists, we need to check if we are allowed to overwrite it
+		if ok, err := isfile(argsDb.paths.database); err != nil {
+			log.Fatalf("db: create user: %v\n", err)
+		} else if !ok {
+			log.Fatalf("db: create user: database not found\n")
+		}
+
+		// open the database.
+		log.Printf("db: create user: opening database...\n")
+		db, err := sql.Open("sqlite", argsDb.paths.database)
+		if err != nil {
+			log.Fatalf("db: create user: %v\n", err)
+		}
+		defer func() {
+			if db != nil {
+				_ = db.Close()
+			}
+		}()
+
+		store := sqlite.NewStore(db, context.Background())
+
+		log.Printf("db: create user: clan   %q\n", argsDb.data.user.clan)
+		log.Printf("db: create user: email  %q\n", argsDb.data.user.email)
+		log.Printf("db: create user: secret %q\n", argsDb.data.user.secret)
+
+		// validate the timezone
+		log.Printf("db: create user: tz     %q\n", argsDb.data.user.timezone)
+		loc, err := time.LoadLocation(argsDb.data.user.timezone)
+		if err != nil {
+			log.Fatalf("db: create user: timezone: %v\n", err)
+		}
+
+		user, err := store.CreateUser(argsDb.data.user.email, argsDb.data.user.secret, argsDb.data.user.clan, loc)
+		if err != nil {
+			log.Fatalf("db: create user: %v\n", err)
+		}
+
+		log.Printf("db: create user: user %d created\n", int(user.ID))
 	},
 }
 

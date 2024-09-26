@@ -57,10 +57,6 @@ CREATE TABLE server
 INSERT INTO users (user_id, email, is_active, is_administrator, is_user, hashed_password, clan, last_login)
 VALUES (1, 'admin@ottomap', 1, 1, 0, '*', '0000', CURRENT_TIMESTAMP);
 
--- create clan 0138 user
-INSERT INTO users (email, is_active, hashed_password, clan, last_login)
-VALUES ('0138@ottomap', 0, '*', '0138', CURRENT_TIMESTAMP);
-
 -- initialize the server metadata and salt
 INSERT INTO server (assets_path, templates_path, salt)
 VALUES ('assets', 'templates', lower(hex(randomblob(16))));

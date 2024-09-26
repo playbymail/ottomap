@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 16, Patch: 14}
+	version = semver.Version{Major: 0, Minor: 16, Patch: 15}
 )
 
 func main() {
@@ -45,6 +45,22 @@ func Execute() error {
 	cmdDbInit.Flags().StringVarP(&argsDb.paths.data, "data", "d", "", "path to the data files directory")
 	cmdDbInit.Flags().StringVarP(&argsDb.paths.templates, "templates", "t", "", "path to the templates directory")
 	cmdDbInit.Flags().StringVarP(&argsDb.secrets.signing, "secret", "s", "", "new secret for signing tokens")
+
+	cmdDb.AddCommand(cmdDbCreate)
+	cmdDbCreate.AddCommand(cmdDbCreateUser)
+	cmdDbCreateUser.Flags().StringVarP(&argsDb.data.user.clan, "clan-id", "c", "", "clan number for user")
+	if err := cmdDbCreateUser.MarkFlagRequired("clan-id"); err != nil {
+		log.Fatalf("error: clan-id: %v\n", err)
+	}
+	cmdDbCreateUser.Flags().StringVarP(&argsDb.data.user.email, "email", "e", "", "email for user")
+	if err := cmdDbCreateUser.MarkFlagRequired("email"); err != nil {
+		log.Fatalf("error: email: %v\n", err)
+	}
+	cmdDbCreateUser.Flags().StringVarP(&argsDb.data.user.secret, "secret", "s", "", "secret for user")
+	if err := cmdDbCreateUser.MarkFlagRequired("secret"); err != nil {
+		log.Fatalf("error: secret: %v\n", err)
+	}
+	cmdDbCreateUser.Flags().StringVarP(&argsDb.data.user.timezone, "timezone", "t", "UTC", "timezone for user")
 
 	cmdDb.AddCommand(cmdDbUpdate)
 	cmdDbUpdate.Flags().BoolVar(&argsDb.secrets.useRandomSecret, "use-random-secret", false, "generate a new random secret for signing tokens")
