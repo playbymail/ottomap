@@ -1,3 +1,5 @@
+--  Copyright (c) 2024 Michael D Henderson. All rights reserved.
+
 -- CreateUser creates a new user and returns its id.
 -- The email must be lowercase and unique.
 -- Timezone is the user's timezone. Use UTC if unknown.

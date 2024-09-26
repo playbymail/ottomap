@@ -23,6 +23,7 @@ var argsDb struct {
 	secrets struct {
 		useRandomSecret bool   // if true, generate a random secret for signing tokens
 		admin           string // plain text password for admin user
+		salt            string // salt for nothing (unused)
 		signing         string // secret for signing tokens
 	}
 }
@@ -124,7 +125,7 @@ var cmdDbInit = &cobra.Command{
 		store := sqlite.NewStore(db, context.Background())
 
 		log.Printf("db: init: creating schema...\n")
-		if err := store.CreateSchema(argsDb.secrets.admin, argsDb.paths.assets, argsDb.paths.templates); err != nil {
+		if err := store.CreateSchema(argsDb.secrets.admin, argsDb.paths.assets, argsDb.paths.templates, argsDb.secrets.salt); err != nil {
 			log.Fatalf("db: init: %v\n", err)
 		}
 

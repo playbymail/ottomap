@@ -34,6 +34,7 @@ func (q *Queries) AuthenticateUser(ctx context.Context, arg AuthenticateUserPara
 }
 
 const createUser = `-- name: CreateUser :one
+
 INSERT INTO users (email, timezone, is_active, is_user, hashed_password, clan, last_login)
 VALUES (?1, ?2, ?3, 1, ?4, ?5, ?6)
 RETURNING user_id
@@ -48,6 +49,8 @@ type CreateUserParams struct {
 	LastLogin      time.Time
 }
 
+//	Copyright (c) 2024 Michael D Henderson. All rights reserved.
+//
 // CreateUser creates a new user and returns its id.
 // The email must be lowercase and unique.
 // Timezone is the user's timezone. Use UTC if unknown.

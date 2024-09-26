@@ -7,6 +7,7 @@ package sqlite
 import (
 	_ "embed"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/playbymail/ottomap/domains"
 	"log"
 )
@@ -16,7 +17,7 @@ var (
 	schemaDDL string
 )
 
-func (db *DB) CreateSchema(adminPassword, assets, templates string) error {
+func (db *DB) CreateSchema(adminPassword, assets, templates, salt string) error {
 	// we have to assume that the database already exists
 
 	// confirm that the database has foreign keys enabled
@@ -45,6 +46,30 @@ func (db *DB) CreateSchema(adminPassword, assets, templates string) error {
 		}
 		log.Printf("[sqldb] admin user updated\n")
 	}
+
+	if err := db.SetServerAssetsPaths(assets); err != nil {
+		log.Printf("[sqldb] failed to set assets path\n")
+		log.Printf("[sqldb] %v\n", err)
+		return err
+	}
+	log.Printf("[sqldb] added assets %q\n", assets)
+
+	if err := db.SetServerTemplatesPaths(templates); err != nil {
+		log.Printf("[sqldb] failed to set templates path\n")
+		log.Printf("[sqldb] %v\n", err)
+		return err
+	}
+	log.Printf("[sqldb] added templates %q\n", templates)
+
+	if salt == "" {
+		salt = uuid.NewString()
+	}
+	if err := db.SetServerSalt(salt); err != nil {
+		log.Printf("[sqldb] failed to set salt\n")
+		log.Printf("[sqldb] %v\n", err)
+		return err
+	}
+	log.Printf("[sqldb] added salt\n")
 
 	return nil
 }
