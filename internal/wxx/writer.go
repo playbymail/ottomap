@@ -20,7 +20,8 @@ import (
 )
 
 type RenderConfig struct {
-	Show struct {
+	FordsAsPills bool // if true, draw ford icons as pills
+	Show         struct {
 		Grid struct {
 			Centers bool
 			Coords  bool
@@ -493,50 +494,55 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				canalEdges[dir] = true
 			}
 			fordEdges := map[direction.Direction_e]bool{}
-			for _, dir := range t.Features.Edges.Ford {
-				fordEdges[dir] = true
+			// populate the map only if we're not drawing the ford as a pill
+			if !cfg.FordsAsPills {
+				for _, dir := range t.Features.Edges.Ford {
+					fordEdges[dir] = true
+				}
 			}
 
 			var from, to Point
 
-			for _, dir := range t.Features.Edges.Ford {
-				// log.Printf("ford %s %s", t.Location.GridString(), dir)
-				// if we have a ford, we need to draw part of a river or canal
-				fordData := riverData
-				if canalEdges[dir] {
-					fordData = canalData
+			if !cfg.FordsAsPills {
+				for _, dir := range t.Features.Edges.Ford {
+					// log.Printf("ford %s %s", t.Location.GridString(), dir)
+					// if we have a ford, we need to draw part of a river or canal
+					fordData := riverData
+					if canalEdges[dir] {
+						fordData = canalData
+					}
+
+					switch dir {
+					case direction.North:
+						from, to = points[2], points[3]
+					case direction.NorthEast:
+						from, to = points[3], points[4]
+					case direction.SouthEast:
+						from, to = points[4], points[5]
+					case direction.South:
+						from, to = points[5], points[6]
+					case direction.SouthWest:
+						from, to = points[6], points[1]
+					case direction.NorthWest:
+						from, to = points[1], points[2]
+					default:
+						panic(fmt.Sprintf("assert(direction != %d)", dir))
+					}
+
+					ford := edgeCenter(dir, points)
+					midpointFrom := midpoint(from, ford)
+					midpointTo := midpoint(to, ford)
+
+					w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, fordData.R, fordData.G, fordData.B, fordData.Width)
+					w.Printf(` <p type="m" x="%f" y="%f"/>`, from.X, from.Y)
+					w.Printf(` <p x="%f" y="%f"/>`, midpointFrom.X, midpointFrom.Y)
+					w.Println(`</shape>`)
+
+					w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, fordData.R, fordData.G, fordData.B, fordData.Width)
+					w.Printf(` <p type="m" x="%f" y="%f"/>`, midpointTo.X, midpointTo.Y)
+					w.Printf(` <p x="%f" y="%f"/>`, to.X, to.Y)
+					w.Println(`</shape>`)
 				}
-
-				switch dir {
-				case direction.North:
-					from, to = points[2], points[3]
-				case direction.NorthEast:
-					from, to = points[3], points[4]
-				case direction.SouthEast:
-					from, to = points[4], points[5]
-				case direction.South:
-					from, to = points[5], points[6]
-				case direction.SouthWest:
-					from, to = points[6], points[1]
-				case direction.NorthWest:
-					from, to = points[1], points[2]
-				default:
-					panic(fmt.Sprintf("assert(direction != %d)", dir))
-				}
-
-				ford := edgeCenter(dir, points)
-				midpointFrom := midpoint(from, ford)
-				midpointTo := midpoint(to, ford)
-
-				w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, fordData.R, fordData.G, fordData.B, fordData.Width)
-				w.Printf(` <p type="m" x="%f" y="%f"/>`, from.X, from.Y)
-				w.Printf(` <p x="%f" y="%f"/>`, midpointFrom.X, midpointFrom.Y)
-				w.Println(`</shape>`)
-
-				w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, fordData.R, fordData.G, fordData.B, fordData.Width)
-				w.Printf(` <p type="m" x="%f" y="%f"/>`, midpointTo.X, midpointTo.Y)
-				w.Printf(` <p x="%f" y="%f"/>`, to.X, to.Y)
-				w.Println(`</shape>`)
 			}
 
 			for _, dir := range t.Features.Edges.Canal {
@@ -622,6 +628,29 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				w.Printf(` <p type="m" x="%f" y="%f"/>`, segmentStart.X, segmentStart.Y)
 				w.Printf(` <p x="%f" y="%f"/>`, segmentEnd.X, segmentEnd.Y)
 				w.Println(`</shape>`)
+			}
+
+			if cfg.FordsAsPills {
+				fordPillData := struct {
+					R, G, B, Width float64
+				}{
+					R: 0.0, G: 0.0, B: 0.0, Width: 0.0625,
+				}
+				for _, dir := range t.Features.Edges.Ford {
+					// log.Printf("ford-as-pill %s %s", t.Location.GridString(), dir)
+
+					// get the center of the hex we're in
+					center := points[0]
+
+					// get the midpoint of the segment from the center to the edge
+					segmentEnd := edgeCenter(dir, points)
+					segmentStart := midpoint(midpoint(center, segmentEnd), segmentEnd)
+
+					w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" fillColor="0.7019608020782471,0.7019608020782471,0.7019608020782471,1.0" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, fordPillData.R, fordPillData.G, fordPillData.B, fordPillData.Width)
+					w.Printf(` <p type="m" x="%f" y="%f"/>`, segmentStart.X, segmentStart.Y)
+					w.Printf(` <p x="%f" y="%f"/>`, segmentEnd.X, segmentEnd.Y)
+					w.Println(`</shape>`)
+				}
 			}
 		}
 	}

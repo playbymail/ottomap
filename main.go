@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 16, Patch: 21}
+	version = semver.Version{Major: 0, Minor: 16, Patch: 22}
 )
 
 func main() {
@@ -99,6 +99,7 @@ func Execute() error {
 	cmdRender.Flags().BoolVar(&argsRender.saveWithTurnId, "save-with-turn-id", false, "add turn id to file name")
 	cmdRender.Flags().BoolVar(&argsRender.show.origin, "show-origin", false, "show origin hex")
 	cmdRender.Flags().BoolVar(&argsRender.show.shiftMap, "shift-map", false, "shift map up and left")
+	cmdRender.Flags().BoolVar(&argsRender.render.FordsAsPills, "x-fords-as-pills", false, "experimental: render fords as pills")
 	cmdRender.Flags().StringVar(&argsRender.clanId, "clan-id", "", "clan for output file names")
 	if err := cmdRender.MarkFlagRequired("clan-id"); err != nil {
 		log.Fatalf("error: clan-id: %v\n", err)
