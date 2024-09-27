@@ -1,0 +1,169 @@
+<!DOCTYPE html><!-- Copyright (c) 2024 Michael D Henderson. All rights reserved. -->
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <title>OttoMap</title>
+    <link rel="stylesheet" href="/css/tailwind.css">
+</head>
+<body class="h-full">
+
+<div class="bg-white">
+    <header class="absolute inset-x-0 top-0 z-50">
+        <nav class="flex items-center justify-between p-6 lg:px-8" aria-label="Global">
+            <div class="flex lg:flex-1">
+                <a href="/ottomap.html" class="-m-1.5 p-1.5">
+                    <span class="sr-only">Your Company</span>
+                    <img class="h-8 w-auto" src="/img/logos/mark-indigo-600.svg" alt="">
+                </a>
+            </div>
+            <div class="flex lg:hidden">
+                <button type="button"
+                        class="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700">
+                    <span class="sr-only">Open main menu</span>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                         aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="hidden lg:flex lg:gap-x-12">
+                <a href="/ottomap.html" class="text-sm font-semibold leading-6 text-gray-900">OttoMap</a>
+                <a href="https://tribenet.wiki/" class="text-sm font-semibold leading-6 text-gray-900">TribeNet</a>
+                <a href="https://worldographer.com/"
+                   class="text-sm font-semibold leading-6 text-gray-900">Worldographer</a>
+                <a href="https://github.com/playbymail/ottomap/" class="text-sm font-semibold leading-6 text-gray-900">Github</a>
+            </div>
+            <div class="hidden lg:flex lg:flex-1 lg:justify-end">
+                <a href="/login.html" class="text-sm font-semibold leading-6 text-gray-900">Log in <span
+                        aria-hidden="true">&rarr;</span></a>
+            </div>
+        </nav>
+        <!-- Mobile menu, show/hide based on menu open state. -->
+        <div class="hidden lg:hidden" role="dialog" aria-modal="true">
+            <!-- Background backdrop, show/hide based on slide-over state. -->
+            <div class="fixed inset-0 z-50"></div>
+            <div class="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
+                <div class="flex items-center justify-between">
+                    <a href="/ottomap.html" class="-m-1.5 p-1.5">
+                        <span class="sr-only">Your Company</span>
+                        <img class="h-8 w-auto" src="/img/logos/mark-indigo-600.svg" alt="">
+                    </a>
+                    <button type="button" class="-m-2.5 rounded-md p-2.5 text-gray-700">
+                        <span class="sr-only">Close menu</span>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                             aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="mt-6 flow-root">
+                    <div class="-my-6 divide-y divide-gray-500/10">
+                        <div class="space-y-2 py-6">
+                            <a href="/ottomap.html"
+                               class="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">OttoMap</a>
+                            <a href="https://tribenet.wiki/"
+                               class="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">TribeNet</a>
+                            <a href="https://worldographer.com/"
+                               class="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">Worldographer</a>
+                            <a href="https://github.com/playbymail/ottomap/"
+                               class="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">Github</a>
+                        </div>
+                        <div class="py-6">
+                            <a href="/login.html"
+                               class="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">Log
+                                in</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="bg-white py-24 sm:py-32">
+        <div class="mx-auto max-w-7xl px-6 lg:px-8">
+            <div class="mx-auto max-w-2xl lg:text-center">
+                <h2 class="text-base font-semibold leading-7 text-indigo-600">Map faster! Map differently!</h2>
+                <p class="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Everything you need to
+                    create maps from your turn reports</p>
+                <p class="mt-6 text-lg leading-8 text-gray-600">
+                    OttoMap is an open-source web application that allows you to create maps from your turn reports.
+                    It is designed to be used with the TribeNet turn reporting system (but can be used with any turn
+                    reporting system that just happens to have the same format).
+                </p>
+            </div>
+            <div class="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
+                <dl class="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
+                    <div class="flex flex-col">
+                        <dt class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
+                            <svg class="h-5 w-5 flex-none text-indigo-600" viewBox="0 0 20 20" fill="currentColor"
+                                 aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                      d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"
+                                      clip-rule="evenodd"/>
+                            </svg>
+                            Secure by default
+                        </dt>
+                        <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
+                            <p class="flex-auto">
+                                You own your data.
+                                Delete it at any time.
+                                Reports and maps are password protected and are never shared with anyone.
+                            </p>
+                            <p class="mt-6">
+                                <a href="/trusted" class="text-sm font-semibold leading-6 text-indigo-600">Learn
+                                    more <span aria-hidden="true">→</span></a>
+                            </p>
+                        </dd>
+                    </div>
+                    <div class="flex flex-col">
+                        <dt class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
+                            <svg class="h-5 w-5 flex-none text-indigo-600" viewBox="0 0 20 20" fill="currentColor"
+                                 aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                      d="M5.5 17a4.5 4.5 0 01-1.44-8.765 4.5 4.5 0 018.302-3.046 3.5 3.5 0 014.504 4.272A4 4 0 0115 17H5.5zm3.75-2.75a.75.75 0 001.5 0V9.66l1.95 2.1a.75.75 0 101.1-1.02l-3.25-3.5a.75.75 0 00-1.1 0l-3.25 3.5a.75.75 0 101.1 1.02l1.95-2.1v4.59z"
+                                      clip-rule="evenodd"/>
+                            </svg>
+                            Upload turn reports, download maps
+                        </dt>
+                        <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
+                            <p class="flex-auto">
+                                Save your turn reports as text files and upload them to the server.
+                                The files are read and any errors are reported back to you.
+                                Maps are generated automatically and can be downloaded as Worldographer files.
+                            </p>
+                            <p class="mt-6">
+                                <a href="/docs/ottomap.html" class="text-sm font-semibold leading-6 text-indigo-600">Learn
+                                    more <span aria-hidden="true">→</span></a>
+                            </p>
+                        </dd>
+                    </div>
+                    <div class="flex flex-col">
+                        <dt class="flex items-center gap-x-3 text-base font-semibold leading-7 text-gray-900">
+                            <svg class="h-5 w-5 flex-none text-indigo-600" viewBox="0 0 20 20" fill="currentColor"
+                                 aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                      d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z"
+                                      clip-rule="evenodd"/>
+                            </svg>
+                            Community supported
+                        </dt>
+                        <dd class="mt-4 flex flex-auto flex-col text-base leading-7 text-gray-600">
+                            <p class="flex-auto">
+                                OttoMap questions can be asked and answered on the #mapping-tools channel in the TribeNet Discord server.
+                            </p>
+                            <p class="mt-6">
+                                <a href="https://discord.gg/xR9HVYGFXs"
+                                   class="text-sm font-semibold leading-6 text-indigo-600">Discord <span
+                                        aria-hidden="true">→</span></a>
+                            </p>
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
