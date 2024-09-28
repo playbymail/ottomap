@@ -9,5 +9,6 @@ Flakey set-up, but it seems to work.
 2. Run the watch command with the relative paths.
 
 ```bash
-npx tailwindcss -i ~ottomap/cmd/ottoweb/assets/css/tailwind-input.css -o ~ottomap/cmd/ottoweb/assets/css/tailwind.css --watch
+npx tailwindcss -i ../ottomap/cmd/ottoweb/assets/css/tailwind-input.css -o ../ottomap/cmd/ottoweb/assets/css/tailwind.css --watch
 ```
+

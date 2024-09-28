@@ -3,8 +3,8 @@ const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
     content: [
-        "~ottomap/cmd/ottoweb/assets/**/*.{html,js}",
-        "~ottomap/cmd/ottoweb/components/components/**/*.{go,gohtml}",
+        "../ottomap/cmd/ottoweb/assets/**/*.{html,js}",
+        "../ottomap/cmd/ottoweb/components/**/*.gohtml",
     ],
     theme: {
         extend: {
