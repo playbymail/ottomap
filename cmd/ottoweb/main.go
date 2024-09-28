@@ -4,8 +4,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/mdhender/semver"
+	"github.com/playbymail/ottomap/stores/sqlite"
 	"github.com/spf13/cobra"
 	"log"
 	"net/http"
@@ -13,7 +15,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 1, Patch: 0}
+	version = semver.Version{Major: 0, Minor: 2, Patch: 0}
 
 	argsRoot struct {
 		paths struct {
@@ -90,9 +92,23 @@ var (
 			log.Printf("components: %s\n", argsRoot.paths.components)
 			log.Printf("database  : %s\n", argsRoot.paths.database)
 
+			// open the database
+			log.Printf("database : %s\n", argsRoot.paths.database)
+			store, err := sqlite.OpenStore(argsRoot.paths.database, context.Background())
+			if err != nil {
+				log.Fatalf("error: store: %v\n", err)
+			}
+			defer func() {
+				if store != nil {
+					_ = store.Close()
+				}
+				store = nil
+			}()
+
 			s, err := newServer(
 				withAssets(argsRoot.paths.assets),
 				withComponents(argsRoot.paths.components),
+				withStore(store),
 			)
 			if err != nil {
 				log.Fatalf("error: %v\n", err)

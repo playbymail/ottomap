@@ -5,12 +5,12 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/get_started"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/landing"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/learn_more"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/trusted"
+	"github.com/playbymail/ottomap/domains"
 	"github.com/playbymail/ottomap/stores/sqlite"
 	"html/template"
 	"log"
@@ -45,27 +45,7 @@ func newServer(options ...Option) (*Server, error) {
 		}
 	}
 
-	s.mux = http.NewServeMux()
-
-	//s.mux.HandleFunc("GET /calendar.html", s.getCalendar)
-	//s.mux.HandleFunc("GET /dashboard.html", s.getDashboard)
-	//s.mux.HandleFunc("GET /login/{clan_id}/{magic_link}", s.getMagicLink)
-	//s.mux.HandleFunc("GET /projects.html", s.getProjects)
-	//s.mux.HandleFunc("GET /team.html", s.getTeam)
-	//s.mux.HandleFunc("POST /api/login", s.postLogin)
-	//s.mux.HandleFunc("POST /api/logout", s.postLogout)
-
-	s.mux.HandleFunc("GET /clan/{clan_id}", s.getClanClanId(s.paths.components))
-	s.mux.HandleFunc("GET /get-started", s.getGetStarted(s.paths.components))
-	s.mux.HandleFunc("GET /learn-more", s.getLearnMore(s.paths.components))
-	s.mux.HandleFunc("GET /login", s.getLogin(s.paths.components))
-	s.mux.HandleFunc("GET /login/{clan_id}/{magic_link}", s.getLoginClanIdMagicLink())
-	s.mux.HandleFunc("GET /logout", s.getLogout())
-	s.mux.HandleFunc("GET /trusted", s.getTrusted(s.paths.components))
-
-	// unfortunately for us, the "/" route is special. it serves the landing page as well as all the assets.
-	//s.mux.Handle("GET /", http.FileServer(http.Dir(s.paths.assets)))
-	s.mux.Handle("GET /", s.getIndex(s.paths.assets, s.getLanding(s.paths.components)))
+	s.mux = s.routes()
 
 	return s, nil
 }
@@ -119,11 +99,17 @@ func withPort(port string) Option {
 	}
 }
 
+func withStore(store *sqlite.DB) Option {
+	return func(s *Server) error {
+		s.store = store
+		return nil
+	}
+}
+
 type Server struct {
 	http.Server
 	scheme, host, port string
 	mux                *http.ServeMux
-	router             http.Handler
 	store              *sqlite.DB
 	//assets             fs.FS
 	//templates          fs.FS
@@ -141,6 +127,22 @@ type Server struct {
 
 func (s *Server) BaseURL() string {
 	return fmt.Sprintf("%s://%s", s.scheme, s.Addr)
+}
+
+// extractSession extracts the session from the request.
+// Returns nil if there is no session, or it is invalid.
+func (s *Server) extractSession(r *http.Request) (*domains.User_t, error) {
+	cookie, err := r.Cookie(s.sessions.cookieName)
+	if err != nil {
+		return nil, nil
+	}
+
+	user, err := s.store.GetSession(cookie.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (s *Server) getClanClanId(path string) http.HandlerFunc {
@@ -179,7 +181,7 @@ func (s *Server) getClanClanId(path string) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		bytesWritten, _ = w.Write([]byte("welcome, clan " + clanId + "!"))
+		bytesWritten, _ = w.Write([]byte("<h2>welcome, clan " + clanId + "!</h2><a href=\"/logout\">logout</a>"))
 	}
 }
 
@@ -252,22 +254,20 @@ func (s *Server) getIndex(assets string, landing http.HandlerFunc) http.HandlerF
 			return
 		}
 
-		var sessionId string
-		if cookie, err := r.Cookie(s.sessions.cookieName); err != nil {
-			// bad form but treat as no cookie and no session
-		} else {
-			sessionId = cookie.Value
-		}
-		log.Printf("%s %s: session id %q <- %q\n", r.Method, r.URL.Path, sessionId, s.sessions.cookieName)
-
-		// if no session, redirect to hero page
-		if sessionId == "" {
-			landing(w, r)
+		user, err := s.extractSession(r)
+		if err != nil {
+			log.Printf("%s %s: extractSession: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else if user != nil {
+			// there is an active session, so redirect to dashboard
+			log.Printf("%s %s: clan %q\n", r.Method, r.URL.Path, user.Clan)
+			http.Redirect(w, r, fmt.Sprintf("/clan/%s", user.Clan), http.StatusSeeOther)
 			return
 		}
 
-		// if session, redirect to dashboard
-		http.Redirect(w, r, "/dashboard.html", http.StatusSeeOther)
+		// no session, so redirect to hero page
+		landing(w, r)
 	}
 }
 
@@ -421,23 +421,66 @@ func (s *Server) getLoginClanIdMagicLink() http.HandlerFunc {
 			log.Printf("%s %s: exited (%s)\n", r.Method, r.URL.Path, time.Since(started))
 		}()
 
+		loggedIn := false
+		defer func() {
+			if !loggedIn {
+				log.Printf("%s %s: purging cookies\n", r.Method, r.URL.Path)
+				// delete any existing session on the client
+				http.SetCookie(w, &http.Cookie{
+					Name:   s.sessions.cookieName,
+					Value:  "",
+					Path:   "/",
+					MaxAge: -1,
+				})
+			}
+		}()
+
 		if r.Method != "GET" {
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
 		}
 
-		clanId := r.PathValue("clan_id")
-		log.Printf("%s: %s: clan_id %q\n", r.Method, r.URL.Path, clanId)
-		if n, err := strconv.Atoi(clanId); err != nil || n < 1 || n > 999 {
+		input := struct {
+			clanId    string
+			magicLink string
+		}{
+			clanId:    r.PathValue("clan_id"),
+			magicLink: r.PathValue("magic_link"),
+		}
+		log.Printf("%s: %s: clan_id    %q\n", r.Method, r.URL.Path, input.clanId)
+		log.Printf("%s: %s: magic_link %q\n", r.Method, r.URL.Path, input.magicLink)
+		if n, err := strconv.Atoi(input.clanId); err != nil || n < 1 || n > 999 {
 			log.Printf("%s %s: clan_id %v\n", r.Method, r.URL.Path, err)
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
-		magicLink := r.PathValue("magic_link")
-		log.Printf("%s: %s: magic_link %q\n", r.Method, r.URL.Path, magicLink)
+
+		// check the magic link against the database
+		user, err := s.store.GetUserByMagicLink(input.clanId, input.magicLink)
+		if err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		log.Printf("%s %s: user %d\n", r.Method, r.URL.Path, user.ID)
+		loggedIn = user.Roles.IsActive
+
+		// if the check fails, send them back to the login page
+		if !loggedIn {
+			http.Redirect(w, r, "/login?invalid_credentials=true", http.StatusSeeOther)
+			return
+		}
+
+		sessionId, err := s.store.CreateSession(user.ID, s.sessions.ttl)
+		if err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("%s %s: session id %q (%d)\n", r.Method, r.URL.Path, sessionId, s.sessions.maxAge)
+		log.Printf("%s %s: session id %q (%v)\n", r.Method, r.URL.Path, sessionId, s.sessions.ttl)
 
 		// set the session cookie
-		sessionId := uuid.NewString()
 		http.SetCookie(w, &http.Cookie{
 			Name:     s.sessions.cookieName,
 			Value:    sessionId,
@@ -449,7 +492,7 @@ func (s *Server) getLoginClanIdMagicLink() http.HandlerFunc {
 		})
 
 		// redirect to the user's landing page
-		http.Redirect(w, r, fmt.Sprintf("/clan/%s", clanId), http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/clan/%s", input.clanId), http.StatusSeeOther)
 	}
 }
 
