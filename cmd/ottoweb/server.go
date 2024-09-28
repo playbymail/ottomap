@@ -56,6 +56,7 @@ func newServer(options ...Option) (*Server, error) {
 
 	s.mux.HandleFunc("GET /get-started", s.getGetStarted(s.paths.components))
 	s.mux.HandleFunc("GET /learn-more", s.getLearnMore(s.paths.components))
+	s.mux.HandleFunc("GET /login", s.getLogin(s.paths.components))
 	s.mux.HandleFunc("GET /trusted", s.getTrusted(s.paths.components))
 
 	// unfortunately for us, the "/" route is special. it serves the landing page as well as all the assets.
@@ -312,6 +313,50 @@ func (s *Server) getGetStarted(path string) http.HandlerFunc {
 		// parse into a buffer so that we can handle errors without writing to the response
 		buf := &bytes.Buffer{}
 		if err := t.Execute(buf, payload); err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		bytesWritten, _ = w.Write(buf.Bytes())
+		bytesWritten = len(buf.Bytes())
+	}
+}
+
+func (s *Server) getLogin(path string) http.HandlerFunc {
+	files := []string{
+		filepath.Join(path, "pages", "login.gohtml"),
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		started, bytesWritten := time.Now(), 0
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
+		defer func() {
+			if bytesWritten == 0 {
+				log.Printf("%s %s: exited (%s)\n", r.Method, r.URL.Path, time.Since(started))
+			} else {
+				log.Printf("%s %s: wrote %d bytes in %s\n", r.Method, r.URL.Path, bytesWritten, time.Since(started))
+			}
+		}()
+
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("%s %s: parsed templates\n", r.Method, r.URL.Path)
+
+		// parse into a buffer so that we can handle errors without writing to the response
+		buf := &bytes.Buffer{}
+		if err := t.Execute(buf, nil); err != nil {
 			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
