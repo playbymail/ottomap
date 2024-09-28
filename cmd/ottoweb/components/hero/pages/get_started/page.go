@@ -1,8 +1,6 @@
 // Copyright (c) 2024 Michael D Henderson. All rights reserved.
 
-package hero
+package get_started
 
-type Layout struct {
-	Title   string
-	Content any
+type Page struct {
 }

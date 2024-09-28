@@ -6,6 +6,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero"
+	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/get_started"
+	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/landing"
+	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/learn_more"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/trusted"
 	"github.com/playbymail/ottomap/stores/sqlite"
 	"html/template"
@@ -51,11 +54,13 @@ func newServer(options ...Option) (*Server, error) {
 	//s.mux.HandleFunc("POST /api/login", s.postLogin)
 	//s.mux.HandleFunc("POST /api/logout", s.postLogout)
 
+	s.mux.HandleFunc("GET /get-started", s.getGetStarted(s.paths.components))
+	s.mux.HandleFunc("GET /learn-more", s.getLearnMore(s.paths.components))
 	s.mux.HandleFunc("GET /trusted", s.getTrusted(s.paths.components))
 
 	// unfortunately for us, the "/" route is special. it serves the landing page as well as all the assets.
 	//s.mux.Handle("GET /", http.FileServer(http.Dir(s.paths.assets)))
-	s.mux.Handle("GET /", s.getIndex(s.paths.assets))
+	s.mux.Handle("GET /", s.getIndex(s.paths.assets, s.getLanding(s.paths.components)))
 
 	return s, nil
 }
@@ -133,7 +138,7 @@ func (s *Server) BaseURL() string {
 	return fmt.Sprintf("%s://%s", s.scheme, s.Addr)
 }
 
-func (s *Server) getIndex(assets string) http.HandlerFunc {
+func (s *Server) getIndex(assets string, landing http.HandlerFunc) http.HandlerFunc {
 	assetsFS := http.FileServer(http.Dir(assets))
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -163,7 +168,7 @@ func (s *Server) getIndex(assets string) http.HandlerFunc {
 
 		// if no session, redirect to hero page
 		if sessionId == "" {
-			http.Redirect(w, r, "/ottomap.html", http.StatusSeeOther)
+			landing(w, r)
 			return
 		}
 
@@ -172,12 +177,159 @@ func (s *Server) getIndex(assets string) http.HandlerFunc {
 	}
 }
 
+func (s *Server) getLanding(path string) http.HandlerFunc {
+	files := []string{
+		filepath.Join(path, "hero", "layout.gohtml"),
+		filepath.Join(path, "hero", "pages", "landing", "page.gohtml"),
+	}
+	payload := hero.Layout{
+		Title:   "OttoMap",
+		Content: landing.Page{},
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		started, bytesWritten := time.Now(), 0
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
+		defer func() {
+			if bytesWritten == 0 {
+				log.Printf("%s %s: exited (%s)\n", r.Method, r.URL.Path, time.Since(started))
+			} else {
+				log.Printf("%s %s: wrote %d bytes in %s\n", r.Method, r.URL.Path, bytesWritten, time.Since(started))
+			}
+		}()
+
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("%s %s: parsed templates\n", r.Method, r.URL.Path)
+
+		// parse into a buffer so that we can handle errors without writing to the response
+		buf := &bytes.Buffer{}
+		if err := t.Execute(buf, payload); err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		bytesWritten, _ = w.Write(buf.Bytes())
+		bytesWritten = len(buf.Bytes())
+	}
+}
+
+func (s *Server) getLearnMore(path string) http.HandlerFunc {
+	files := []string{
+		filepath.Join(path, "hero", "layout.gohtml"),
+		filepath.Join(path, "hero", "pages", "learn_more", "page.gohtml"),
+	}
+	payload := hero.Layout{
+		Title:   "OttoMap",
+		Content: learn_more.Page{},
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		started, bytesWritten := time.Now(), 0
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
+		defer func() {
+			if bytesWritten == 0 {
+				log.Printf("%s %s: exited (%s)\n", r.Method, r.URL.Path, time.Since(started))
+			} else {
+				log.Printf("%s %s: wrote %d bytes in %s\n", r.Method, r.URL.Path, bytesWritten, time.Since(started))
+			}
+		}()
+
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("%s %s: parsed templates\n", r.Method, r.URL.Path)
+
+		// parse into a buffer so that we can handle errors without writing to the response
+		buf := &bytes.Buffer{}
+		if err := t.Execute(buf, payload); err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		bytesWritten, _ = w.Write(buf.Bytes())
+		bytesWritten = len(buf.Bytes())
+	}
+}
+
+func (s *Server) getGetStarted(path string) http.HandlerFunc {
+	files := []string{
+		filepath.Join(path, "hero", "layout.gohtml"),
+		filepath.Join(path, "hero", "pages", "get_started", "page.gohtml"),
+	}
+	payload := hero.Layout{
+		Title:   "OttoMap",
+		Content: get_started.Page{},
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		started, bytesWritten := time.Now(), 0
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
+		defer func() {
+			if bytesWritten == 0 {
+				log.Printf("%s %s: exited (%s)\n", r.Method, r.URL.Path, time.Since(started))
+			} else {
+				log.Printf("%s %s: wrote %d bytes in %s\n", r.Method, r.URL.Path, bytesWritten, time.Since(started))
+			}
+		}()
+
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("%s %s: parsed templates\n", r.Method, r.URL.Path)
+
+		// parse into a buffer so that we can handle errors without writing to the response
+		buf := &bytes.Buffer{}
+		if err := t.Execute(buf, payload); err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		bytesWritten, _ = w.Write(buf.Bytes())
+		bytesWritten = len(buf.Bytes())
+	}
+}
+
 func (s *Server) getTrusted(path string) http.HandlerFunc {
 	files := []string{
 		filepath.Join(path, "hero", "layout.gohtml"),
 		filepath.Join(path, "hero", "pages", "trusted", "page.gohtml"),
 	}
-	payload := hero.LayoutHero{
+	payload := hero.Layout{
 		Title: "OttoMap",
 		Content: trusted.Page{
 			LogoGrid: trusted.LogoGrid{
