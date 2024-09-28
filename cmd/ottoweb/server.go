@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/get_started"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/landing"
@@ -17,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -53,9 +55,11 @@ func newServer(options ...Option) (*Server, error) {
 	//s.mux.HandleFunc("POST /api/login", s.postLogin)
 	//s.mux.HandleFunc("POST /api/logout", s.postLogout)
 
+	s.mux.HandleFunc("GET /clan/{clan_id}", s.getClanClanId(s.paths.components))
 	s.mux.HandleFunc("GET /get-started", s.getGetStarted(s.paths.components))
 	s.mux.HandleFunc("GET /learn-more", s.getLearnMore(s.paths.components))
 	s.mux.HandleFunc("GET /login", s.getLogin(s.paths.components))
+	s.mux.HandleFunc("GET /login/{clan_id}/{magic_link}", s.getLoginClanIdMagicLink())
 	s.mux.HandleFunc("GET /logout", s.getLogout())
 	s.mux.HandleFunc("GET /trusted", s.getTrusted(s.paths.components))
 
@@ -137,6 +141,46 @@ type Server struct {
 
 func (s *Server) BaseURL() string {
 	return fmt.Sprintf("%s://%s", s.scheme, s.Addr)
+}
+
+func (s *Server) getClanClanId(path string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		started, bytesWritten := time.Now(), 0
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
+		defer func() {
+			if bytesWritten == 0 {
+				log.Printf("%s %s: exited (%s)\n", r.Method, r.URL.Path, time.Since(started))
+			} else {
+				log.Printf("%s %s: wrote %d bytes in %s\n", r.Method, r.URL.Path, bytesWritten, time.Since(started))
+			}
+		}()
+
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		var sessionId string
+		if cookie, err := r.Cookie(s.sessions.cookieName); err != nil || cookie == nil || cookie.Value == "" {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		} else {
+			sessionId = cookie.Value
+		}
+		log.Printf("%s %s: session id %q <- %q\n", r.Method, r.URL.Path, sessionId, s.sessions.cookieName)
+
+		clanId := r.PathValue("clan_id")
+		log.Printf("%s: %s: clan_id %q\n", r.Method, r.URL.Path, clanId)
+		if n, err := strconv.Atoi(clanId); err != nil || n < 1 || n > 999 {
+			log.Printf("%s %s: clan_id %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		bytesWritten, _ = w.Write([]byte("welcome, clan " + clanId + "!"))
+	}
 }
 
 func (s *Server) getGetStarted(path string) http.HandlerFunc {
@@ -366,6 +410,46 @@ func (s *Server) getLogin(path string) http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		bytesWritten, _ = w.Write(buf.Bytes())
 		bytesWritten = len(buf.Bytes())
+	}
+}
+
+func (s *Server) getLoginClanIdMagicLink() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		started := time.Now()
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
+		defer func() {
+			log.Printf("%s %s: exited (%s)\n", r.Method, r.URL.Path, time.Since(started))
+		}()
+
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		clanId := r.PathValue("clan_id")
+		log.Printf("%s: %s: clan_id %q\n", r.Method, r.URL.Path, clanId)
+		if n, err := strconv.Atoi(clanId); err != nil || n < 1 || n > 999 {
+			log.Printf("%s %s: clan_id %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		magicLink := r.PathValue("magic_link")
+		log.Printf("%s: %s: magic_link %q\n", r.Method, r.URL.Path, magicLink)
+
+		// set the session cookie
+		sessionId := uuid.NewString()
+		http.SetCookie(w, &http.Cookie{
+			Name:     s.sessions.cookieName,
+			Value:    sessionId,
+			Path:     "/",
+			MaxAge:   s.sessions.maxAge,
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+		})
+
+		// redirect to the user's landing page
+		http.Redirect(w, r, fmt.Sprintf("/clan/%s", clanId), http.StatusSeeOther)
 	}
 }
 
