@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/playbymail/ottomap/cmd/ottoweb/components/app"
+	"github.com/playbymail/ottomap/cmd/ottoweb/components/app/pages/dashboard"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/get_started"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/landing"
@@ -29,6 +31,17 @@ func newServer(options ...Option) (*Server, error) {
 		host:   "localhost",
 		port:   "8080",
 		mux:    http.NewServeMux(),
+		blocks: struct {
+			Footer app.Footer
+		}{
+			Footer: app.Footer{
+				Copyright: app.Copyright{
+					Year:  2024,
+					Owner: "Michael D Henderson",
+				},
+				Version: version.String(),
+			},
+		},
 	}
 	s.Addr = net.JoinHostPort(s.host, s.port)
 	s.MaxHeaderBytes = 1 << 20
@@ -124,6 +137,9 @@ type Server struct {
 		maxAge     int // maximum age of a session cookie in seconds
 		ttl        time.Duration
 	}
+	blocks struct {
+		Footer app.Footer
+	}
 }
 
 func (s *Server) BaseURL() string {
@@ -164,7 +180,12 @@ func (s *Server) getApiVersionV1() http.HandlerFunc {
 	}
 }
 
-func (s *Server) getClanClanId(path string) http.HandlerFunc {
+func (s *Server) getCalendar(path string, footer app.Footer) http.HandlerFunc {
+	files := []string{
+		filepath.Join(path, "app", "layout.gohtml"),
+		filepath.Join(path, "app", "pages", "calendar", "content.gohtml"),
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		started, bytesWritten := time.Now(), 0
 		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
@@ -181,15 +202,76 @@ func (s *Server) getClanClanId(path string) http.HandlerFunc {
 			return
 		}
 
-		input := struct {
-			clanId string
-		}{
-			clanId: r.PathValue("clan_id"),
+		user, err := s.extractSession(r)
+		if err != nil {
+			log.Printf("%s %s: extractSession: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else if user == nil {
+			// there is no active session, so this is an error
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
 		}
-		log.Printf("%s: %s: clan_id    %q\n", r.Method, r.URL.Path, input.clanId)
-		if n, err := strconv.Atoi(input.clanId); err != nil || n < 1 || n > 999 {
-			log.Printf("%s %s: clan_id %v\n", r.Method, r.URL.Path, err)
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		log.Printf("%s %s: session: clan_id %q\n", r.Method, r.URL.Path, user.Clan)
+
+		payload := app.Layout{
+			Title:   fmt.Sprintf("Clan %s", user.Clan),
+			Heading: "Calendar",
+			Content: dashboard.Content{
+				ClanId: user.Clan,
+			},
+			Footer: footer,
+		}
+		payload.CurrentPage.Calendar = true
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("%s %s: parsed templates\n", r.Method, r.URL.Path)
+
+		// parse into a buffer so that we can handle errors without writing to the response
+		buf := &bytes.Buffer{}
+		if err := t.Execute(buf, payload); err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		bytesWritten, _ = w.Write(buf.Bytes())
+		bytesWritten = len(buf.Bytes())
+	}
+}
+
+func (s *Server) getClanClanId() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
+	}
+}
+
+func (s *Server) getDashboard(path string, footer app.Footer) http.HandlerFunc {
+	files := []string{
+		filepath.Join(path, "app", "layout.gohtml"),
+		filepath.Join(path, "app", "pages", "dashboard", "content.gohtml"),
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		started, bytesWritten := time.Now(), 0
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
+		defer func() {
+			if bytesWritten == 0 {
+				log.Printf("%s %s: exited (%s)\n", r.Method, r.URL.Path, time.Since(started))
+			} else {
+				log.Printf("%s %s: wrote %d bytes in %s\n", r.Method, r.URL.Path, bytesWritten, time.Since(started))
+			}
+		}()
+
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -204,25 +286,37 @@ func (s *Server) getClanClanId(path string) http.HandlerFunc {
 			return
 		}
 		log.Printf("%s %s: session: clan_id %q\n", r.Method, r.URL.Path, user.Clan)
-		if user.Clan != input.clanId {
-			log.Printf("%s %s: clan_id %q != %q\n", r.Method, r.URL.Path, user.Clan, input.clanId)
-			http.Redirect(w, r, fmt.Sprintf("/clan/%s", user.Clan), http.StatusSeeOther)
+
+		payload := app.Layout{
+			Title:   fmt.Sprintf("Clan %s", user.Clan),
+			Heading: "Dashboard",
+			Content: dashboard.Content{
+				ClanId: user.Clan,
+			},
+			Footer: footer,
+		}
+		payload.CurrentPage.Dashboard = true
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("%s %s: parsed templates\n", r.Method, r.URL.Path)
+
+		// parse into a buffer so that we can handle errors without writing to the response
+		buf := &bytes.Buffer{}
+		if err := t.Execute(buf, payload); err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
-		payload := fmt.Sprintf(
-			`<h2>welcome, clan %s!</h2>
-<hr>
-<footer>
-	<p>
-		version %s
-		| <a href="/logout">logout</a>
-	</p>
-</footer>`, user.Clan, version.String())
-
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		bytesWritten, _ = w.Write([]byte(payload))
+		bytesWritten, _ = w.Write(buf.Bytes())
+		bytesWritten = len(buf.Bytes())
 	}
 }
 
@@ -303,7 +397,7 @@ func (s *Server) getIndex(assets string, landing http.HandlerFunc) http.HandlerF
 		} else if user != nil {
 			// there is an active session, so redirect to dashboard
 			log.Printf("%s %s: clan %q\n", r.Method, r.URL.Path, user.Clan)
-			http.Redirect(w, r, fmt.Sprintf("/clan/%s", user.Clan), http.StatusSeeOther)
+			http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 			return
 		}
 
@@ -532,8 +626,8 @@ func (s *Server) getLoginClanIdMagicLink() http.HandlerFunc {
 			SameSite: http.SameSiteStrictMode,
 		})
 
-		// redirect to the user's landing page
-		http.Redirect(w, r, fmt.Sprintf("/clan/%s", input.clanId), http.StatusSeeOther)
+		// redirect to the dashboard
+		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 	}
 }
 
@@ -555,6 +649,140 @@ func (s *Server) getLogout() http.HandlerFunc {
 
 		// redirect to the landing page
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+}
+
+func (s *Server) getMaps(path string, footer app.Footer) http.HandlerFunc {
+	files := []string{
+		filepath.Join(path, "app", "layout.gohtml"),
+		filepath.Join(path, "app", "pages", "maps", "content.gohtml"),
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		started, bytesWritten := time.Now(), 0
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
+		defer func() {
+			if bytesWritten == 0 {
+				log.Printf("%s %s: exited (%s)\n", r.Method, r.URL.Path, time.Since(started))
+			} else {
+				log.Printf("%s %s: wrote %d bytes in %s\n", r.Method, r.URL.Path, bytesWritten, time.Since(started))
+			}
+		}()
+
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		user, err := s.extractSession(r)
+		if err != nil {
+			log.Printf("%s %s: extractSession: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else if user == nil {
+			// there is no active session, so this is an error
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		log.Printf("%s %s: session: clan_id %q\n", r.Method, r.URL.Path, user.Clan)
+
+		payload := app.Layout{
+			Title:   fmt.Sprintf("Clan %s", user.Clan),
+			Heading: "Maps",
+			Content: dashboard.Content{
+				ClanId: user.Clan,
+			},
+			Footer: footer,
+		}
+		payload.CurrentPage.Maps = true
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("%s %s: parsed templates\n", r.Method, r.URL.Path)
+
+		// parse into a buffer so that we can handle errors without writing to the response
+		buf := &bytes.Buffer{}
+		if err := t.Execute(buf, payload); err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		bytesWritten, _ = w.Write(buf.Bytes())
+		bytesWritten = len(buf.Bytes())
+	}
+}
+
+func (s *Server) getReports(path string, footer app.Footer) http.HandlerFunc {
+	files := []string{
+		filepath.Join(path, "app", "layout.gohtml"),
+		filepath.Join(path, "app", "pages", "reports", "content.gohtml"),
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		started, bytesWritten := time.Now(), 0
+		log.Printf("%s %s: entered\n", r.Method, r.URL.Path)
+		defer func() {
+			if bytesWritten == 0 {
+				log.Printf("%s %s: exited (%s)\n", r.Method, r.URL.Path, time.Since(started))
+			} else {
+				log.Printf("%s %s: wrote %d bytes in %s\n", r.Method, r.URL.Path, bytesWritten, time.Since(started))
+			}
+		}()
+
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		user, err := s.extractSession(r)
+		if err != nil {
+			log.Printf("%s %s: extractSession: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else if user == nil {
+			// there is no active session, so this is an error
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		log.Printf("%s %s: session: clan_id %q\n", r.Method, r.URL.Path, user.Clan)
+
+		payload := app.Layout{
+			Title:   fmt.Sprintf("Clan %s", user.Clan),
+			Heading: "Reports",
+			Content: dashboard.Content{
+				ClanId: user.Clan,
+			},
+			Footer: footer,
+		}
+		payload.CurrentPage.Reports = true
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("%s %s: parsed templates\n", r.Method, r.URL.Path)
+
+		// parse into a buffer so that we can handle errors without writing to the response
+		buf := &bytes.Buffer{}
+		if err := t.Execute(buf, payload); err != nil {
+			log.Printf("%s %s: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		bytesWritten, _ = w.Write(buf.Bytes())
+		bytesWritten = len(buf.Bytes())
 	}
 }
 
