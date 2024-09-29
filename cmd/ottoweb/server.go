@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero"
 	"github.com/playbymail/ottomap/cmd/ottoweb/components/hero/pages/get_started"
@@ -145,6 +146,24 @@ func (s *Server) extractSession(r *http.Request) (*domains.User_t, error) {
 	return user, nil
 }
 
+func (s *Server) getApiVersionV1() http.HandlerFunc {
+	buf, err := json.MarshalIndent(version, "", "  ")
+	if err != nil {
+		return func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(buf)
+	}
+}
+
 func (s *Server) getClanClanId(path string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		started, bytesWritten := time.Now(), 0
@@ -191,9 +210,19 @@ func (s *Server) getClanClanId(path string) http.HandlerFunc {
 			return
 		}
 
+		payload := fmt.Sprintf(
+			`<h2>welcome, clan %s!</h2>
+<hr>
+<footer>
+	<p>
+		version %s
+		| <a href="/logout">logout</a>
+	</p>
+</footer>`, user.Clan, version.String())
+
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		bytesWritten, _ = w.Write([]byte("<h2>welcome, clan " + user.Clan + "!</h2><a href=\"/logout\">logout</a>"))
+		bytesWritten, _ = w.Write([]byte(payload))
 	}
 }
 

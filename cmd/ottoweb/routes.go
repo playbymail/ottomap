@@ -23,6 +23,8 @@ func (s *Server) routes() *http.ServeMux {
 	s.mux.HandleFunc("GET /logout", s.getLogout())
 	s.mux.HandleFunc("GET /trusted", s.getTrusted(s.paths.components))
 
+	s.mux.HandleFunc("GET /api/v1/version", s.getApiVersionV1())
+
 	// unfortunately for us, the "/" route is special. it serves the landing page as well as all the assets.
 	//s.mux.Handle("GET /", http.FileServer(http.Dir(s.paths.assets)))
 	s.mux.Handle("GET /", s.getIndex(s.paths.assets, s.getLanding(s.paths.components)))
