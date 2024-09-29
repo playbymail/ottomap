@@ -12,3 +12,8 @@ Flakey set-up, but it seems to work.
 npx tailwindcss -i ../ottomap/cmd/ottoweb/assets/css/tailwind-input.css -o ../ottomap/cmd/ottoweb/assets/css/tailwind.css --watch
 ```
 
+## Build for DO
+
+```bash
+GOOS=linux GOARCH=amd64 go build -o ottoweb.exe
+```
