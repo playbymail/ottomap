@@ -162,26 +162,38 @@ func (s *Server) getClanClanId(path string) http.HandlerFunc {
 			return
 		}
 
-		var sessionId string
-		if cookie, err := r.Cookie(s.sessions.cookieName); err != nil || cookie == nil || cookie.Value == "" {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		} else {
-			sessionId = cookie.Value
+		input := struct {
+			clanId string
+		}{
+			clanId: r.PathValue("clan_id"),
 		}
-		log.Printf("%s %s: session id %q <- %q\n", r.Method, r.URL.Path, sessionId, s.sessions.cookieName)
-
-		clanId := r.PathValue("clan_id")
-		log.Printf("%s: %s: clan_id %q\n", r.Method, r.URL.Path, clanId)
-		if n, err := strconv.Atoi(clanId); err != nil || n < 1 || n > 999 {
+		log.Printf("%s: %s: clan_id    %q\n", r.Method, r.URL.Path, input.clanId)
+		if n, err := strconv.Atoi(input.clanId); err != nil || n < 1 || n > 999 {
 			log.Printf("%s %s: clan_id %v\n", r.Method, r.URL.Path, err)
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
 
+		user, err := s.extractSession(r)
+		if err != nil {
+			log.Printf("%s %s: extractSession: %v\n", r.Method, r.URL.Path, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		} else if user == nil {
+			// there is no active session, so this is an error
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return
+		}
+		log.Printf("%s %s: session: clan_id %q\n", r.Method, r.URL.Path, user.Clan)
+		if user.Clan != input.clanId {
+			log.Printf("%s %s: clan_id %q != %q\n", r.Method, r.URL.Path, user.Clan, input.clanId)
+			http.Redirect(w, r, fmt.Sprintf("/clan/%s", user.Clan), http.StatusSeeOther)
+			return
+		}
+
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		bytesWritten, _ = w.Write([]byte("<h2>welcome, clan " + clanId + "!</h2><a href=\"/logout\">logout</a>"))
+		bytesWritten, _ = w.Write([]byte("<h2>welcome, clan " + user.Clan + "!</h2><a href=\"/logout\">logout</a>"))
 	}
 }
 
