@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 17, Patch: 1}
+	version = semver.Version{Major: 0, Minor: 17, Patch: 2}
 )
 
 func main() {
@@ -35,7 +35,8 @@ func main() {
 }
 
 func Execute() error {
-	cmdRoot.PersistentFlags().BoolVar(&argsRoot.showVersion, "version", false, "show version")
+	cmdRoot.PersistentFlags().BoolVar(&argsRoot.showVersion, "show-version", false, "show version")
+	cmdRoot.PersistentFlags().StringVar(&argsRoot.logFile.name, "log-file", "", "set log file")
 
 	cmdRoot.AddCommand(cmdDump)
 	cmdDump.Flags().BoolVar(&argsDump.defaultTileMap, "default-tile-map", false, "dump the default tile map")
@@ -74,6 +75,10 @@ func Execute() error {
 }
 
 var argsRoot struct {
+	logFile struct {
+		name string
+		fd   *os.File
+	}
 	showVersion bool
 }
 
@@ -81,6 +86,31 @@ var cmdRoot = &cobra.Command{
 	Use:   "ottomap",
 	Short: "Root command for our application",
 	Long:  `Create maps from TribeNet turn reports.`,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if argsRoot.logFile.name != "" {
+			if fd, err := os.OpenFile(argsRoot.logFile.name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644); err != nil {
+				return err
+			} else {
+				argsRoot.logFile.fd = fd
+			}
+			log.SetOutput(argsRoot.logFile.fd)
+			argsRoot.showVersion = true
+		}
+		if argsRoot.showVersion {
+			log.Printf("version: %s\n", version)
+		}
+		return nil
+	},
+	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+		if argsRoot.logFile.fd != nil {
+			if err := log.Output(2, "log file closed"); err != nil {
+				return err
+			} else if err = argsRoot.logFile.fd.Close(); err != nil {
+				return err
+			}
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Printf("Hello from root command\n")
 	},
