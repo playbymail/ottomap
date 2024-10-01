@@ -157,6 +157,10 @@ var cmdRender = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		if argsRoot.showVersion {
+			log.Printf("ottomap version %s\n", version)
+		}
+
 		argsRender.originGrid = "RR"
 		argsRender.quitOnInvalidGrid = false
 		argsRender.warnOnInvalidGrid = true

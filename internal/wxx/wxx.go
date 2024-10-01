@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/terrain"
-	"log"
 	"sort"
 )
 
@@ -100,10 +99,11 @@ func NewWXX(options ...Option) (*WXX, error) {
 		msgs = append(msgs, fmt.Sprintf("%-7s %-32s %4d", terrainCode, tileName, slot))
 	}
 	sort.Strings(msgs)
-	log.Printf("terrain tile____________________________ slot\n")
-	for _, msg := range msgs {
-		log.Printf("%s\n", msg)
-	}
+	// for debugging tiles when we start using tile templates from the user
+	//log.Printf("terrain tile____________________________ slot\n")
+	//for _, msg := range msgs {
+	//	log.Printf("%s\n", msg)
+	//}
 
 	return w, nil
 }

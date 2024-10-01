@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 17, Patch: 0}
+	version = semver.Version{Major: 0, Minor: 17, Patch: 1}
 )
 
 func main() {
@@ -35,6 +35,8 @@ func main() {
 }
 
 func Execute() error {
+	cmdRoot.PersistentFlags().BoolVar(&argsRoot.showVersion, "version", false, "show version")
+
 	cmdRoot.AddCommand(cmdDump)
 	cmdDump.Flags().BoolVar(&argsDump.defaultTileMap, "default-tile-map", false, "dump the default tile map")
 
@@ -69,6 +71,10 @@ func Execute() error {
 	cmdRoot.AddCommand(cmdVersion)
 
 	return cmdRoot.Execute()
+}
+
+var argsRoot struct {
+	showVersion bool
 }
 
 var cmdRoot = &cobra.Command{

@@ -18,7 +18,7 @@ var (
 
 // CollectInputs returns a slice containing all the turn reports in the path
 func CollectInputs(path string, maxYear, maxMonth int) (inputs []*TurnReportFile_t, err error) {
-	log.Printf("collect: input path: %s\n", path)
+	//log.Printf("collect: input path: %s\n", path)
 
 	entries, err := os.ReadDir(path)
 	if err != nil {
