@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 16, Patch: 34}
+	version = semver.Version{Major: 0, Minor: 17, Patch: 0}
 )
 
 func main() {
@@ -35,48 +35,6 @@ func main() {
 }
 
 func Execute() error {
-	cmdRoot.AddCommand(cmdDb)
-	cmdDb.PersistentFlags().StringVar(&argsDb.paths.database, "database", "", "path to the database file")
-
-	cmdDb.AddCommand(cmdDbInit)
-	cmdDbInit.Flags().BoolVarP(&argsDb.force, "force", "f", false, "force the creation even if the database exists")
-	cmdDbInit.Flags().StringVar(&argsDb.secrets.admin, "admin-password", "", "optional password for the admin user")
-	cmdDbInit.Flags().StringVarP(&argsDb.paths.assets, "assets", "a", "", "path to the assets directory")
-	cmdDbInit.Flags().StringVarP(&argsDb.paths.data, "data", "d", "", "path to the data files directory")
-	cmdDbInit.Flags().StringVarP(&argsDb.paths.templates, "templates", "t", "", "path to the templates directory")
-	cmdDbInit.Flags().StringVarP(&argsDb.secrets.signing, "secret", "s", "", "new secret for signing tokens")
-
-	cmdDb.AddCommand(cmdDbCreate)
-	cmdDbCreate.AddCommand(cmdDbCreateUser)
-	cmdDbCreateUser.Flags().StringVarP(&argsDb.data.user.clan, "clan-id", "c", "", "clan number for user")
-	if err := cmdDbCreateUser.MarkFlagRequired("clan-id"); err != nil {
-		log.Fatalf("error: clan-id: %v\n", err)
-	}
-	cmdDbCreateUser.Flags().StringVarP(&argsDb.data.user.email, "email", "e", "", "email for user")
-	if err := cmdDbCreateUser.MarkFlagRequired("email"); err != nil {
-		log.Fatalf("error: email: %v\n", err)
-	}
-	cmdDbCreateUser.Flags().StringVarP(&argsDb.data.user.secret, "secret", "s", "", "secret for user")
-	if err := cmdDbCreateUser.MarkFlagRequired("secret"); err != nil {
-		log.Fatalf("error: secret: %v\n", err)
-	}
-	cmdDbCreateUser.Flags().StringVarP(&argsDb.data.user.timezone, "timezone", "t", "UTC", "timezone for user")
-
-	cmdDb.AddCommand(cmdDbDelete)
-	cmdDbDelete.AddCommand(cmdDbDeleteUser)
-	cmdDbDeleteUser.Flags().StringVarP(&argsDb.data.user.clan, "clan-id", "c", "", "clan number for user")
-	if err := cmdDbCreateUser.MarkFlagRequired("clan-id"); err != nil {
-		log.Fatalf("error: clan-id: %v\n", err)
-	}
-
-	cmdDb.AddCommand(cmdDbUpdate)
-	cmdDbUpdate.Flags().BoolVar(&argsDb.secrets.useRandomSecret, "use-random-secret", false, "generate a new random secret for signing tokens")
-	cmdDbUpdate.Flags().StringVar(&argsDb.secrets.admin, "admin-password", "", "update password for the admin user")
-	cmdDbUpdate.Flags().StringVarP(&argsDb.paths.assets, "assets", "a", "", "new path to the assets directory")
-	cmdDbUpdate.Flags().StringVarP(&argsDb.paths.data, "data", "d", "", "new path to the data files directory")
-	cmdDbUpdate.Flags().StringVarP(&argsDb.paths.templates, "templates", "t", "", "new path to the templates directory")
-	cmdDbUpdate.Flags().StringVarP(&argsDb.secrets.signing, "secret", "s", "", "new secret for signing tokens")
-
 	cmdRoot.AddCommand(cmdDump)
 	cmdDump.Flags().BoolVar(&argsDump.defaultTileMap, "default-tile-map", false, "dump the default tile map")
 
@@ -107,55 +65,6 @@ func Execute() error {
 	cmdRender.Flags().StringVar(&argsRender.paths.data, "data", "data", "path to root of data files")
 	cmdRender.Flags().StringVar(&argsRender.originGrid, "origin-grid", "", "grid id to substitute for ##")
 	cmdRender.Flags().StringVar(&argsRender.maxTurn.id, "max-turn", "", "last turn to map (yyyy-mm format)")
-
-	cmdRoot.AddCommand(cmdServe)
-
-	cmdServe.AddCommand(cmdServeHtmx)
-	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.paths.assets, "assets", "assets", "path to public assets")
-	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.paths.data, "data", "userdata", "path to root of user data files")
-	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.paths.database, "database", "userdata", "path to folder containing database files")
-	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.paths.templates, "templates", "templates", "path to template files")
-	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.server.host, "host", "localhost", "host to serve on")
-	cmdServeHtmx.Flags().StringVar(&argsServeHtmx.server.port, "port", "29631", "port to bind to")
-
-	cmdServe.AddCommand(cmdServeRest)
-	cmdServeRest.Flags().StringVar(&argsServeRest.paths.database, "database", "ottomap.db", "path to database file")
-	cmdServeRest.Flags().StringVar(&argsServeRest.server.host, "host", "localhost", "host to serve on")
-	cmdServeRest.Flags().StringVar(&argsServeRest.server.port, "port", "29642", "port to bind to")
-
-	cmdRoot.AddCommand(cmdUser)
-
-	cmdUser.AddCommand(cmdUserCreate)
-	cmdUserCreate.Flags().StringVarP(&argsUser.clan, "clan-id", "c", "", "clan for the new user (required)")
-	if err := cmdUserCreate.MarkFlagRequired("clan-id"); err != nil {
-		log.Fatalf("error: clan-id: %v\n", err)
-	}
-	cmdUserCreate.Flags().StringVarP(&argsUser.email, "email", "e", "", "email address (required)")
-	if err := cmdUserCreate.MarkFlagRequired("email"); err != nil {
-		log.Fatalf("error: email: %v\n", err)
-	}
-	cmdUserCreate.Flags().StringVarP(&argsUser.password, "password", "p", "", "password for the new user")
-	cmdUserCreate.Flags().StringVarP(&argsUser.role, "role", "r", "user", "user role (default to 'user')")
-
-	cmdUser.AddCommand(cmdUserDelete)
-	cmdUserDelete.Flags().StringVarP(&argsUser.clan, "clan-id", "c", "", "clan of the user to delete (required)")
-	if err := cmdUserDelete.MarkFlagRequired("clan-id"); err != nil {
-		log.Fatalf("error: clan-id: %v\n", err)
-	}
-	cmdUserDelete.Flags().BoolVarP(&argsUser.force, "force", "f", false, "force deletion without confirmation")
-
-	cmdUser.AddCommand(cmdUserList)
-	cmdUserList.Flags().StringVarP(&argsUser.role, "role", "r", "", "filter users by role")
-	cmdUserList.Flags().IntVarP(&argsUser.limit, "limit", "l", 0, "limit the number of results")
-
-	cmdUser.AddCommand(cmdUserUpdate)
-	cmdUserUpdate.Flags().StringP("clan-id", "c", "", "clan for the user (required)")
-	if err := cmdUserUpdate.MarkFlagRequired("clan-id"); err != nil {
-		log.Fatalf("error: clan-id: %v\n", err)
-	}
-	cmdUserUpdate.Flags().StringP("email", "e", "", "new email address")
-	cmdUserUpdate.Flags().StringP("password", "p", "", "new password")
-	cmdUserUpdate.Flags().StringP("role", "r", "", "new role for the user")
 
 	cmdRoot.AddCommand(cmdVersion)
 
