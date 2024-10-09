@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 17, Patch: 2}
+	version = semver.Version{Major: 0, Minor: 17, Patch: 3}
 )
 
 func main() {
@@ -45,6 +45,8 @@ func Execute() error {
 	cmdRender.Flags().BoolVar(&argsRender.autoEOL, "auto-eol", false, "automatically convert line endings")
 	cmdRender.Flags().BoolVar(&argsRender.debug.dumpAllTiles, "debug-dump-all-tiles", false, "dump all tiles")
 	cmdRender.Flags().BoolVar(&argsRender.debug.dumpAllTurns, "debug-dump-all-turns", false, "dump all turns")
+	cmdRender.Flags().BoolVar(&argsRender.debug.logFile, "debug-log-file", true, "enable file name in log output")
+	cmdRender.Flags().BoolVar(&argsRender.debug.logTime, "debug-log-time", true, "enable time in log output")
 	cmdRender.Flags().BoolVar(&argsRender.debug.maps, "debug-maps", false, "enable maps debugging")
 	cmdRender.Flags().BoolVar(&argsRender.debug.nodes, "debug-nodes", false, "enable node debugging")
 	cmdRender.Flags().BoolVar(&argsRender.debug.parser, "debug-parser", false, "enable parser debugging")

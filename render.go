@@ -45,6 +45,8 @@ var argsRender struct {
 	debug struct {
 		dumpAllTiles bool
 		dumpAllTurns bool
+		logFile      bool
+		logTime      bool
 		maps         bool
 		merge        bool
 		nodes        bool
@@ -68,6 +70,15 @@ var cmdRender = &cobra.Command{
 	Short: "Create a map from a report",
 	Long:  `Load and parse turn report and create a map.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
+		logFlags := 0
+		if argsRender.debug.logFile {
+			logFlags |= log.Lshortfile
+		}
+		if argsRender.debug.logTime {
+			logFlags |= log.Ltime
+		}
+		log.SetFlags(logFlags)
+
 		if len(argsRender.clanId) != 4 || argsRender.clanId[0] != '0' {
 			return fmt.Errorf("clan-id must be a 4 digit number starting with 0")
 		} else if n, err := strconv.Atoi(argsRender.clanId[1:]); err != nil || n < 0 || n > 9999 {
