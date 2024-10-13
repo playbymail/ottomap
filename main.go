@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 17, Patch: 3}
+	version = semver.Version{Major: 0, Minor: 18, Patch: 0}
 )
 
 func main() {
@@ -42,27 +42,27 @@ func Execute() error {
 	cmdDump.Flags().BoolVar(&argsDump.defaultTileMap, "default-tile-map", false, "dump the default tile map")
 
 	cmdRoot.AddCommand(cmdRender)
-	cmdRender.Flags().BoolVar(&argsRender.autoEOL, "auto-eol", false, "automatically convert line endings")
+	cmdRender.Flags().BoolVar(&argsRender.autoEOL, "auto-eol", true, "automatically convert line endings")
 	cmdRender.Flags().BoolVar(&argsRender.debug.dumpAllTiles, "debug-dump-all-tiles", false, "dump all tiles")
 	cmdRender.Flags().BoolVar(&argsRender.debug.dumpAllTurns, "debug-dump-all-turns", false, "dump all turns")
-	cmdRender.Flags().BoolVar(&argsRender.debug.logFile, "debug-log-file", true, "enable file name in log output")
-	cmdRender.Flags().BoolVar(&argsRender.debug.logTime, "debug-log-time", true, "enable time in log output")
+	cmdRender.Flags().BoolVar(&argsRender.debug.logFile, "debug-log-file", false, "enable file name in log output")
+	cmdRender.Flags().BoolVar(&argsRender.debug.logTime, "debug-log-time", false, "enable time in log output")
 	cmdRender.Flags().BoolVar(&argsRender.debug.maps, "debug-maps", false, "enable maps debugging")
 	cmdRender.Flags().BoolVar(&argsRender.debug.nodes, "debug-nodes", false, "enable node debugging")
 	cmdRender.Flags().BoolVar(&argsRender.debug.parser, "debug-parser", false, "enable parser debugging")
 	cmdRender.Flags().BoolVar(&argsRender.debug.sections, "debug-sections", false, "enable sections debugging")
 	cmdRender.Flags().BoolVar(&argsRender.debug.steps, "debug-steps", false, "enable step debugging")
-	cmdRender.Flags().BoolVar(&argsRender.experimental.stripCR, "debug-strip-cr", false, "experimental: enable conversion of DOS EOL")
 	cmdRender.Flags().BoolVar(&argsRender.experimental.splitTrailingUnits, "x-split-units", false, "experimental: split trailing units")
 	cmdRender.Flags().BoolVar(&argsRender.mapper.Dump.BorderCounts, "dump-border-counts", false, "dump border counts")
+	cmdRender.Flags().BoolVar(&argsRender.render.FordsAsPills, "fords-as-pills", true, "render fords as pills")
 	cmdRender.Flags().BoolVar(&argsRender.parser.Ignore.Scouts, "ignore-scouts", false, "ignore scout reports")
 	cmdRender.Flags().BoolVar(&argsRender.noWarnOnInvalidGrid, "no-warn-on-invalid-grid", false, "disable grid id warnings")
 	cmdRender.Flags().BoolVar(&argsRender.render.Show.Grid.Coords, "show-grid-coords", false, "show grid coordinates (XX CCRR)")
 	cmdRender.Flags().BoolVar(&argsRender.render.Show.Grid.Numbers, "show-grid-numbers", false, "show grid numbers (CCRR)")
 	cmdRender.Flags().BoolVar(&argsRender.saveWithTurnId, "save-with-turn-id", false, "add turn id to file name")
 	cmdRender.Flags().BoolVar(&argsRender.show.origin, "show-origin", false, "show origin hex")
-	cmdRender.Flags().BoolVar(&argsRender.show.shiftMap, "shift-map", false, "shift map up and left")
-	cmdRender.Flags().BoolVar(&argsRender.render.FordsAsPills, "x-fords-as-pills", false, "experimental: render fords as pills")
+	cmdRender.Flags().BoolVar(&argsRender.show.shiftMap, "shift-map", true, "shift map up and left")
+	cmdRender.Flags().BoolVar(&argsRender.experimental.stripCR, "strip-cr", false, "experimental: enable conversion of DOS EOL")
 	cmdRender.Flags().StringVar(&argsRender.clanId, "clan-id", "", "clan for output file names")
 	if err := cmdRender.MarkFlagRequired("clan-id"); err != nil {
 		log.Fatalf("error: clan-id: %v\n", err)
