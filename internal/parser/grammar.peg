@@ -64,6 +64,11 @@ AdminNote <- "Map Testing" {
     return true, nil
 }
 
+MiscNote <- (![\n\r,] .)* {
+    //log.Printf("peg: misc note %q\n", string(c.text))
+    return true, nil
+}
+
 CrowsNestObservation <- cs:CROWSIGHTING SP "-" SP cp:COMPASSPOINT EOF{
     return FarHorizon_t{
         Point: cp.(compass.Point_e),
@@ -100,7 +105,7 @@ FleetMovement <- ws:WINDSTRENGTH SP d:DIRECTION SP "Fleet Movement:" _ results:T
     return mt, nil
 }
 
-Location <- ("Courier" / "Element" / "Fleet" / "Garrison" / "Tribe") SP u:UNIT_ID "," SP AdminNote? "," SP "Current Hex =" SP ch:COORDS "," SP "(Previous Hex =" SP ph:COORDS ")" _ EOF {
+Location <- ("Courier" / "Element" / "Fleet" / "Garrison" / "Tribe") SP u:UNIT_ID "," SP MiscNote? "," SP "Current Hex =" SP ch:COORDS "," SP "(Previous Hex =" SP ph:COORDS ")" _ EOF {
     return Location_t {
         UnitId:      u.(UnitId_t),
         CurrentHex:  ch.(string),
