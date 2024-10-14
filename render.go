@@ -55,6 +55,7 @@ var argsRender struct {
 		steps        bool
 	}
 	experimental struct {
+		newWaterTiles      bool
 		splitTrailingUnits bool
 		stripCR            bool
 	}
@@ -170,6 +171,12 @@ var cmdRender = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if argsRoot.showVersion {
 			log.Printf("ottomap version %s\n", version)
+		}
+
+		if argsRender.experimental.newWaterTiles {
+			log.Printf("experimental: newWaterTiles enabled\n")
+			terrain.TileTerrainNames[terrain.Lake] = "Water Sea"
+			terrain.TileTerrainNames[terrain.Ocean] = "Water Ocean"
 		}
 
 		argsRender.originGrid = "RR"

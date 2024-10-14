@@ -21,12 +21,12 @@
 | HSM        | High Snowy Mountains   | Mountain Snowcapped         |      |    |
 | JG         | Jungle                 | Flat Forest Jungle Heavy    |      |    |
 | JH         | Jungle Hill            | Hills Forest Jungle         |      |    |
-| L          | Lake                   | Water Shoals                |  *   |    |
+| L          | Lake                   | Water Sea                   |  *   |    |
 | LCM        | Low Conifer Mountains  | Mountains Forest Evergreen  |      |    |
 | LJM        | Low Jungle Mountain    | Mountain Forest Jungle      |      |    |
 | LSM        | Low Snowy Mountains    | Mountains Snowcapped        |      |    |
 | LVM        | Low Volcanic Mountains | Mountain Volcano Dormant    |      |    |
-| O          | Ocean                  | Water Sea                   |  *   |    |
+| O          | Ocean                  | Water Ocean                 |  *   |    |
 | PI         | Polar Ice              | Mountains Glacier           |      |    |
 | PPR        | Plateau Prairie        | Flat Grasslands Poor        |      |    |
 | PR         | Prairie                | Flat Grazing Land           |  *   |    |

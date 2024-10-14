@@ -15,6 +15,7 @@ import (
 	"log"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -404,7 +405,30 @@ func ParseScoutMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line [
 
 func ParseStatusLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, debugSteps, debugNodes bool, experimentalUnitSplit bool) ([]*Move_t, error) {
 	if va, err := Parse(fid, line, Entrypoint("StatusLine")); err != nil {
+		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, string(line))
 		log.Printf("status %v\n", err)
+
+		var column int
+		if fields := strings.Split(err.Error(), ":"); len(fields) > 2 && fields[0] == fid {
+			if columns := strings.Fields(fields[2]); len(columns) == 2 {
+				column, _ = strconv.Atoi(columns[0])
+			}
+		}
+		log.Printf("error: parsing status line\n")
+		log.Printf("error: file id  %q\n", fid)
+		log.Printf("error: line no  %d\n", lineNo)
+		if column != 0 {
+			log.Printf("error: near col %d\n", column)
+		}
+		log.Printf("error: input is %q\n", line)
+		// is the line valid UTF-8?
+		wl := []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.,()#:/ \t\r\n")
+		for n := 0; n < len(line); n++ {
+			ch := line[n]
+			if bytes.IndexByte(wl, ch) == -1 {
+				log.Printf("error: column %d: invalid character %q\n", n+1, string([]byte{ch}))
+			}
+		}
 		return nil, err
 	} else if mt, ok := va.(Movement_t); !ok {
 		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, line)
