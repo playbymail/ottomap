@@ -795,10 +795,17 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 			}
 			m.Advance = v.Direction
 			m.Result = results.Failed
-			m.Report.MergeBorders(&Border_t{
-				Direction: v.Direction,
-				Terrain:   v.Terrain,
-			})
+			// fleet movements can end up exhausted in an unknown direction and with no terrain.
+			// if we were smart enough to look back at the wind direction, we could use that,
+			// but we're not, and we still wouldn't know what to do with the terrain.
+			if v.Direction == direction.Unknown && v.Terrain == terrain.Blank {
+				log.Printf("%s: %s: %d: step %d: sub %d: %q: fleet exhausted?\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
+			} else {
+				m.Report.MergeBorders(&Border_t{
+					Direction: v.Direction,
+					Terrain:   v.Terrain,
+				})
+			}
 		case FoundItem_t: // ignore
 			// log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
 		case FoundNothing_t:

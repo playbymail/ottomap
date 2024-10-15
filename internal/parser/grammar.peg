@@ -256,6 +256,11 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
     return MissingEdge_t{
         Direction: d.(direction.Direction_e),
     }, nil
+} / [Nn] "ot enough M.P's" _ EOF {
+    return &Exhausted_t{
+        Direction: direction.Unknown,
+        Terrain:   terrain.Blank,
+    }, nil
 } / [Nn] "ot enough M.P's to move to" SP d:DIRECTION SP "into" SP t:TERRAIN EOF {
     return &Exhausted_t{
         Direction: d.(direction.Direction_e),
