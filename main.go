@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 21, Patch: 0}
+	version = semver.Version{Major: 0, Minor: 22, Patch: 0}
 )
 
 func main() {
@@ -63,6 +63,7 @@ func Execute() error {
 	cmdRender.Flags().BoolVar(&argsRender.show.origin, "show-origin", false, "show origin hex")
 	cmdRender.Flags().BoolVar(&argsRender.show.shiftMap, "shift-map", true, "shift map up and left")
 	cmdRender.Flags().BoolVar(&argsRender.experimental.stripCR, "strip-cr", false, "experimental: enable conversion of DOS EOL")
+	cmdRender.Flags().BoolVar(&argsRender.experimental.cleanUpScoutStill, "x-clean-up-scout-still", false, "experimental: clean up 'scout still' entries")
 	cmdRender.Flags().BoolVar(&argsRender.experimental.newWaterTiles, "x-new-water-tiles", false, "experimental: use higher contrast water tiles")
 	cmdRender.Flags().StringVar(&argsRender.clanId, "clan-id", "", "clan for output file names")
 	if err := cmdRender.MarkFlagRequired("clan-id"); err != nil {

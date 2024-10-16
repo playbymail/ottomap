@@ -56,6 +56,7 @@ var argsRender struct {
 	}
 	experimental struct {
 		newWaterTiles      bool
+		cleanUpScoutStill  bool
 		splitTrailingUnits bool
 		stripCR            bool
 	}
@@ -234,7 +235,7 @@ var cmdRender = &cobra.Command{
 			if turnId > maxTurnId {
 				maxTurnId = turnId
 			}
-			turn, err := parser.ParseInput(i.Id, turnId, data, argsRender.debug.parser, argsRender.debug.sections, argsRender.debug.steps, argsRender.debug.nodes, argsRender.experimental.splitTrailingUnits, argsRender.parser)
+			turn, err := parser.ParseInput(i.Id, turnId, data, argsRender.debug.parser, argsRender.debug.sections, argsRender.debug.steps, argsRender.debug.nodes, argsRender.experimental.splitTrailingUnits, argsRender.experimental.cleanUpScoutStill, argsRender.parser)
 			if err != nil {
 				log.Fatal(err)
 			} else if turnId != fmt.Sprintf("%04d-%02d", turn.Year, turn.Month) {

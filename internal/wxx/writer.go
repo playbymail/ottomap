@@ -490,115 +490,118 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 			}
 			points := coordsToPoints(t.RenderAt.Column, t.RenderAt.Row)
 
-			// detect edges that are both Ford and (River or Canal)
+			// create maps with all possible edges to help us draw edges that combine types
 			canalEdges := map[direction.Direction_e]bool{}
 			for _, dir := range t.Features.Edges.Canal {
 				canalEdges[dir] = true
 			}
 			fordEdges := map[direction.Direction_e]bool{}
-			// populate the map only if we're not drawing the ford as a pill
-			if !cfg.FordsAsPills {
-				for _, dir := range t.Features.Edges.Ford {
-					fordEdges[dir] = true
-				}
+			for _, dir := range t.Features.Edges.Ford {
+				fordEdges[dir] = true
 			}
-
-			var from, to Point
-
-			for _, dir := range t.Features.Edges.Canal {
-				// log.Printf("canal %s %s", t.Location.GridString(), dir)
-				// if we have both a ford and a canal, honor the ford
-				if fordEdges[dir] {
-					continue
-				}
-				switch dir {
-				case direction.North:
-					from, to = points[2], points[3]
-				case direction.NorthEast:
-					from, to = points[3], points[4]
-				case direction.SouthEast:
-					from, to = points[4], points[5]
-				case direction.South:
-					from, to = points[5], points[6]
-				case direction.SouthWest:
-					from, to = points[6], points[1]
-				case direction.NorthWest:
-					from, to = points[1], points[2]
-				default:
-					panic(fmt.Sprintf("assert(direction != %d)", dir))
-				}
-				w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, canalData.R, canalData.G, canalData.B, canalData.Width)
-				w.Printf(` <p type="m" x="%f" y="%f"/>`, from.X, from.Y)
-				w.Printf(` <p x="%f" y="%f"/>`, to.X, to.Y)
-				w.Println(`</shape>`)
-			}
-
-			for _, dir := range t.Features.Edges.River {
-				// log.Printf("river %s %s", t.Location.GridString(), dir)
-				// if we have both a ford and a river, honor the ford
-				if fordEdges[dir] {
-					continue
-				}
-				switch dir {
-				case direction.North:
-					from, to = points[2], points[3]
-				case direction.NorthEast:
-					from, to = points[3], points[4]
-				case direction.SouthEast:
-					from, to = points[4], points[5]
-				case direction.South:
-					from, to = points[5], points[6]
-				case direction.SouthWest:
-					from, to = points[6], points[1]
-				case direction.NorthWest:
-					from, to = points[1], points[2]
-				default:
-					panic(fmt.Sprintf("assert(direction != %d)", dir))
-				}
-				//w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="0.6000000238418579,0.800000011920929,1.0,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, riverWidth)
-				w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, riverData.R, riverData.G, riverData.B, riverData.Width)
-				w.Printf(` <p type="m" x="%f" y="%f"/>`, from.X, from.Y)
-				w.Printf(` <p x="%f" y="%f"/>`, to.X, to.Y)
-				w.Println(`</shape>`)
-			}
-
+			passEdges := map[direction.Direction_e]bool{}
 			for _, dir := range t.Features.Edges.Pass {
-				// get the center of the hex we're in
-				center := points[0]
-
-				// get the midpoint of the segment from the center to the edge
-				segmentEnd := edgeCenter(dir, points)
-				segmentStart := midpoint(midpoint(midpoint(center, segmentEnd), segmentEnd), segmentEnd)
-
-				//w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" fillColor="%g,%g,%g,1.0" strokeColor="%g,%g,%g,1.0" strokeWidth="0.09" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, mountainPass.R, mountainPass.G, mountainPass.B, mountainPass.R, mountainPass.G, mountainPass.B)
-				w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" fillColor="0.7019608020782471,0.7019608020782471,0.7019608020782471,1.0" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, mountainPassPillData.R, mountainPassPillData.G, mountainPassPillData.B, mountainPassPillData.Width)
-				w.Printf(` <p type="m" x="%f" y="%f"/>`, segmentStart.X, segmentStart.Y)
-				w.Printf(` <p x="%f" y="%f"/>`, segmentEnd.X, segmentEnd.Y)
-				w.Println(`</shape>`)
+				passEdges[dir] = true
 			}
-
+			riverEdges := map[direction.Direction_e]bool{}
+			for _, dir := range t.Features.Edges.River {
+				riverEdges[dir] = true
+			}
+			stoneRoadEdges := map[direction.Direction_e]bool{}
 			for _, dir := range t.Features.Edges.StoneRoad {
-				// get the center of the hex we're in
-				center := points[0]
-
-				// get the midpoint of the segment from the center to the edge
-				segmentEnd := edgeCenter(dir, points)
-				segmentStart := midpoint(midpoint(midpoint(center, segmentEnd), segmentEnd), segmentEnd)
-
-				//w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" fillColor="0.7019608020782471,0.7019608020782471,0.7019608020782471,1.0" strokeColor="0.7019608020782471,0.7019608020782471,0.7019608020782471,1.0" strokeWidth="0.05" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`)
-				w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" fillColor="0.7019608020782471,0.7019608020782471,0.7019608020782471,1.0" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, stoneRoadPillData.R, stoneRoadPillData.G, stoneRoadPillData.B, stoneRoadPillData.Width)
-				w.Printf(` <p type="m" x="%f" y="%f"/>`, segmentStart.X, segmentStart.Y)
-				w.Printf(` <p x="%f" y="%f"/>`, segmentEnd.X, segmentEnd.Y)
-				w.Println(`</shape>`)
+				stoneRoadEdges[dir] = true
 			}
 
-			if cfg.FordsAsPills {
-				for _, dir := range t.Features.Edges.Ford {
-					// log.Printf("ford-as-pill %s %s", t.Location.GridString(), dir)
+			for _, dir := range []direction.Direction_e{direction.North, direction.NorthEast, direction.SouthEast, direction.South, direction.SouthWest, direction.NorthWest} {
+				// get the center of the hex we're in and the end points of the edge we're going to draw
+				center := points[0]
+				var from, to Point
+				switch dir {
+				case direction.North:
+					from, to = points[2], points[3]
+				case direction.NorthEast:
+					from, to = points[3], points[4]
+				case direction.SouthEast:
+					from, to = points[4], points[5]
+				case direction.South:
+					from, to = points[5], points[6]
+				case direction.SouthWest:
+					from, to = points[6], points[1]
+				case direction.NorthWest:
+					from, to = points[1], points[2]
+				default:
+					panic(fmt.Sprintf("assert(direction != %d)", dir))
+				}
 
-					// get the center of the hex we're in
-					center := points[0]
+				// draw the edges in the order we want them to appear.
+				// rivers, then canals, then stone roads, then fords, then passes.
 
+				// set a flag to indicate if we should draw fords as a gap or pillbox.
+				drawFordGap := fordEdges[dir] && !cfg.FordsAsPills
+
+				// the test for river is odd because the report says "ford" for "river" edges sometimes.
+				// but it says "ford and canal" for canal edges that are also fords.
+				if riverEdges[dir] || (fordEdges[dir] && !canalEdges[dir]) {
+					if drawFordGap {
+						ford := edgeCenter(dir, points)
+						midpointFrom := midpoint(from, ford)
+						midpointTo := midpoint(to, ford)
+
+						w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, riverData.R, riverData.G, riverData.B, riverData.Width)
+						w.Printf(` <p type="m" x="%f" y="%f"/>`, from.X, from.Y)
+						w.Printf(` <p x="%f" y="%f"/>`, midpointFrom.X, midpointFrom.Y)
+						w.Println(`</shape>`)
+
+						w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, riverData.R, riverData.G, riverData.B, riverData.Width)
+						w.Printf(` <p type="m" x="%f" y="%f"/>`, midpointTo.X, midpointTo.Y)
+						w.Printf(` <p x="%f" y="%f"/>`, to.X, to.Y)
+						w.Println(`</shape>`)
+					} else {
+						w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, riverData.R, riverData.G, riverData.B, riverData.Width)
+						w.Printf(` <p type="m" x="%f" y="%f"/>`, from.X, from.Y)
+						w.Printf(` <p x="%f" y="%f"/>`, to.X, to.Y)
+						w.Println(`</shape>`)
+					}
+				}
+
+				if canalEdges[dir] {
+					if drawFordGap {
+						ford := edgeCenter(dir, points)
+						midpointFrom := midpoint(from, ford)
+						midpointTo := midpoint(to, ford)
+
+						w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, canalData.R, canalData.G, canalData.B, canalData.Width)
+						w.Printf(` <p type="m" x="%f" y="%f"/>`, from.X, from.Y)
+						w.Printf(` <p x="%f" y="%f"/>`, midpointFrom.X, midpointFrom.Y)
+						w.Println(`</shape>`)
+
+						w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, canalData.R, canalData.G, canalData.B, canalData.Width)
+						w.Printf(` <p type="m" x="%f" y="%f"/>`, midpointTo.X, midpointTo.Y)
+						w.Printf(` <p x="%f" y="%f"/>`, to.X, to.Y)
+						w.Println(`</shape>`)
+					} else {
+						w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, canalData.R, canalData.G, canalData.B, canalData.Width)
+						w.Printf(` <p type="m" x="%f" y="%f"/>`, from.X, from.Y)
+						w.Printf(` <p x="%f" y="%f"/>`, to.X, to.Y)
+						w.Println(`</shape>`)
+					}
+				}
+
+				if stoneRoadEdges[dir] {
+					// get the midpoint of the segment from the center to the edge
+					segmentEnd := edgeCenter(dir, points)
+					segmentStart := midpoint(midpoint(midpoint(center, segmentEnd), segmentEnd), segmentEnd)
+
+					//w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" fillColor="0.7019608020782471,0.7019608020782471,0.7019608020782471,1.0" strokeColor="0.7019608020782471,0.7019608020782471,0.7019608020782471,1.0" strokeWidth="0.05" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`)
+					w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" fillColor="0.7019608020782471,0.7019608020782471,0.7019608020782471,1.0" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, stoneRoadPillData.R, stoneRoadPillData.G, stoneRoadPillData.B, stoneRoadPillData.Width)
+					w.Printf(` <p type="m" x="%f" y="%f"/>`, segmentStart.X, segmentStart.Y)
+					w.Printf(` <p x="%f" y="%f"/>`, segmentEnd.X, segmentEnd.Y)
+					w.Println(`</shape>`)
+				}
+
+				// fords as drawn as gaps or pills. gaps were handled in the river and canal code above,
+				// so we only need to draw pills here.
+				if fordEdges[dir] && cfg.FordsAsPills {
 					// get the midpoint of the segment from the center to the edge
 					segmentEnd := edgeCenter(dir, points)
 					segmentStart := midpoint(midpoint(midpoint(center, segmentEnd), segmentEnd), segmentEnd)
@@ -608,44 +611,16 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 					w.Printf(` <p x="%f" y="%f"/>`, segmentEnd.X, segmentEnd.Y)
 					w.Println(`</shape>`)
 				}
-			} else {
-				for _, dir := range t.Features.Edges.Ford {
-					// log.Printf("ford %s %s", t.Location.GridString(), dir)
-					// if we have a ford, we need to draw part of a river or canal
-					fordData := riverData
-					if canalEdges[dir] {
-						fordData = canalData
-					}
 
-					switch dir {
-					case direction.North:
-						from, to = points[2], points[3]
-					case direction.NorthEast:
-						from, to = points[3], points[4]
-					case direction.SouthEast:
-						from, to = points[4], points[5]
-					case direction.South:
-						from, to = points[5], points[6]
-					case direction.SouthWest:
-						from, to = points[6], points[1]
-					case direction.NorthWest:
-						from, to = points[1], points[2]
-					default:
-						panic(fmt.Sprintf("assert(direction != %d)", dir))
-					}
+				if passEdges[dir] {
+					// get the midpoint of the segment from the center to the edge
+					segmentEnd := edgeCenter(dir, points)
+					segmentStart := midpoint(midpoint(midpoint(center, segmentEnd), segmentEnd), segmentEnd)
 
-					ford := edgeCenter(dir, points)
-					midpointFrom := midpoint(from, ford)
-					midpointTo := midpoint(to, ford)
-
-					w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, fordData.R, fordData.G, fordData.B, fordData.Width)
-					w.Printf(` <p type="m" x="%f" y="%f"/>`, from.X, from.Y)
-					w.Printf(` <p x="%f" y="%f"/>`, midpointFrom.X, midpointFrom.Y)
-					w.Println(`</shape>`)
-
-					w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, fordData.R, fordData.G, fordData.B, fordData.Width)
-					w.Printf(` <p type="m" x="%f" y="%f"/>`, midpointTo.X, midpointTo.Y)
-					w.Printf(` <p x="%f" y="%f"/>`, to.X, to.Y)
+					//w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" fillColor="%g,%g,%g,1.0" strokeColor="%g,%g,%g,1.0" strokeWidth="0.09" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, mountainPass.R, mountainPass.G, mountainPass.B, mountainPass.R, mountainPass.G, mountainPass.B)
+					w.Printf(`<shape  type="Path" isCurve="false" isGMOnly="false" isSnapVertices="true" isMatchTileBorders="false" tags="" creationType="BASIC" isDropShadow="false" isInnerShadow="false" isBoxBlur="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" dsSpread="0.2" dsRadius="50.0" dsOffsetX="0.0" dsOffsetY="0.0" insChoke="0.2" insRadius="50.0" insOffsetX="0.0" insOffsetY="0.0" bbWidth="10.0" bbHeight="10.0" bbIterations="3" mapLayer="Above Terrain" fillTexture="" strokeTexture="" strokeType="SIMPLE" highestViewLevel="WORLD" currentShapeViewLevel="WORLD" lineCap="ROUND" lineJoin="ROUND" opacity="1.0" fillRule="NON_ZERO" fillColor="0.7019608020782471,0.7019608020782471,0.7019608020782471,1.0" strokeColor="%f,%f,%f,1.0" strokeWidth="%f" dsColor="1.0,0.8941176533699036,0.7686274647712708,1.0" insColor="1.0,0.8941176533699036,0.7686274647712708,1.0">`, mountainPassPillData.R, mountainPassPillData.G, mountainPassPillData.B, mountainPassPillData.Width)
+					w.Printf(` <p type="m" x="%f" y="%f"/>`, segmentStart.X, segmentStart.Y)
+					w.Printf(` <p x="%f" y="%f"/>`, segmentEnd.X, segmentEnd.Y)
 					w.Println(`</shape>`)
 				}
 			}

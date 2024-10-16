@@ -296,6 +296,14 @@ func (f *FoundItem_t) String() string {
 	return fmt.Sprintf("found(%d-%s)", f.Quantity, f.Item)
 }
 
+type FoundUnit_t struct {
+	Id UnitId_t
+}
+
+type Patrolled_t struct {
+	FoundUnits []FoundUnit_t
+}
+
 type Longhouse_t struct {
 	Id       string
 	Capacity int

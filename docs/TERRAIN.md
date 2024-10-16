@@ -25,7 +25,7 @@
 | LCM        | Low Conifer Mountains  | Mountains Forest Evergreen  |      |    |
 | LJM        | Low Jungle Mountain    | Mountain Forest Jungle      |      |    |
 | LSM        | Low Snowy Mountains    | Mountains Snowcapped        |      |    |
-| LVM        | Low Volcanic Mountains | Mountain Volcano Dormant    |      |    |
+| LVM        | Low Volcano Mountains  | Mountain Volcano Dormant    |      |    |
 | O          | Ocean                  | Water Ocean                 |  *   |    |
 | PI         | Polar Ice              | Mountains Glacier           |      |    |
 | PPR        | Plateau Prairie        | Flat Grasslands Poor        |      |    |

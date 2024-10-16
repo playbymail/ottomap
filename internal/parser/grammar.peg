@@ -269,16 +269,17 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
 } / [Nn] "othing of interest found" EOF {
     return FoundNothing_t{}, nil
 } / "Patrolled and found" SP u:UNIT_ID sui:SpaceUnitID* EOF {
-    found := []FoundUnit_t{{Id: u.(UnitId_t)}}
+    var patrolled Patrolled_t
+    patrolled.FoundUnits = []FoundUnit_t{{Id: u.(UnitId_t)}}
     for _, su := range toAnySlice(sui) {
         switch v := su.(type) {
         case UnitId_t:
-            found = append(found, FoundUnit_t{Id: v})
+            patrolled.FoundUnits = append(patrolled.FoundUnits, FoundUnit_t{Id: v})
         default:
             panic(fmt.Errorf("unexpected type %T", v))
         }
     }
-    return found, nil
+    return &patrolled, nil
 } / t:ObviousNeighboringTerrainCode SP+ d:DIRECTION sdi:SpaceDirection* EOF {
     kind := t.(terrain.Terrain_e)
     neighbors := []*Neighbor_t{{
@@ -684,6 +685,8 @@ TERRAIN <- "ALPS" {
 } / "LOW SNOWY MOUNTAINS" {
     return terrain.LowSnowyMountains, nil
 } / "LOW VOLCANIC MOUNTAINS" {
+    return terrain.LowVolcanicMountains, nil
+} / "LOW VOLCANO MOUNTAINS" {
     return terrain.LowVolcanicMountains, nil
 } / "OCEAN" {
     return terrain.Ocean, nil
