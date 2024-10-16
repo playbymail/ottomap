@@ -31,15 +31,27 @@ WINDOWS_EXE="build/ottomap-windows-${OTTOVER}.exe"
 GOOS=windows GOARCH=amd64 go build -o "${WINDOWS_EXE}" || exit 2
 
 # push the executable files to our production server
-echo " info: pushing executable files..."
-scp "${LINUX_EXE}"   mdhender@tribenet:bin/ottomap || {
+echo " info: pushing executable files to mdhender..."
+scp "${LINUX_EXE}"   mdhender@tribenet:bin/ || {
   echo "error: failed to copy the linux executable to the production server"
   exit 2
 }
-scp "${LINUX_EXE}"   mdhender@tribenet:/var/www/ottomap.mdhenderson.com/bin/ottomap || {
+scp "${LINUX_EXE}"   mdhender@tribenet:bin/ottomap.${OTTOVER} || {
   echo "error: failed to copy the linux executable to the production server"
   exit 2
 }
+
+echo " info: pushing linux executable files to mdhenderson/bin..."
+scp "${LINUX_EXE}"   mdhender@tribenet:/var/www/ottomap.mdhenderson.com/bin/ || {
+  echo "error: failed to copy the linux executable to the production server"
+  exit 2
+}
+scp "${LINUX_EXE}"   mdhender@tribenet:/var/www/ottomap.mdhenderson.com/bin/ottomap.${OTTOVER} || {
+  echo "error: failed to copy the linux executable to the production server"
+  exit 2
+}
+
+echo " info: pushing windows executable files to mdhenderson/bin..."
 scp "${WINDOWS_EXE}" mdhender@tribenet:/var/www/ottomap.mdhenderson.com/assets/uploads/ || {
   echo "error: failed to copy the windows executable to the production server"
   exit 2

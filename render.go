@@ -173,6 +173,9 @@ var cmdRender = &cobra.Command{
 		if argsRoot.showVersion {
 			log.Printf("ottomap version %s\n", version)
 		}
+		if argsRoot.soloClan {
+			log.Printf("clan %q: running solo\n", argsRender.clanId)
+		}
 
 		if argsRender.experimental.newWaterTiles {
 			log.Printf("experimental: newWaterTiles enabled\n")
@@ -188,7 +191,7 @@ var cmdRender = &cobra.Command{
 		log.Printf("input:  %s\n", argsRender.paths.input)
 		log.Printf("output: %s\n", argsRender.paths.output)
 
-		inputs, err := turns.CollectInputs(argsRender.paths.input, argsRender.maxTurn.year, argsRender.maxTurn.month)
+		inputs, err := turns.CollectInputs(argsRender.paths.input, argsRender.maxTurn.year, argsRender.maxTurn.month, argsRoot.soloClan, argsRender.clanId)
 		if err != nil {
 			log.Fatalf("error: inputs: %v\n", err)
 		}

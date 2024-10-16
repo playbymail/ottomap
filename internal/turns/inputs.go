@@ -17,8 +17,20 @@ var (
 )
 
 // CollectInputs returns a slice containing all the turn reports in the path
-func CollectInputs(path string, maxYear, maxMonth int) (inputs []*TurnReportFile_t, err error) {
+// if solo is true, then only the turn reports for the soloClan are returned.
+func CollectInputs(path string, maxYear, maxMonth int, solo bool, soloClan string) (inputs []*TurnReportFile_t, err error) {
 	//log.Printf("collect: input path: %s\n", path)
+	if solo {
+		clan, err := strconv.Atoi(soloClan)
+		if err != nil {
+			return nil, fmt.Errorf("error: clanId: %q: %v\n", soloClan, err)
+		} else if clan < 1 || clan > 999 {
+			return nil, fmt.Errorf("error: clanId: %q: invalid clanId\n", soloClan)
+		}
+		soloClan = fmt.Sprintf("%04d", clan)
+	} else {
+		soloClan = ""
+	}
 
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -35,6 +47,10 @@ func CollectInputs(path string, maxYear, maxMonth int) (inputs []*TurnReportFile
 			year, _ := strconv.Atoi(matches[1])
 			month, _ := strconv.Atoi(matches[2])
 			clanId := matches[3]
+			if solo && clanId != soloClan {
+				//log.Printf("warn: solo %q: ignores %q\n", soloClan, clanId)
+				continue
+			}
 			if year < 899 || year > 9999 || month < 1 || month > 12 {
 				log.Printf("warn: %q: invalid turn year or month\n")
 				continue
