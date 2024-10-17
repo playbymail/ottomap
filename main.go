@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 23, Patch: 0}
+	version = semver.Version{Major: 0, Minor: 24, Patch: 0}
 )
 
 func main() {
@@ -40,6 +40,10 @@ func Execute() error {
 
 	cmdRoot.AddCommand(cmdDump)
 	cmdDump.Flags().BoolVar(&argsDump.defaultTileMap, "default-tile-map", false, "dump the default tile map")
+
+	cmdRoot.AddCommand(cmdList)
+	cmdList.AddCommand(cmdListClans)
+	cmdList.AddCommand(cmdListTurns)
 
 	cmdRoot.AddCommand(cmdRender)
 	cmdRender.Flags().BoolVar(&argsRender.autoEOL, "auto-eol", true, "automatically convert line endings")
