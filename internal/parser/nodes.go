@@ -105,6 +105,11 @@ func hexReportToNodes(hexReport []byte, debugNodes bool, experimentalUnitSplit b
 				tmp.addText(tmp.next)
 				tmp.next = tmp.next.next
 			}
+		} else if tmp.isLowSnowyMountainsEdge() {
+			for tmp.next.isDirection() {
+				tmp.addText(tmp.next)
+				tmp.next = tmp.next.next
+			}
 		} else if tmp.isHighSnowyMountainsEdge() {
 			for tmp.next.isDirection() {
 				tmp.addText(tmp.next)
@@ -207,20 +212,23 @@ func (n *node) addText(t *node) {
 	n.text = append(n.text, t.text...)
 }
 
+// isDirection returns true if the node is a direction.
+// we have to do a case-insensitive comparison because the grammar is case-insensitive,
+// but we don't coerce the returned tokens to upper case.
 func (n *node) isDirection() bool {
 	if n == nil {
 		return false
-	} else if bytes.Equal(n.text, []byte{'N'}) {
+	} else if bytes.EqualFold(n.text, []byte{'N'}) {
 		return true
-	} else if bytes.Equal(n.text, []byte{'N', 'E'}) {
+	} else if bytes.EqualFold(n.text, []byte{'N', 'E'}) {
 		return true
-	} else if bytes.Equal(n.text, []byte{'S', 'E'}) {
+	} else if bytes.EqualFold(n.text, []byte{'S', 'E'}) {
 		return true
-	} else if bytes.Equal(n.text, []byte{'S'}) {
+	} else if bytes.EqualFold(n.text, []byte{'S'}) {
 		return true
-	} else if bytes.Equal(n.text, []byte{'S', 'W'}) {
+	} else if bytes.EqualFold(n.text, []byte{'S', 'W'}) {
 		return true
-	} else if bytes.Equal(n.text, []byte{'N', 'W'}) {
+	} else if bytes.EqualFold(n.text, []byte{'N', 'W'}) {
 		return true
 	}
 	return false
@@ -252,6 +260,13 @@ func (n *node) isLowConiferMountainsEdge() bool {
 		return false
 	}
 	return bytes.HasPrefix(n.text, []byte{'L', 'c', 'm', ' '})
+}
+
+func (n *node) isLowSnowyMountainsEdge() bool {
+	if n == nil {
+		return false
+	}
+	return bytes.HasPrefix(n.text, []byte{'L', 's', 'm', ' '})
 }
 
 func (n *node) isHighSnowyMountainsEdge() bool {

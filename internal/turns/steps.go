@@ -9,7 +9,18 @@ import (
 	"github.com/playbymail/ottomap/internal/results"
 	"github.com/playbymail/ottomap/internal/tiles"
 	"log"
+	"strings"
 )
+
+func errslug(text []byte, width int) string {
+	var slug string
+	if len(text) > width {
+		slug = string(text[:width-3]) + "..."
+	} else {
+		slug = string(text)
+	}
+	return strings.ReplaceAll(fmt.Sprintf("%q", slug), "\\\\", "\\")
+}
 
 // Step processes a single step from a unit's move.
 // It returns the final location of the unit.
@@ -60,8 +71,13 @@ func Step(turnId string, move *parser.Move_t, location, leader coords.Map, world
 			return location, err
 		}
 	} else {
-		log.Printf("%s: %d: step %d: result %q\n", turnId, move.LineNo, move.StepNo, move.Result)
-		log.Printf("line: %q\n", move.Line)
+		log.Printf("error: unexpected result while parsing movement\n")
+		log.Printf("error: turn %q\n", turnId)
+		log.Printf("error: input: line %d\n", move.LineNo)
+		log.Printf("error: input: text %s\n", errslug(move.Line, 58))
+		log.Printf("error: move: step %d\n", move.StepNo)
+		log.Printf("error: found result %q\n", move.Result)
+		log.Printf("please report this error\n")
 		panic(fmt.Sprintf("assert(result != %q)", move.Result))
 	}
 	if to == nil {
