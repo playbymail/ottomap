@@ -4,7 +4,9 @@ package tiles
 
 import (
 	"github.com/playbymail/ottomap/internal/coords"
+	"log"
 	"sort"
+	"strings"
 )
 
 // Map_t represents a map of tiles.
@@ -26,6 +28,9 @@ func (m *Map_t) Bounds() (upperLeft, lowerRight coords.Map) {
 	}
 
 	for _, tile := range m.Tiles {
+		if (tile.Visited != "" || tile.Scouted != "") && strings.Contains(tile.Location.GridString(), "-") {
+			log.Printf("tile: %s: visited %q: scouted %q\n", tile.Location.GridString(), tile.Visited, tile.Scouted)
+		}
 		if upperLeft.Column == 0 {
 			// assume that we're on the first tile
 			upperLeft.Column, upperLeft.Row = tile.Location.Column, tile.Location.Row

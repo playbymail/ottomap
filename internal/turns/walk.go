@@ -97,6 +97,10 @@ func Walk(input []*parser.Turn_t, originGrid string, quitOnInvalidGrid, warnOnIn
 				//log.Printf("%s: %-6s: %d: step %d: result %q: to %q\n", turn.Id, unit, move.LineNo, move.StepNo, move.Result, location)
 				current = location
 			}
+			if strings.Contains(current.GridString(), "-") {
+				log.Printf("walk: %s: %s: %s\n", moves.TurnId, moves.Id, current.GridString())
+			}
+
 			moves.Location, lastSeen[unit] = current, current
 
 			// the unit's final location has been updated, so we can now send out the scouting parties

@@ -179,12 +179,12 @@ func (t *Tile_t) MergeSettlement(s *parser.Settlement_t) {
 	if s == nil {
 		return
 	}
-	log.Printf("merge: settlement: %q\n", s.Name)
 	for _, l := range t.Settlements {
 		if strings.ToLower(l.Name) == strings.ToLower(s.Name) {
 			return
 		}
 	}
+	log.Printf("merge: settlement: %q\n", s.Name)
 	t.Settlements = append(t.Settlements, s)
 }
 
@@ -230,7 +230,7 @@ func (t *Tile_t) MergeTerrain(n terrain.Terrain_e) {
 	}
 
 	// log any deltas
-	log.Printf("useless tidbit: old terrain %-4q new terrain %q\n", t.Terrain, n)
+	log.Printf("%s: terrain changed from %-4q: to %q\n", t.Location.GridString(), t.Terrain, n)
 
 	t.Terrain = n
 }

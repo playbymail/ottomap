@@ -729,8 +729,19 @@ func parseMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte
 	return moves, nil
 }
 
+func errslug(text []byte, width int) string {
+	var slug string
+	if len(text) > width {
+		slug = string(text[:width-3]) + "..."
+	} else {
+		slug = string(text)
+	}
+	return strings.ReplaceAll(fmt.Sprintf("%q", slug), "\\\\", "\\")
+}
+
 // parseMove parses a single step of a move, returning the results or an error
 func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte, isScout bool, debugSteps, debugNodes bool, experimentalUnitSplit bool) (*Move_t, error) {
+
 	//debugSteps, debugNodes = true, true
 	line = bytes.TrimSpace(bytes.TrimRight(line, ","))
 	if debugSteps {
@@ -902,8 +913,13 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 			m.Result, m.Still = results.Succeeded, true
 			m.Report.Terrain = v
 		default:
-			log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
-			log.Printf("error: unexpected type %T\n", v)
+			log.Printf("error: unexpected input while parsing movement\n")
+			log.Printf("error: turn %q\n", fid)
+			log.Printf("error: unit %q\n", unitId)
+			log.Printf("error: input: line %d\n", lineNo)
+			log.Printf("error: input: text %s\n", errslug(line, 58))
+			log.Printf("error: move: step %d: sub-step %d\n", stepNo, subStepNo)
+			log.Printf("error: found type %T\n", v)
 			log.Printf("please report this error\n")
 			panic(fmt.Sprintf("unexpected %T", v))
 		}
