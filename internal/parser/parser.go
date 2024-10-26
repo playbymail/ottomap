@@ -784,11 +784,23 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 
 		var obj any
 		if obj, err = Parse("step", subStep, Entrypoint("Step")); err != nil {
-			if bytes.Equal(subStep, []byte{'-'}) {
-				log.Printf("%s: %s: %d: step %d: sub %d: %q (888 maybe dash 888)\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
-				if acceptLoneDash {
-					// ignore maybe?
-					continue
+			if bytes.HasPrefix(subStep, []byte{'-'}) {
+				if len(subStep) == 1 {
+					// what do we do with lone dashes?
+					if acceptLoneDash {
+						// ignore lone dashes
+						continue
+					}
+					log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
+					log.Printf("error: found lone dash on line; it must be removed\n")
+					return nil, fmt.Errorf("error parsing step")
+				}
+				if subStep[1] == '(' {
+					// probably a fleet movement result?
+				} else {
+					log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
+					log.Printf("error: found dash prefix on result; it must be removed\n")
+					return nil, fmt.Errorf("error parsing step")
 				}
 			}
 			// hack - an unrecognized step might be a settlement name
