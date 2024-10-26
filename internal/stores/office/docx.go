@@ -16,6 +16,26 @@ import (
 // copied from https://github.com/lu4p/cat/blob/master/docxtxt/docxreader.go
 // and licensed as provided in the COPYING file in this folder.
 
+func ParseBuffer(reader *bytes.Reader) ([][]byte, error) {
+	d, err := openDocxReader(reader)
+	if err != nil {
+		return nil, err
+	}
+	d.GenWordsList()
+	result := &bytes.Buffer{}
+	for _, word := range d.WordsList {
+		//result.WriteString(fmt.Sprintf("%06d: ", line+1))
+		for column, content := range word.Content {
+			if column != 0 {
+				result.WriteString(" ")
+			}
+			result.WriteString(content)
+		}
+		result.WriteByte('\n')
+	}
+	return bytes.Split(result.Bytes(), []byte{'\n'}), nil
+}
+
 // docx zip struct
 type docx struct {
 	zipFileReader *zip.ReadCloser

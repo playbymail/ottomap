@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 25, Patch: 0}
+	version = semver.Version{Major: 0, Minor: 25, Patch: 1}
 )
 
 func main() {
@@ -46,9 +46,11 @@ func Execute() error {
 	cmdList.AddCommand(cmdListTurns)
 
 	cmdRoot.AddCommand(cmdRender)
+	cmdRender.Flags().BoolVar(&argsRender.acceptLoneDash, "accept-lone-dash", false, "ignore lone dashes in movement results")
 	cmdRender.Flags().BoolVar(&argsRender.autoEOL, "auto-eol", true, "automatically convert line endings")
 	cmdRender.Flags().BoolVar(&argsRender.debug.dumpAllTiles, "debug-dump-all-tiles", false, "dump all tiles")
 	cmdRender.Flags().BoolVar(&argsRender.debug.dumpAllTurns, "debug-dump-all-turns", false, "dump all turns")
+	cmdRender.Flags().BoolVar(&argsRender.debug.fleetMovement, "debug-fleet-movement", false, "enable fleet movement debugging")
 	cmdRender.Flags().BoolVar(&argsRender.debug.logFile, "debug-log-file", false, "enable file name in log output")
 	cmdRender.Flags().BoolVar(&argsRender.debug.logTime, "debug-log-time", false, "enable time in log output")
 	cmdRender.Flags().BoolVar(&argsRender.debug.maps, "debug-maps", false, "enable maps debugging")
@@ -60,7 +62,9 @@ func Execute() error {
 	cmdRender.Flags().BoolVar(&argsRender.mapper.Dump.BorderCounts, "dump-border-counts", false, "dump border counts")
 	cmdRender.Flags().BoolVar(&argsRender.render.FordsAsPills, "fords-as-pills", true, "render fords as pills")
 	cmdRender.Flags().BoolVar(&argsRender.parser.Ignore.Scouts, "ignore-scouts", false, "ignore scout reports")
-	cmdRender.Flags().BoolVar(&argsRender.noWarnOnInvalidGrid, "no-warn-on-invalid-grid", false, "disable grid id warnings")
+	cmdRender.Flags().BoolVar(&argsRender.warnOnInvalidGrid, "warn-on-invalid-grid", true, "warn on invalid grid id")
+	cmdRender.Flags().BoolVar(&argsRender.warnOnNewSettlement, "warn-on-new-settlement", true, "warn on new settlement")
+	cmdRender.Flags().BoolVar(&argsRender.warnOnTerrainChange, "warn-on-terrain-change", true, "warn when terrain changes")
 	cmdRender.Flags().BoolVar(&argsRender.render.Show.Grid.Coords, "show-grid-coords", false, "show grid coordinates (XX CCRR)")
 	cmdRender.Flags().BoolVar(&argsRender.render.Show.Grid.Numbers, "show-grid-numbers", false, "show grid numbers (CCRR)")
 	cmdRender.Flags().BoolVar(&argsRender.saveWithTurnId, "save-with-turn-id", false, "add turn id to file name")

@@ -49,7 +49,7 @@ func (t *Tile_t) Dump() {
 }
 
 // MergeReports merges the reports from two tiles.
-func (t *Tile_t) MergeReports(turnId string, report *parser.Report_t, worldMap *Map_t, scouting bool) error {
+func (t *Tile_t) MergeReports(turnId string, report *parser.Report_t, worldMap *Map_t, scouting, warnOnNewSettlement, warnOnTerrainChange bool) error {
 	// update flags for visited and scouted.
 	// panic if the input is not sorted by turn.
 	if !(t.Visited <= turnId) {
@@ -61,16 +61,16 @@ func (t *Tile_t) MergeReports(turnId string, report *parser.Report_t, worldMap *
 	}
 
 	// merge the reports from this move into the tile
-	t.MergeTerrain(report.Terrain)
+	t.MergeTerrain(report.Terrain, warnOnTerrainChange)
 	for _, border := range report.Borders {
-		t.MergeBorder(border, worldMap)
+		t.MergeBorder(border, worldMap, warnOnTerrainChange)
 		t.MergeEdge(border.Direction, border.Edge)
 	}
 	for _, encounter := range report.Encounters {
 		t.MergeEncounter(encounter)
 	}
 	for _, fh := range report.FarHorizons {
-		t.MergeFarHorizon(fh, worldMap)
+		t.MergeFarHorizon(fh, worldMap, warnOnTerrainChange)
 	}
 	for _, item := range report.Items {
 		t.MergeItem(item)
@@ -79,20 +79,20 @@ func (t *Tile_t) MergeReports(turnId string, report *parser.Report_t, worldMap *
 		t.MergeResource(resource)
 	}
 	for _, settlement := range report.Settlements {
-		t.MergeSettlement(settlement)
+		t.MergeSettlement(settlement, warnOnNewSettlement)
 	}
 
 	return nil
 }
 
 // MergeBorder merges a new border into the tile.
-func (t *Tile_t) MergeBorder(border *parser.Border_t, worldMap *Map_t) {
+func (t *Tile_t) MergeBorder(border *parser.Border_t, worldMap *Map_t, warnOnTerrainChange bool) {
 	if border.Terrain == terrain.Blank {
 		return
 	}
 	// create neighbor with terrain
 	neighbor := worldMap.FetchTile(t.Location.Add(border.Direction))
-	neighbor.MergeTerrain(border.Terrain)
+	neighbor.MergeTerrain(border.Terrain, warnOnTerrainChange)
 }
 
 // MergeEdge merges a new edge into the tile.
@@ -119,7 +119,7 @@ func (t *Tile_t) MergeEncounter(e *parser.Encounter_t) {
 }
 
 // MergeFarHorizon merges the far horizon from two tiles.
-func (t *Tile_t) MergeFarHorizon(fh *parser.FarHorizon_t, worldMap *Map_t) {
+func (t *Tile_t) MergeFarHorizon(fh *parser.FarHorizon_t, worldMap *Map_t, warnOnTerrainChange bool) {
 	if fh == nil {
 		return
 	}
@@ -153,7 +153,7 @@ func (t *Tile_t) MergeFarHorizon(fh *parser.FarHorizon_t, worldMap *Map_t) {
 	default:
 		panic(fmt.Sprintf("assert(point != %d)", fh.Point))
 	}
-	neighbor.MergeTerrain(fh.Terrain)
+	neighbor.MergeTerrain(fh.Terrain, warnOnTerrainChange)
 }
 
 // MergeItem merges a new item into the tile.
@@ -175,7 +175,7 @@ func (t *Tile_t) MergeResource(r resources.Resource_e) {
 }
 
 // MergeSettlement merges a new settlement into the tile.
-func (t *Tile_t) MergeSettlement(s *parser.Settlement_t) {
+func (t *Tile_t) MergeSettlement(s *parser.Settlement_t, warnOnNewSettlement bool) {
 	if s == nil {
 		return
 	}
@@ -184,12 +184,14 @@ func (t *Tile_t) MergeSettlement(s *parser.Settlement_t) {
 			return
 		}
 	}
-	log.Printf("merge: settlement: %q\n", s.Name)
+	if warnOnNewSettlement {
+		log.Printf("merge: settlement: %q\n", s.Name)
+	}
 	t.Settlements = append(t.Settlements, s)
 }
 
 // MergeTerrain if it is not blank and is different
-func (t *Tile_t) MergeTerrain(n terrain.Terrain_e) {
+func (t *Tile_t) MergeTerrain(n terrain.Terrain_e, warnOnTerrainChange bool) {
 	// ignore the new terrain if it is blank or the same as the existing terrain
 	if n == terrain.Blank || n == t.Terrain {
 		return
@@ -230,7 +232,9 @@ func (t *Tile_t) MergeTerrain(n terrain.Terrain_e) {
 	}
 
 	// log any deltas
-	log.Printf("%s: terrain changed from %-4q: to %q\n", t.Location.GridString(), t.Terrain, n)
+	if warnOnTerrainChange {
+		log.Printf("%s: terrain changed from %-4q: to %q\n", t.Location.GridString(), t.Terrain, n)
+	}
 
 	t.Terrain = n
 }

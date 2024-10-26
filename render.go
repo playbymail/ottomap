@@ -33,26 +33,29 @@ var argsRender struct {
 	render              wxx.RenderConfig
 	clanId              string
 	originGrid          string
+	acceptLoneDash      bool
 	autoEOL             bool
-	noWarnOnInvalidGrid bool
 	quitOnInvalidGrid   bool
 	warnOnInvalidGrid   bool
+	warnOnNewSettlement bool
+	warnOnTerrainChange bool
 	maxTurn             struct { // maximum turn id to use
 		id    string
 		year  int
 		month int
 	}
 	debug struct {
-		dumpAllTiles bool
-		dumpAllTurns bool
-		logFile      bool
-		logTime      bool
-		maps         bool
-		merge        bool
-		nodes        bool
-		parser       bool
-		sections     bool
-		steps        bool
+		dumpAllTiles  bool
+		dumpAllTurns  bool
+		fleetMovement bool
+		logFile       bool
+		logTime       bool
+		maps          bool
+		merge         bool
+		nodes         bool
+		parser        bool
+		sections      bool
+		steps         bool
 	}
 	experimental struct {
 		newWaterTiles      bool
@@ -137,7 +140,6 @@ var cmdRender = &cobra.Command{
 			// don't quit when we replace ## with the location
 			argsRender.quitOnInvalidGrid = false
 		}
-		argsRender.warnOnInvalidGrid = !argsRender.noWarnOnInvalidGrid
 
 		if argsRender.maxTurn.id == "" {
 			argsRender.maxTurn.year, argsRender.maxTurn.month = 9999, 12
@@ -185,7 +187,7 @@ var cmdRender = &cobra.Command{
 
 		argsRender.originGrid = "RR"
 		argsRender.quitOnInvalidGrid = false
-		argsRender.warnOnInvalidGrid = true
+
 		started := time.Now()
 		log.Printf("data:   %s\n", argsRender.paths.data)
 		log.Printf("input:  %s\n", argsRender.paths.input)
@@ -238,7 +240,7 @@ var cmdRender = &cobra.Command{
 			if turnId > maxTurnId {
 				maxTurnId = turnId
 			}
-			turn, err := parser.ParseInput(i.Id, turnId, data, argsRender.debug.parser, argsRender.debug.sections, argsRender.debug.steps, argsRender.debug.nodes, argsRender.experimental.splitTrailingUnits, argsRender.experimental.cleanUpScoutStill, argsRender.parser)
+			turn, err := parser.ParseInput(i.Id, turnId, data, argsRender.acceptLoneDash, argsRender.debug.parser, argsRender.debug.sections, argsRender.debug.steps, argsRender.debug.nodes, argsRender.debug.fleetMovement, argsRender.experimental.splitTrailingUnits, argsRender.experimental.cleanUpScoutStill, argsRender.parser)
 			if err != nil {
 				log.Fatal(err)
 			} else if turnId != fmt.Sprintf("%04d-%02d", turn.Year, turn.Month) {
@@ -419,7 +421,7 @@ var cmdRender = &cobra.Command{
 		}
 
 		// walk the data
-		worldMap, err := turns.Walk(consolidatedTurns, argsRender.originGrid, argsRender.quitOnInvalidGrid, argsRender.warnOnInvalidGrid, argsRender.debug.maps)
+		worldMap, err := turns.Walk(consolidatedTurns, argsRender.originGrid, argsRender.quitOnInvalidGrid, argsRender.warnOnInvalidGrid, argsRender.warnOnNewSettlement, argsRender.warnOnTerrainChange, argsRender.debug.maps)
 		if err != nil {
 			log.Fatalf("error: %v\n", err)
 		}

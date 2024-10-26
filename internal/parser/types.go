@@ -132,6 +132,11 @@ type Move_t struct {
 
 	// Location is the tile the unit ends the move in
 	Location coords.Map
+
+	// Debug settings
+	Debug struct {
+		FleetMoves bool
+	}
 }
 
 // Report_t represents the observations made by a unit.
