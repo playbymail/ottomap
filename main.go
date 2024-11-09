@@ -5,7 +5,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"github.com/mdhender/semver"
 	"github.com/playbymail/ottomap/cerrs"
 	"github.com/spf13/cobra"
@@ -15,13 +14,11 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 26, Patch: 0}
+	version = semver.Version{Major: 0, Minor: 26, Patch: 1}
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
-
-	fmt.Printf("ottomap: version %s\n", version.String())
+	log.SetFlags(log.Lshortfile | log.Ltime)
 
 	// todo: detect when a unit is created as before and after-move action
 
