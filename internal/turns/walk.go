@@ -23,7 +23,7 @@ func Walk(input []*parser.Turn_t, originGrid string, quitOnInvalidGrid, warnOnIn
 		// sanity check, these should always be the same value
 		for _, moves := range turn.SortedMoves {
 			if moves.GoesTo != "" && moves.ToHex != moves.GoesTo {
-				unit := moves.Id
+				unit := moves.UnitId
 				log.Printf("turn %s: unit %-6s: current hex is %q\n", moves.TurnId, unit, moves.ToHex)
 				log.Printf("turn %s: unit %-6s: goes to hex is %q\n", moves.TurnId, unit, moves.GoesTo)
 				log.Fatalf("error: current hex != goes to hex\n")
@@ -34,10 +34,10 @@ func Walk(input []*parser.Turn_t, originGrid string, quitOnInvalidGrid, warnOnIn
 		for _, unit := range turn.SortedMoves {
 			if !strings.HasPrefix(unit.FromHex, "##") {
 				if location, err := coords.HexToMap(unit.FromHex); err != nil {
-					log.Printf("walk: %s: %s: %q: %v\n", turn.Id, unit.Id, unit.FromHex, err)
+					log.Printf("walk: %s: %s: %q: %v\n", turn.Id, unit.UnitId, unit.FromHex, err)
 					panic(err)
 				} else {
-					unit.Location, lastSeen[unit.Id] = location, location
+					unit.Location, lastSeen[unit.UnitId] = location, location
 					//log.Printf("walk: turn %s unit %-8s goto %-8s follows %-8s %-8s -> %s\n", turn.Id, unit.Id, unit.GoesTo, unit.Follows, unit.FromHex, unit.Location)
 				}
 			}
@@ -46,7 +46,7 @@ func Walk(input []*parser.Turn_t, originGrid string, quitOnInvalidGrid, warnOnIn
 		// update the locations of all units that have a prior location
 		for _, unit := range turn.SortedMoves {
 			if unit.Location.IsZero() {
-				unit.Location = lastSeen[unit.Id]
+				unit.Location = lastSeen[unit.UnitId]
 			}
 		}
 
@@ -56,12 +56,12 @@ func Walk(input []*parser.Turn_t, originGrid string, quitOnInvalidGrid, warnOnIn
 		for _, unit := range turn.SortedMoves {
 			if unit.Location.IsZero() {
 				// it should be an error if we can't derive it from the parent's location
-				if parent, ok := lastSeen[unit.Id.Parent()]; !ok {
-					log.Printf("%s: %-6s: parent %q: missing\n", unit.TurnId, unit.Id, unit.Id.Parent())
+				if parent, ok := lastSeen[unit.UnitId.Parent()]; !ok {
+					log.Printf("%s: %-6s: parent %q: missing\n", unit.TurnId, unit.UnitId, unit.UnitId.Parent())
 					log.Fatalf("error: expected unit to have parent\n")
 				} else {
 					//log.Printf("walk: turn %s unit %-8s goto %-8s follows %-8s %-8s -> %s\n", turn.Id, unit.Id, unit.GoesTo, unit.Follows, unit.FromHex, parent)
-					unit.Location, lastSeen[unit.Id] = parent, parent
+					unit.Location, lastSeen[unit.UnitId] = parent, parent
 				}
 			}
 		}
@@ -70,7 +70,7 @@ func Walk(input []*parser.Turn_t, originGrid string, quitOnInvalidGrid, warnOnIn
 
 		// walk the moves for all the units in this turn
 		for _, moves := range turn.SortedMoves {
-			unit := moves.Id
+			unit := moves.UnitId
 			//log.Printf("walk: turn %s unit %-8s goto %-8s follows %-8s %-8s    %s\n", turn.Id, unit, moves.GoesTo, moves.Follows, moves.FromHex, moves.Location.GridString())
 			// if we're missing the location, can we derive it from the previous turn?
 			if moves.Location.IsZero() {
@@ -100,7 +100,7 @@ func Walk(input []*parser.Turn_t, originGrid string, quitOnInvalidGrid, warnOnIn
 				current = location
 			}
 			if strings.Contains(current.GridString(), "-") {
-				log.Printf("walk: %s: %s: %s\n", moves.TurnId, moves.Id, current.GridString())
+				log.Printf("walk: %s: %s: %s\n", moves.TurnId, moves.UnitId, current.GridString())
 			}
 
 			moves.Location, lastSeen[unit] = current, current

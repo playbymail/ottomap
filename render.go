@@ -32,6 +32,7 @@ var argsRender struct {
 	mapper              actions.MapConfig
 	render              wxx.RenderConfig
 	clanId              string
+	soloElement         string // when set, only this element is rendered
 	originGrid          string
 	acceptLoneDash      bool
 	autoEOL             bool
@@ -301,7 +302,7 @@ var cmdRender = &cobra.Command{
 		for _, turn := range consolidatedTurns {
 			log.Printf("%s: %8d units\n", turn.Id, len(turn.UnitMoves))
 			sort.Slice(turn.SortedMoves, func(i, j int) bool {
-				return turn.SortedMoves[i].Id < turn.SortedMoves[j].Id
+				return turn.SortedMoves[i].UnitId < turn.SortedMoves[j].UnitId
 			})
 		}
 
@@ -321,7 +322,7 @@ var cmdRender = &cobra.Command{
 			for _, unitMoves := range turn.UnitMoves {
 				if unitMoves.FromHex == "N/A" {
 					naLocationCount++
-					log.Printf("%s: %-6s: location %q: invalid location\n", unitMoves.TurnId, unitMoves.Id, unitMoves.FromHex)
+					log.Printf("%s: %-6s: location %q: invalid location\n", unitMoves.TurnId, unitMoves.UnitId, unitMoves.FromHex)
 				}
 			}
 		}
@@ -336,14 +337,14 @@ var cmdRender = &cobra.Command{
 				continue
 			}
 			for _, unitMoves := range turn.UnitMoves {
-				nextUnitMoves := turn.Next.UnitMoves[unitMoves.Id]
+				nextUnitMoves := turn.Next.UnitMoves[unitMoves.UnitId]
 				if nextUnitMoves == nil {
 					continue
 				}
 				if unitMoves.ToHex[2:] != nextUnitMoves.FromHex[2:] {
 					badLinks++
-					log.Printf("error: %s: %-6s: from %q\n", turn.Id, unitMoves.Id, unitMoves.ToHex)
-					log.Printf("     : %s: %-6s: to   %q\n", turn.Next.Id, nextUnitMoves.Id, nextUnitMoves.FromHex)
+					log.Printf("error: %s: %-6s: from %q\n", turn.Id, unitMoves.UnitId, unitMoves.ToHex)
+					log.Printf("     : %s: %-6s: to   %q\n", turn.Next.Id, nextUnitMoves.UnitId, nextUnitMoves.FromHex)
 				} else {
 					goodLinks++
 				}
@@ -367,11 +368,11 @@ var cmdRender = &cobra.Command{
 			for _, unitMoves := range turn.UnitMoves {
 				var prevTurnMoves *parser.Moves_t
 				if turn.Prev != nil {
-					prevTurnMoves = turn.Prev.UnitMoves[unitMoves.Id]
+					prevTurnMoves = turn.Prev.UnitMoves[unitMoves.UnitId]
 				}
 				var nextTurnMoves *parser.Moves_t
 				if turn.Next != nil {
-					nextTurnMoves = turn.Next.UnitMoves[unitMoves.Id]
+					nextTurnMoves = turn.Next.UnitMoves[unitMoves.UnitId]
 				}
 				//if unitMoves.Id == "0138" {
 				//	log.Printf("this: %s: %-6s: this prior %q current %q\n", unitMoves.TurnId, unitMoves.Id, unitMoves.FromHex, unitMoves.ToHex)
@@ -425,6 +426,12 @@ var cmdRender = &cobra.Command{
 		if err != nil {
 			log.Fatalf("error: %v\n", err)
 		}
+		if argsRender.soloElement != "" {
+			log.Printf("info: rendering only %q\n", argsRender.soloElement)
+			solo := worldMap.Solo(argsRender.soloElement)
+			log.Printf("info: %s: world %d tiles: solo %d\n", argsRender.soloElement, len(worldMap.Tiles), len(solo.Tiles))
+			worldMap = solo
+		}
 
 		if argsRender.debug.dumpAllTurns {
 			log.Printf("hey, dumping it all\n")
@@ -433,35 +440,35 @@ var cmdRender = &cobra.Command{
 				for _, unit := range turn.SortedMoves {
 					for _, move := range unit.Moves {
 						if move.Report == nil {
-							log.Fatalf("%s: %-6s: %6d: %2d: %s: %s\n", move.TurnId, unit.Id, move.LineNo, move.StepNo, move.CurrentHex, "missing report!")
+							log.Fatalf("%s: %-6s: %6d: %2d: %s: %s\n", move.TurnId, unit.UnitId, move.LineNo, move.StepNo, move.CurrentHex, "missing report!")
 						} else if move.Report.Terrain == terrain.Blank {
 							if move.Result == results.Failed {
-								log.Printf("%s: %-6s: %s: failed\n", move.TurnId, unit.Id, move.CurrentHex)
+								log.Printf("%s: %-6s: %s: failed\n", move.TurnId, unit.UnitId, move.CurrentHex)
 							} else if move.Still {
-								log.Printf("%s: %-6s: %s: stayed in place\n", move.TurnId, unit.Id, move.CurrentHex)
+								log.Printf("%s: %-6s: %s: stayed in place\n", move.TurnId, unit.UnitId, move.CurrentHex)
 							} else if move.Follows != "" {
-								log.Printf("%s: %-6s: %s: follows %s\n", move.TurnId, unit.Id, move.CurrentHex, move.Follows)
+								log.Printf("%s: %-6s: %s: follows %s\n", move.TurnId, unit.UnitId, move.CurrentHex, move.Follows)
 							} else if move.GoesTo != "" {
-								log.Printf("%s: %-6s: %s: goes to %s\n", move.TurnId, unit.Id, move.CurrentHex, move.GoesTo)
+								log.Printf("%s: %-6s: %s: goes to %s\n", move.TurnId, unit.UnitId, move.CurrentHex, move.GoesTo)
 							} else {
-								log.Fatalf("%s: %-6s: %6d: %2d: %s: %s\n", move.TurnId, unit.Id, move.LineNo, move.StepNo, move.CurrentHex, "missing terrain")
+								log.Fatalf("%s: %-6s: %6d: %2d: %s: %s\n", move.TurnId, unit.UnitId, move.LineNo, move.StepNo, move.CurrentHex, "missing terrain")
 							}
 						} else {
-							log.Printf("%s: %-6s: %s: terrain %s\n", move.TurnId, unit.Id, move.CurrentHex, move.Report.Terrain)
+							log.Printf("%s: %-6s: %s: terrain %s\n", move.TurnId, unit.UnitId, move.CurrentHex, move.Report.Terrain)
 						}
 						for _, border := range move.Report.Borders {
 							if border.Edge != edges.None {
-								log.Printf("%s: %-6s: %s: border  %-14s %q\n", move.TurnId, unit.Id, move.CurrentHex, border.Direction, border.Edge)
+								log.Printf("%s: %-6s: %s: border  %-14s %q\n", move.TurnId, unit.UnitId, move.CurrentHex, border.Direction, border.Edge)
 							}
 							if border.Terrain != terrain.Blank {
-								log.Printf("%s: %-6s: %s: border  %-14s %q\n", move.TurnId, unit.Id, move.CurrentHex, border.Direction, border.Terrain)
+								log.Printf("%s: %-6s: %s: border  %-14s %q\n", move.TurnId, unit.UnitId, move.CurrentHex, border.Direction, border.Terrain)
 							}
 						}
 						for _, point := range move.Report.FarHorizons {
-							log.Printf("%s: %-6s: %s: compass %-14s sighted %q\n", move.TurnId, unit.Id, move.CurrentHex, point.Point, point.Terrain)
+							log.Printf("%s: %-6s: %s: compass %-14s sighted %q\n", move.TurnId, unit.UnitId, move.CurrentHex, point.Point, point.Terrain)
 						}
 						for _, settlement := range move.Report.Settlements {
-							log.Printf("%s: %-6s: %s: village %q\n", move.TurnId, unit.Id, move.CurrentHex, settlement.Name)
+							log.Printf("%s: %-6s: %s: village %q\n", move.TurnId, unit.UnitId, move.CurrentHex, settlement.Name)
 						}
 					}
 				}

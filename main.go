@@ -5,6 +5,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/mdhender/semver"
 	"github.com/playbymail/ottomap/cerrs"
 	"github.com/spf13/cobra"
@@ -14,11 +15,13 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 25, Patch: 2}
+	version = semver.Version{Major: 0, Minor: 26, Patch: 0}
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile | log.Ltime)
+	log.SetFlags(log.Lshortfile)
+
+	fmt.Printf("ottomap: version %s\n", version.String())
 
 	// todo: detect when a unit is created as before and after-move action
 
@@ -79,8 +82,9 @@ func Execute() error {
 		log.Fatalf("error: clan-id: %v\n", err)
 	}
 	cmdRender.Flags().StringVar(&argsRender.paths.data, "data", "data", "path to root of data files")
-	cmdRender.Flags().StringVar(&argsRender.originGrid, "origin-grid", "", "grid id to substitute for ##")
 	cmdRender.Flags().StringVar(&argsRender.maxTurn.id, "max-turn", "", "last turn to map (yyyy-mm format)")
+	cmdRender.Flags().StringVar(&argsRender.originGrid, "origin-grid", "", "grid id to substitute for ##")
+	cmdRender.Flags().StringVar(&argsRender.soloElement, "solo-element", "", "limit parsing to a single element of a clan")
 
 	cmdRoot.AddCommand(cmdVersion)
 

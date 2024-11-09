@@ -57,7 +57,7 @@ func (t *Turn_t) TopoSortMoves() {
 			} else if !aIsGoto {
 				return false
 			}
-			return a.Id < b.Id
+			return a.UnitId < b.UnitId
 		}
 
 		// Normal moves sort before follow moves
@@ -67,14 +67,14 @@ func (t *Turn_t) TopoSortMoves() {
 			} else if aIsFollows {
 				return false
 			}
-			return a.Id < b.Id
+			return a.UnitId < b.UnitId
 		}
 
 		// Follow moves sort last
 		if a.Follows < b.Follows {
 			return true
 		} else if a.Follows == b.Follows {
-			return a.Id < b.Id
+			return a.UnitId < b.UnitId
 		}
 		return false
 	})
@@ -84,7 +84,7 @@ func (t *Turn_t) TopoSortMoves() {
 // There will be one instance of this struct for each turn the unit moves in.
 type Moves_t struct {
 	TurnId string
-	Id     UnitId_t // unit that is moving
+	UnitId UnitId_t // unit that is moving
 
 	// all the moves made this turn
 	Moves   []*Move_t
@@ -112,6 +112,8 @@ type Moves_t struct {
 // The move can be follows, goes to, stay in place, or attempt to advance a direction.
 // The move will fail, succeed, or the unit can simply vanish without a trace.
 type Move_t struct {
+	UnitId UnitId_t // unit that is moving
+
 	// the types of movement that a unit can make.
 	Advance direction.Direction_e // set only if the unit is advancing
 	Follows UnitId_t              // id of the unit being followed
@@ -142,6 +144,8 @@ type Move_t struct {
 // Report_t represents the observations made by a unit.
 // All reports are relative to the hex that the unit is reporting from.
 type Report_t struct {
+	UnitId UnitId_t // id of the unit that made the report
+
 	Location      coords.Map
 	TurnId        string // turn the report was received
 	ScoutedTurnId string // turn the report was received from a scouting party

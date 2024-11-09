@@ -31,6 +31,10 @@ type Tile_t struct {
 	Encounters  []*parser.Encounter_t // other units in this tile
 	Resources   []resources.Resource_e
 	Settlements []*parser.Settlement_t
+
+	// map of elements that are responsible for this tile.
+	// does not work for fleets!
+	SourcedBy map[string]bool
 }
 
 func (t *Tile_t) Dump() {
@@ -63,14 +67,14 @@ func (t *Tile_t) MergeReports(turnId string, report *parser.Report_t, worldMap *
 	// merge the reports from this move into the tile
 	t.MergeTerrain(report.Terrain, warnOnTerrainChange)
 	for _, border := range report.Borders {
-		t.MergeBorder(border, worldMap, warnOnTerrainChange)
+		t.MergeBorder(report.UnitId, border, worldMap, warnOnTerrainChange)
 		t.MergeEdge(border.Direction, border.Edge)
 	}
 	for _, encounter := range report.Encounters {
 		t.MergeEncounter(encounter)
 	}
 	for _, fh := range report.FarHorizons {
-		t.MergeFarHorizon(fh, worldMap, warnOnTerrainChange)
+		t.MergeFarHorizon(report.UnitId, fh, worldMap, warnOnTerrainChange)
 	}
 	for _, item := range report.Items {
 		t.MergeItem(item)
@@ -86,12 +90,12 @@ func (t *Tile_t) MergeReports(turnId string, report *parser.Report_t, worldMap *
 }
 
 // MergeBorder merges a new border into the tile.
-func (t *Tile_t) MergeBorder(border *parser.Border_t, worldMap *Map_t, warnOnTerrainChange bool) {
+func (t *Tile_t) MergeBorder(unitId parser.UnitId_t, border *parser.Border_t, worldMap *Map_t, warnOnTerrainChange bool) {
 	if border.Terrain == terrain.Blank {
 		return
 	}
 	// create neighbor with terrain
-	neighbor := worldMap.FetchTile(t.Location.Add(border.Direction))
+	neighbor := worldMap.FetchTile(unitId, t.Location.Add(border.Direction))
 	neighbor.MergeTerrain(border.Terrain, warnOnTerrainChange)
 }
 
@@ -119,7 +123,7 @@ func (t *Tile_t) MergeEncounter(e *parser.Encounter_t) {
 }
 
 // MergeFarHorizon merges the far horizon from two tiles.
-func (t *Tile_t) MergeFarHorizon(fh *parser.FarHorizon_t, worldMap *Map_t, warnOnTerrainChange bool) {
+func (t *Tile_t) MergeFarHorizon(unitId parser.UnitId_t, fh *parser.FarHorizon_t, worldMap *Map_t, warnOnTerrainChange bool) {
 	if fh == nil {
 		return
 	}
@@ -127,29 +131,29 @@ func (t *Tile_t) MergeFarHorizon(fh *parser.FarHorizon_t, worldMap *Map_t, warnO
 	var neighbor *Tile_t
 	switch fh.Point {
 	case compass.North:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.North, direction.North))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.North, direction.North))
 	case compass.NorthNorthEast:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.North, direction.NorthEast))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.North, direction.NorthEast))
 	case compass.NorthEast:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.NorthEast, direction.NorthEast))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.NorthEast, direction.NorthEast))
 	case compass.East:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.NorthEast, direction.SouthEast))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.NorthEast, direction.SouthEast))
 	case compass.SouthEast:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.SouthEast, direction.SouthEast))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.SouthEast, direction.SouthEast))
 	case compass.SouthSouthEast:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.South, direction.SouthEast))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.South, direction.SouthEast))
 	case compass.South:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.South, direction.South))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.South, direction.South))
 	case compass.SouthSouthWest:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.South, direction.SouthWest))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.South, direction.SouthWest))
 	case compass.SouthWest:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.SouthWest, direction.SouthWest))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.SouthWest, direction.SouthWest))
 	case compass.West:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.SouthWest, direction.NorthWest))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.SouthWest, direction.NorthWest))
 	case compass.NorthWest:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.NorthWest, direction.NorthWest))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.NorthWest, direction.NorthWest))
 	case compass.NorthNorthWest:
-		neighbor = worldMap.FetchTile(t.Location.Move(direction.North, direction.NorthWest))
+		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.North, direction.NorthWest))
 	default:
 		panic(fmt.Sprintf("assert(point != %d)", fh.Point))
 	}
@@ -237,4 +241,14 @@ func (t *Tile_t) MergeTerrain(n terrain.Terrain_e, warnOnTerrainChange bool) {
 	}
 
 	t.Terrain = n
+}
+
+// Source adds an element to the source list for the tile.
+func (t *Tile_t) Source(elements ...string) {
+	if t.SourcedBy == nil {
+		t.SourcedBy = map[string]bool{}
+	}
+	for _, element := range elements {
+		t.SourcedBy[element] = true
+	}
 }

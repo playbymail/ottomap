@@ -36,7 +36,7 @@ func Step(turnId string, move *parser.Move_t, location, leader coords.Map, world
 	}
 
 	// fetch the starting tile
-	from := worldMap.FetchTile(location)
+	from := worldMap.FetchTile(move.UnitId, location)
 	if from == nil {
 		// this should never happen because FetchTile will create the tile if it is missing.
 		panic("missing tile")
@@ -103,7 +103,7 @@ func stepFailed(turnId string, move *parser.Move_t, from *tiles.Tile_t, worldMap
 // It returns the final location of the unit.
 func stepFollows(turnId string, move *parser.Move_t, from *tiles.Tile_t, leader coords.Map, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
 	// the new hex will be the leader's location
-	to := worldMap.FetchTile(leader)
+	to := worldMap.FetchTile(move.UnitId, leader)
 	if to == nil {
 		// this should never happen because FetchTile will create the tile if it is missing.
 		panic("missing tile")
@@ -121,7 +121,7 @@ func stepGoto(turnId string, move *parser.Move_t, from *tiles.Tile_t, goesTo str
 		panic(err)
 	}
 	// update current hex based on the destination's location
-	to := worldMap.FetchTile(location)
+	to := worldMap.FetchTile(move.UnitId, location)
 	if to == nil {
 		// this should never happen because FetchTile will create the tile if it is missing.
 		panic("missing tile")
@@ -147,7 +147,7 @@ func stepStill(turnId string, move *parser.Move_t, from *tiles.Tile_t, worldMap 
 // It returns the final location of the unit.
 func stepSucceeded(turnId string, move *parser.Move_t, from *tiles.Tile_t, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
 	// update current hex based on the direction
-	to := worldMap.FetchTile(from.Location.Add(move.Advance))
+	to := worldMap.FetchTile(move.UnitId, from.Location.Add(move.Advance))
 	if to == nil {
 		// this should never happen because FetchTile will create the tile if it is missing.
 		panic("missing tile")

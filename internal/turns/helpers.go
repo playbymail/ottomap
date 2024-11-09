@@ -22,7 +22,7 @@ func deriveGrid(id parser.UnitId_t, hex string, priorMoves, parentMoves *parser.
 	// use the prior move if it is valid and same digits
 	if priorMoves != nil {
 		if strings.HasPrefix(priorMoves.ToHex, "##") {
-			log.Printf("priorTurn: %s: %-6s: location %q: invalid\n", priorMoves.TurnId, priorMoves.Id, priorMoves.ToHex)
+			log.Printf("priorTurn: %s: %-6s: location %q: invalid\n", priorMoves.TurnId, priorMoves.UnitId, priorMoves.ToHex)
 			panic("invalid prior location")
 		} else if priorMoves.ToHex[2:] == hex[2:] {
 			return priorMoves.ToHex[:2] + hex[2:], true

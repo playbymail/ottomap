@@ -4,6 +4,7 @@ package tiles
 
 import (
 	"github.com/playbymail/ottomap/internal/coords"
+	"github.com/playbymail/ottomap/internal/parser"
 	"log"
 	"sort"
 	"strings"
@@ -75,17 +76,38 @@ func (m *Map_t) Length() int {
 
 // FetchTile returns the tile at the given location.
 // If the tile does not exist, it is created.
-func (m *Map_t) FetchTile(location coords.Map) *Tile_t {
+func (m *Map_t) FetchTile(unitId parser.UnitId_t, location coords.Map) *Tile_t {
 	if tile, ok := m.Tiles[location]; ok {
 		return tile
 	}
 
 	// create a new tile to add to the map
-	tile := &Tile_t{Location: location}
+	tile := &Tile_t{
+		SourcedBy: map[string]bool{},
+		Location:  location,
+	}
+	if unitId != "" {
+		tile.SourcedBy[string(unitId)] = true
+	}
 
 	// add the tile to the map
 	m.Tiles[tile.Location] = tile
 
 	// and return it
 	return tile
+}
+
+// Solo returns a map of tiles that are sourced by the given elements.
+func (m *Map_t) Solo(elements ...string) *Map_t {
+	solo := NewMap()
+	for _, tile := range m.Tiles {
+		for _, element := range elements {
+			if tile.SourcedBy[element] {
+				// log.Printf("tile: %s: sourced by %q\n", tile.Location.GridString(), element)
+				solo.Tiles[tile.Location] = tile
+				break
+			}
+		}
+	}
+	return solo
 }

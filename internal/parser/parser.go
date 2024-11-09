@@ -92,8 +92,8 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, location.CurrentHex)
 				return t, fmt.Errorf("current location is obscured")
 			}
-			moves = &Moves_t{TurnId: t.Id, Id: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
-			t.UnitMoves[moves.Id] = moves
+			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
+			t.UnitMoves[moves.UnitId] = moves
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if rxElementSection.Match(line) {
 			unitId = UnitId_t(line[8:14])
@@ -106,8 +106,8 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 14))
 				return t, fmt.Errorf("duplicate unit in turn")
 			}
-			moves = &Moves_t{TurnId: t.Id, Id: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
-			t.UnitMoves[moves.Id] = moves
+			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
+			t.UnitMoves[moves.UnitId] = moves
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if rxFleetSection.Match(line) {
 			unitId = UnitId_t(line[6:12])
@@ -120,8 +120,8 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 12))
 				return t, fmt.Errorf("duplicate unit in turn")
 			}
-			moves = &Moves_t{TurnId: t.Id, Id: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
-			t.UnitMoves[moves.Id] = moves
+			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
+			t.UnitMoves[moves.UnitId] = moves
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if rxGarrisonSection.Match(line) {
 			unitId = UnitId_t(line[9:15])
@@ -134,8 +134,8 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 15))
 				return t, fmt.Errorf("duplicate unit in turn")
 			}
-			moves = &Moves_t{TurnId: t.Id, Id: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
-			t.UnitMoves[moves.Id] = moves
+			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
+			t.UnitMoves[moves.UnitId] = moves
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if rxTribeSection.Match(line) {
 			unitId = UnitId_t(line[6:10])
@@ -148,8 +148,8 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 10))
 				return t, fmt.Errorf("duplicate unit in turn")
 			}
-			moves = &Moves_t{TurnId: t.Id, Id: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
-			t.UnitMoves[moves.Id] = moves
+			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
+			t.UnitMoves[moves.UnitId] = moves
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if moves == nil {
 			log.Printf("%s: %s: %d: found line outside of section: %q\n", fid, unitId, lineNo, slug(line, 20))
@@ -483,8 +483,9 @@ func ParseTribeFollowsLine(fid, tid string, unitId UnitId_t, lineNo int, line []
 	}
 
 	return &Move_t{
+		UnitId:  unitId,
 		Follows: follows,
-		Report:  &Report_t{TurnId: tid},
+		Report:  &Report_t{TurnId: tid, UnitId: unitId},
 		LineNo:  lineNo,
 		StepNo:  1,
 		Line:    bdup(line),
@@ -509,8 +510,9 @@ func ParseTribeGoesToLine(fid, tid string, unitId UnitId_t, lineNo int, line []b
 	}
 
 	return &Move_t{
+		UnitId: unitId,
 		GoesTo: goesTo,
-		Report: &Report_t{TurnId: tid},
+		Report: &Report_t{TurnId: tid, UnitId: unitId},
 		LineNo: lineNo,
 		StepNo: 1,
 		Line:   bdup(line),
@@ -562,14 +564,15 @@ func parseMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte
 	if bytes.Equal(line, []byte{'\\'}) {
 		// "Move \" should be treated as a stay in place
 		m := []*Move_t{
-			{LineNo: lineNo, StepNo: 1, Line: []byte{},
-				Still: true, Result: results.Succeeded, Report: &Report_t{TurnId: tid}},
+			{UnitId: unitId,
+				LineNo: lineNo, StepNo: 1, Line: []byte{},
+				Still: true, Result: results.Succeeded, Report: &Report_t{TurnId: tid, UnitId: unitId}},
 		}
 		m[0].Debug.FleetMoves = debugFleetMoves
 		return m, nil
 	}
 
-	for _, move := range splitMoves(fid, tid, lineNo, line) {
+	for _, move := range splitMoves(fid, tid, unitId, lineNo, line) {
 		if debugSteps {
 			log.Printf("%s: %s: %d: step %d: %q\n", fid, unitId, lineNo, move.StepNo, move.Line)
 		}
@@ -756,7 +759,7 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 		log.Printf("%s: %s: %d: step %d: %q\n", fid, unitId, lineNo, stepNo, line)
 	}
 
-	m := &Move_t{LineNo: lineNo, StepNo: stepNo, Line: line, Report: &Report_t{TurnId: tid}}
+	m := &Move_t{UnitId: unitId, LineNo: lineNo, StepNo: stepNo, Line: line, Report: &Report_t{TurnId: tid, UnitId: unitId}}
 	m.Debug.FleetMoves = debugFleetMoves
 
 	// each move should find at most one settlement
@@ -958,14 +961,14 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 
 // splitMoves splits the line into individual moves. moves are separated by backslashes.
 // leading and trailing spaces and any trailing commas are from each move.
-func splitMoves(fid, tid string, lineNo int, line []byte) (moves []*Move_t) {
+func splitMoves(fid, tid string, unitId UnitId_t, lineNo int, line []byte) (moves []*Move_t) {
 	line = bytes.TrimSpace(bytes.TrimRight(line, " \t\\,"))
 	if len(line) == 0 {
 		return nil
 	}
 	for n, text := range bytes.Split(line, []byte{'\\'}) {
 		text = bytes.TrimSpace(bytes.TrimRight(text, ", \t"))
-		moves = append(moves, &Move_t{LineNo: lineNo, StepNo: n + 1, Line: bdup(text), Report: &Report_t{TurnId: tid}})
+		moves = append(moves, &Move_t{UnitId: unitId, LineNo: lineNo, StepNo: n + 1, Line: bdup(text), Report: &Report_t{TurnId: tid, UnitId: unitId}})
 	}
 	return moves
 }
