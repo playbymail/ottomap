@@ -14,20 +14,11 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 26, Patch: 1}
+	version = semver.Version{Major: 0, Minor: 27, Patch: 0}
 )
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.Ltime)
-
-	// todo: detect when a unit is created as before and after-move action
-
-	// todo: can we use this office package if we fix the tab issue?
-	//	if s, err := office.ToStr("input/899-12.0138.Turn-Report.docx"); err != nil {
-	//		log.Fatal(err)
-	//	} else {
-	//		log.Println(s)
-	//	}
 
 	if err := Execute(); err != nil {
 		log.Fatal(err)
@@ -44,6 +35,17 @@ func Execute() error {
 	cmdRoot.AddCommand(cmdList)
 	cmdList.AddCommand(cmdListClans)
 	cmdList.AddCommand(cmdListTurns)
+
+	cmdRoot.AddCommand(cmdParse)
+	cmdParse.AddCommand(cmdParseFile)
+	//cmdParseFile.Flags().StringVar(&argsParseFiles.clanId, "clan-id", "", "clan id")
+	//if err := cmdParseFile.MarkFlagRequired("clan-id"); err != nil {
+	//	log.Fatalf("error: clan-id: %v\n", err)
+	//}
+	//cmdParseFile.Flags().StringVar(&argsParseFiles.turnId, "turn-id", "", "turn id")
+	//if err := cmdParseFile.MarkFlagRequired("turn-id"); err != nil {
+	//	log.Fatalf("error: turn-id: %v\n", err)
+	//}
 
 	cmdRoot.AddCommand(cmdRender)
 	cmdRender.Flags().BoolVar(&argsRender.acceptLoneDash, "accept-lone-dash", false, "ignore lone dashes in movement results")
@@ -82,6 +84,10 @@ func Execute() error {
 	cmdRender.Flags().StringVar(&argsRender.maxTurn.id, "max-turn", "", "last turn to map (yyyy-mm format)")
 	cmdRender.Flags().StringVar(&argsRender.originGrid, "origin-grid", "", "grid id to substitute for ##")
 	cmdRender.Flags().StringVar(&argsRender.soloElement, "solo-element", "", "limit parsing to a single element of a clan")
+
+	cmdRoot.AddCommand(cmdScrub)
+	cmdScrub.AddCommand(cmdScrubFile)
+	cmdScrub.AddCommand(cmdScrubFiles)
 
 	cmdRoot.AddCommand(cmdVersion)
 
