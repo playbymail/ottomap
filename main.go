@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 27, Patch: 0}
+	version = semver.Version{Major: 0, Minor: 28, Patch: 0}
 )
 
 func main() {
@@ -28,6 +28,40 @@ func main() {
 func Execute() error {
 	cmdRoot.PersistentFlags().BoolVar(&argsRoot.showVersion, "show-version", false, "show version")
 	cmdRoot.PersistentFlags().StringVar(&argsRoot.logFile.name, "log-file", "", "set log file")
+
+	cmdRoot.AddCommand(cmdDb)
+	cmdDb.PersistentFlags().StringVar(&argsDb.paths.store, "store", argsDb.paths.store, "path to the database file")
+
+	cmdDb.AddCommand(cmdDbCreate)
+	cmdDbCreate.AddCommand(cmdDbCreateDatabase)
+	cmdDbCreateDatabase.Flags().BoolVar(&argsDb.create.force, "force", false, "force the creation if the database exists")
+	cmdDbCreateDatabase.Flags().StringVar(&argsDb.paths.store, "store", argsDb.paths.store, "path to the database file")
+	if err := cmdDbCreateDatabase.MarkFlagRequired("store"); err != nil {
+		log.Fatalf("store: %v\n", err)
+	}
+
+	cmdDb.AddCommand(cmdDbLoad)
+	cmdDbLoad.AddCommand(cmdDbLoadFiles)
+	cmdDbLoadFiles.Flags().StringVar(&argsDb.load.clan, "clan", argsDb.load.clan, "clan that owns reports")
+	if err := cmdDbLoadFiles.MarkFlagRequired("clan"); err != nil {
+		log.Fatalf("clan: %v\n", err)
+	}
+	cmdDbLoadFiles.Flags().StringVar(&argsDb.paths.store, "store", argsDb.paths.store, "path to the database file")
+	if err := cmdDbLoadFiles.MarkFlagRequired("store"); err != nil {
+		log.Fatalf("store: %v\n", err)
+	}
+	cmdDbLoadFiles.Flags().StringVar(&argsDb.load.path, "report-path", argsDb.load.path, "path to report files")
+
+	cmdDbLoad.AddCommand(cmdDbLoadPath)
+	cmdDbLoadPath.Flags().StringVar(&argsDb.load.clan, "clan", argsDb.load.clan, "clan that owns reports")
+	if err := cmdDbLoadPath.MarkFlagRequired("clan"); err != nil {
+		log.Fatalf("clan: %v\n", err)
+	}
+	cmdDbLoadPath.Flags().StringVar(&argsDb.paths.store, "store", argsDb.paths.store, "path to the database file")
+	if err := cmdDbLoadPath.MarkFlagRequired("store"); err != nil {
+		log.Fatalf("store: %v\n", err)
+	}
+	cmdDbLoadPath.Flags().StringVar(&argsDb.load.path, "report-path", argsDb.load.path, "path to report files")
 
 	cmdRoot.AddCommand(cmdDump)
 	cmdDump.Flags().BoolVar(&argsDump.defaultTileMap, "default-tile-map", false, "dump the default tile map")

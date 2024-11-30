@@ -82,7 +82,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			debugs("%s: %d: found %q\n", fid, lineNo, unitId)
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
-				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 14))
+				log.Printf("%s: %s: %d: location %q: %v\n", fid, unitId, lineNo, slug(line, 14), err)
 				return t, nil
 			} else if _, ok := t.UnitMoves[unitId]; ok {
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 14))
@@ -100,7 +100,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			debugs("%s: %d: found %q\n", fid, lineNo, unitId)
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
-				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 14))
+				log.Printf("%s: %s: %d: location %q: %v\n", fid, unitId, lineNo, slug(line, 14), err)
 				return t, nil
 			} else if _, ok := t.UnitMoves[unitId]; ok {
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 14))
@@ -114,7 +114,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			debugs("%s: %d: found %q\n", fid, lineNo, unitId)
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
-				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 12))
+				log.Printf("%s: %s: %d: location %q: %v\n", fid, unitId, lineNo, slug(line, 12), err)
 				return t, nil
 			} else if _, ok := t.UnitMoves[unitId]; ok {
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 12))
@@ -128,7 +128,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			debugs("%s: %d: found %q\n", fid, lineNo, unitId)
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
-				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 15))
+				log.Printf("%s: %s: %d: location %q: %v\n", fid, unitId, lineNo, slug(line, 15), err)
 				return t, nil
 			} else if _, ok := t.UnitMoves[unitId]; ok {
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 15))
@@ -142,7 +142,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			debugs("%s: %d: found %q\n", fid, lineNo, unitId)
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
-				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 10))
+				log.Printf("%s: %s: %d: location %q: %v\n", fid, unitId, lineNo, slug(line, 10), err)
 				return t, nil
 			} else if _, ok := t.UnitMoves[unitId]; ok {
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 10))

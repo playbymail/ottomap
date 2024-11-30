@@ -95,6 +95,11 @@ func hexReportToNodes(hexReport []byte, debugNodes bool, experimentalUnitSplit b
 				tmp.addText(tmp.next)
 				tmp.next = tmp.next.next
 			}
+		} else if tmp.isHighSnowyMountainsEdge() {
+			for tmp.next.isDirection() {
+				tmp.addText(tmp.next)
+				tmp.next = tmp.next.next
+			}
 		} else if tmp.isLakeEdge() {
 			for tmp.next.isDirection() {
 				tmp.addText(tmp.next)
@@ -105,17 +110,17 @@ func hexReportToNodes(hexReport []byte, debugNodes bool, experimentalUnitSplit b
 				tmp.addText(tmp.next)
 				tmp.next = tmp.next.next
 			}
+		} else if tmp.isLowJungleMountainsEdge() {
+			for tmp.next.isDirection() {
+				tmp.addText(tmp.next)
+				tmp.next = tmp.next.next
+			}
 		} else if tmp.isLowSnowyMountainsEdge() {
 			for tmp.next.isDirection() {
 				tmp.addText(tmp.next)
 				tmp.next = tmp.next.next
 			}
-		} else if tmp.isHighSnowyMountainsEdge() {
-			for tmp.next.isDirection() {
-				tmp.addText(tmp.next)
-				tmp.next = tmp.next.next
-			}
-		} else if tmp.isLowJungleMountainsEdge() {
+		} else if tmp.isLowVolcanicMountainsEdge() {
 			for tmp.next.isDirection() {
 				tmp.addText(tmp.next)
 				tmp.next = tmp.next.next
@@ -212,6 +217,13 @@ func (n *node) addText(t *node) {
 	n.text = append(n.text, t.text...)
 }
 
+func (n *node) hasPrefix(pfx string) bool {
+	if n == nil || len(n.text) < len(pfx) {
+		return false
+	}
+	return bytes.HasPrefix(bytes.ToUpper(n.text[:len(pfx)]), []byte(pfx))
+}
+
 // isDirection returns true if the node is a direction.
 // we have to do a case-insensitive comparison because the grammar is case-insensitive,
 // but we don't coerce the returned tokens to upper case.
@@ -242,66 +254,43 @@ func (n *node) isFindQuantityItem() bool {
 }
 
 func (n *node) isFordEdge() bool {
-	if n == nil {
-		return false
-	}
-	return bytes.HasPrefix(n.text, []byte{'F', 'o', 'r', 'd', ' '})
-}
-
-func (n *node) isLakeEdge() bool {
-	if n == nil {
-		return false
-	}
-	return bytes.HasPrefix(n.text, []byte{'L', ' '})
-}
-
-func (n *node) isLowConiferMountainsEdge() bool {
-	if n == nil {
-		return false
-	}
-	return bytes.HasPrefix(n.text, []byte{'L', 'c', 'm', ' '})
-}
-
-func (n *node) isLowSnowyMountainsEdge() bool {
-	if n == nil {
-		return false
-	}
-	return bytes.HasPrefix(n.text, []byte{'L', 's', 'm', ' '})
+	return n.hasPrefix("FORD ")
 }
 
 func (n *node) isHighSnowyMountainsEdge() bool {
-	if n == nil {
-		return false
-	}
-	return bytes.HasPrefix(n.text, []byte{'H', 's', 'm', ' '})
+	return n.hasPrefix("HSM ")
+}
+
+func (n *node) isLakeEdge() bool {
+	return n.hasPrefix("L ")
+}
+
+func (n *node) isLowConiferMountainsEdge() bool {
+	return n.hasPrefix("LCM ")
 }
 
 func (n *node) isLowJungleMountainsEdge() bool {
-	if n == nil {
-		return false
-	}
-	return bytes.HasPrefix(bytes.ToUpper(n.text), []byte{'L', 'J', 'M', ' '})
+	return n.hasPrefix("LJM ")
+}
+
+func (n *node) isLowSnowyMountainsEdge() bool {
+	return n.hasPrefix("LSM ")
+}
+
+func (n *node) isLowVolcanicMountainsEdge() bool {
+	return n.hasPrefix("LVM ")
 }
 
 func (n *node) isOceanEdge() bool {
-	if n == nil {
-		return false
-	}
-	return bytes.HasPrefix(n.text, []byte{'O', ' '})
+	return n.hasPrefix("O ")
 }
 
 func (n *node) isPassEdge() bool {
-	if n == nil {
-		return false
-	}
-	return bytes.HasPrefix(n.text, []byte{'P', 'a', 's', 's', ' '})
+	return n.hasPrefix("PASS ")
 }
 
 func (n *node) isPatrolledAndFound() bool {
-	if n == nil {
-		return false
-	}
-	return bytes.HasPrefix(n.text, []byte{'P', 'a', 't', 'r', 'o', 'l', 'l', 'e', 'd', ' ', 'a', 'n', 'd', ' ', 'f', 'o', 'u', 'n', 'd', ' '})
+	return n.hasPrefix("PATROLLED AND FOUND ")
 }
 
 func (n *node) isQuantityItem() bool {
@@ -312,17 +301,11 @@ func (n *node) isQuantityItem() bool {
 }
 
 func (n *node) isRiverEdge() bool {
-	if n == nil {
-		return false
-	}
-	return bytes.HasPrefix(n.text, []byte{'R', 'i', 'v', 'e', 'r', ' '})
+	return n.hasPrefix("RIVER ")
 }
 
 func (n *node) isStoneRoadEdge() bool {
-	if n == nil {
-		return false
-	}
-	return bytes.HasPrefix(n.text, []byte{'S', 't', 'o', 'n', 'e', ' ', 'R', 'o', 'a', 'd', ' '})
+	return n.hasPrefix("STONE ROAD ")
 }
 
 func (n *node) isUnitId() bool {

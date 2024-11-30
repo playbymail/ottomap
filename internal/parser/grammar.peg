@@ -159,6 +159,8 @@ ObviousNeighboringTerrainCode <- "ALPS"i {
     return terrain.LowJungleMountains, nil
 } / "LSM"i {
     return terrain.LowSnowyMountains, nil
+} / "LVM"i {
+    return terrain.LowVolcanicMountains, nil
 } / "L" {
     return terrain.Lake, nil
 } / "O" {
