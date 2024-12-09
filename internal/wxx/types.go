@@ -81,6 +81,7 @@ type Features struct {
 	Encounters  []*parser.Encounter_t // other units in this tile
 	Resources   []resources.Resource_e
 	Settlements []*parser.Settlement_t // name of settlement
+	Special     []*parser.Special_t    // any special hex name
 }
 
 type Resources struct {

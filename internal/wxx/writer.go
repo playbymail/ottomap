@@ -364,6 +364,20 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 					break
 				}
 			}
+
+			// we allow multiple special hex names per tile but we can only render one
+			for _, s := range t.Features.Special {
+				//log.Printf("special: %q: %q", s.Id, s.Name)
+				center := points[0]
+				w.Printf(`<feature type="Symbol Point-of-Interest" rotate="0.0" uuid="%s" mapLayer="Tribenet Settlements" isFlipHorizontal="false" isFlipVertical="false" scale="-1.0" scaleHt="-1.0" tags="" color="null" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, uuid.NewString())
+				w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" />`, center.X, center.Y)
+				w.Printf(`<label  mapLayer="Tribenet Settlements" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
+				w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="12.5" />`, center.X, center.Y)
+				w.Printf("%s", s.Name)
+				w.Printf(`</label>`)
+				w.Println(`</feature>`)
+				break // never render more than one special hex per tile
+			}
 		}
 	}
 

@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func Walk(input []*parser.Turn_t, originGrid string, quitOnInvalidGrid, warnOnInvalidGrid, warnOnNewSettlement, warnOnTerrainChange, debug bool) (*tiles.Map_t, error) {
+func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, originGrid string, quitOnInvalidGrid, warnOnInvalidGrid, warnOnNewSettlement, warnOnTerrainChange, debug bool) (*tiles.Map_t, error) {
 	started := time.Now()
 	log.Printf("walk: input: %8d turns\n", len(input))
 
@@ -90,7 +90,7 @@ func Walk(input []*parser.Turn_t, originGrid string, quitOnInvalidGrid, warnOnIn
 
 			// step through all the moves this unit makes this turn, tracking the location of the unit after each step
 			for _, move := range moves.Moves {
-				location, err := Step(turn.Id, move, current, leader, worldMap, false, warnOnNewSettlement, warnOnTerrainChange, debug)
+				location, err := Step(turn.Id, move, current, leader, worldMap, specialNames, false, warnOnNewSettlement, warnOnTerrainChange, debug)
 				if err != nil {
 					panic(err)
 				}
@@ -111,7 +111,7 @@ func Walk(input []*parser.Turn_t, originGrid string, quitOnInvalidGrid, warnOnIn
 				current = moves.Location
 				// step through all the moves this scout makes this turn, tracking the location of the scout after each step
 				for _, move := range scout.Moves {
-					location, err := Step(turn.Id, move, current, leader, worldMap, true, warnOnNewSettlement, warnOnTerrainChange, debug)
+					location, err := Step(turn.Id, move, current, leader, worldMap, specialNames, true, warnOnNewSettlement, warnOnTerrainChange, debug)
 					if err != nil {
 						panic(err)
 					}

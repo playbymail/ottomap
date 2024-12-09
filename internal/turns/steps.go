@@ -24,7 +24,7 @@ func errslug(text []byte, width int) string {
 
 // Step processes a single step from a unit's move.
 // It returns the final location of the unit.
-func Step(turnId string, move *parser.Move_t, location, leader coords.Map, worldMap *tiles.Map_t, scouting, warnOnNewSettlement, warnOnTerrainChange, debug bool) (coords.Map, error) {
+func Step(turnId string, move *parser.Move_t, location, leader coords.Map, worldMap *tiles.Map_t, specialNames map[string]*parser.Special_t, scouting, warnOnNewSettlement, warnOnTerrainChange, debug bool) (coords.Map, error) {
 	// return an error if the starting location is obscured.
 	if location.IsZero() {
 		return location, fmt.Errorf("missing location")
@@ -84,7 +84,7 @@ func Step(turnId string, move *parser.Move_t, location, leader coords.Map, world
 		panic("missing tile")
 	}
 
-	err = to.MergeReports(turnId, move.Report, worldMap, scouting, warnOnNewSettlement, warnOnTerrainChange)
+	err = to.MergeReports(turnId, move.Report, worldMap, specialNames, scouting, warnOnNewSettlement, warnOnTerrainChange)
 
 	// update the input so that the location represents the final location of the unit after the move
 	move.Location = to.Location

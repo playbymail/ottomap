@@ -31,6 +31,7 @@ type Tile_t struct {
 	Encounters  []*parser.Encounter_t // other units in this tile
 	Resources   []resources.Resource_e
 	Settlements []*parser.Settlement_t
+	Special     []*parser.Special_t
 
 	// map of elements that are responsible for this tile.
 	// does not work for fleets!
@@ -53,7 +54,7 @@ func (t *Tile_t) Dump() {
 }
 
 // MergeReports merges the reports from two tiles.
-func (t *Tile_t) MergeReports(turnId string, report *parser.Report_t, worldMap *Map_t, scouting, warnOnNewSettlement, warnOnTerrainChange bool) error {
+func (t *Tile_t) MergeReports(turnId string, report *parser.Report_t, worldMap *Map_t, specialNames map[string]*parser.Special_t, scouting, warnOnNewSettlement, warnOnTerrainChange bool) error {
 	// update flags for visited and scouted.
 	// panic if the input is not sorted by turn.
 	if !(t.Visited <= turnId) {
@@ -83,7 +84,7 @@ func (t *Tile_t) MergeReports(turnId string, report *parser.Report_t, worldMap *
 		t.MergeResource(resource)
 	}
 	for _, settlement := range report.Settlements {
-		t.MergeSettlement(settlement, warnOnNewSettlement)
+		t.MergeSettlement(settlement, specialNames, warnOnNewSettlement)
 	}
 
 	return nil
@@ -179,9 +180,28 @@ func (t *Tile_t) MergeResource(r resources.Resource_e) {
 }
 
 // MergeSettlement merges a new settlement into the tile.
-func (t *Tile_t) MergeSettlement(s *parser.Settlement_t, warnOnNewSettlement bool) {
+func (t *Tile_t) MergeSettlement(s *parser.Settlement_t, specialNames map[string]*parser.Special_t, warnOnNewSettlement bool) {
 	if s == nil {
 		return
+	}
+	//log.Printf("merge: settlement: testing %q\n", s.Name)
+	//if specialNames != nil {
+	//	log.Printf("merge: settlement: special names: %d\n", len(specialNames))
+	//}
+	if special, ok := specialNames[strings.ToLower(s.Name)]; ok {
+		//log.Printf("merge: settlement %q: special %q\n", special.Id, special.Name)
+		foundId := false
+		for _, ss := range t.Special { // loop to prevent adding duplicates
+			foundId = ss.Id == special.Id
+			if foundId {
+				break
+			}
+		}
+		if !foundId {
+			t.Special = append(t.Special, special)
+			//log.Printf("merge: settlement %q: special %q: added to %q\n", special.Id, special.Name, t.Location)
+			return
+		}
 	}
 	for _, l := range t.Settlements {
 		if strings.ToLower(l.Name) == strings.ToLower(s.Name) {

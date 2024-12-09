@@ -252,14 +252,17 @@ var cmdRender = &cobra.Command{
 				}
 				log.Fatalf("error: expected turn %q: got turn %q\n", turnId, fmt.Sprintf("%04d-%02d", turn.Year, turn.Month))
 			}
+			//log.Printf("len(turn.SpecialNames) = %d\n", len(turn.SpecialNames))
+
 			allTurns[turnId] = append(allTurns[turnId], turn)
 			totalUnitMoves += len(turn.UnitMoves)
 			log.Printf("%q: parsed %6d units in %v\n", i.Id, len(turn.UnitMoves), time.Since(started))
 		}
-		log.Printf("parsed %d inputs in to %d turns and %d units %v\n", len(inputs), len(allTurns), totalUnitMoves, time.Since(started))
+		log.Printf("parsed %d inputs in to %d turns and %d units in %v\n", len(inputs), len(allTurns), totalUnitMoves, time.Since(started))
 
 		// consolidate the turns, then sort by year and month
 		var consolidatedTurns []*parser.Turn_t
+		consolidatedSpecialNames := map[string]*parser.Special_t{}
 		foundDuplicates := false
 		for _, unitTurns := range allTurns {
 			if len(unitTurns) == 0 {
@@ -285,10 +288,19 @@ var cmdRender = &cobra.Command{
 					turn.UnitMoves[id] = unitMoves
 					turn.SortedMoves = append(turn.SortedMoves, unitMoves)
 				}
+				if unitTurn.SpecialNames != nil {
+					// consolidate any the special hexes
+					for id, special := range unitTurn.SpecialNames {
+						consolidatedSpecialNames[id] = special
+					}
+				}
 			}
 		}
 		if foundDuplicates {
 			log.Fatalf("error: please fix the duplicate units and restart\n")
+		}
+		if len(consolidatedSpecialNames) > 0 {
+			log.Printf("consolidated %d special hex names\n", len(consolidatedSpecialNames))
 		}
 		sort.Slice(consolidatedTurns, func(i, j int) bool {
 			a, b := consolidatedTurns[i], consolidatedTurns[j]
@@ -422,7 +434,7 @@ var cmdRender = &cobra.Command{
 		}
 
 		// walk the data
-		worldMap, err := turns.Walk(consolidatedTurns, argsRender.originGrid, argsRender.quitOnInvalidGrid, argsRender.warnOnInvalidGrid, argsRender.warnOnNewSettlement, argsRender.warnOnTerrainChange, argsRender.debug.maps)
+		worldMap, err := turns.Walk(consolidatedTurns, consolidatedSpecialNames, argsRender.originGrid, argsRender.quitOnInvalidGrid, argsRender.warnOnInvalidGrid, argsRender.warnOnNewSettlement, argsRender.warnOnTerrainChange, argsRender.debug.maps)
 		if err != nil {
 			log.Fatalf("error: %v\n", err)
 		}
@@ -481,7 +493,7 @@ var cmdRender = &cobra.Command{
 		}
 
 		// map the data
-		wxxMap, err := actions.MapWorld(worldMap, parser.UnitId_t(argsRender.clanId), argsRender.mapper)
+		wxxMap, err := actions.MapWorld(worldMap, consolidatedSpecialNames, parser.UnitId_t(argsRender.clanId), argsRender.mapper)
 		if err != nil {
 			log.Fatalf("error: %v\n", err)
 		}

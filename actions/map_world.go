@@ -11,6 +11,7 @@ import (
 	"github.com/playbymail/ottomap/internal/tiles"
 	"github.com/playbymail/ottomap/internal/wxx"
 	"log"
+	"strings"
 )
 
 type MapConfig struct {
@@ -28,7 +29,7 @@ type MapConfig struct {
 	}
 }
 
-func MapWorld(allTiles *tiles.Map_t, clan parser.UnitId_t, cfg MapConfig, options ...wxx.Option) (*wxx.WXX, error) {
+func MapWorld(allTiles *tiles.Map_t, allSpecialNames map[string]*parser.Special_t, clan parser.UnitId_t, cfg MapConfig, options ...wxx.Option) (*wxx.WXX, error) {
 	if allTiles.Length() == 0 {
 		log.Fatalf("error: no tiles to map\n")
 	}
@@ -119,7 +120,27 @@ func MapWorld(allTiles *tiles.Map_t, clan parser.UnitId_t, cfg MapConfig, option
 		}
 
 		for _, settlement := range t.Settlements {
+			id := strings.ToLower(settlement.Name)
+			if special, ok := allSpecialNames[id]; ok {
+				log.Printf("settlement: %s -> special %q\n", id, special.Name)
+				hex.Features.Special = append(hex.Features.Special, special)
+				continue
+			}
 			hex.Features.Settlements = append(hex.Features.Settlements, settlement)
+		}
+
+		for _, special := range t.Special {
+			//log.Printf("map world: checking special %q\n", special.Name)
+			foundId := false
+			for _, v := range hex.Features.Special {
+				foundId = v.Id == special.Id
+				if foundId {
+					break // avoid duplicates
+				}
+			}
+			if !foundId {
+				hex.Features.Special = append(hex.Features.Special, special)
+			}
 		}
 
 		worldHexMap[hex.RenderAt] = hex

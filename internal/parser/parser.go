@@ -174,6 +174,24 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 					return t, fmt.Errorf("turn mismatch in report")
 				}
 			}
+		} else if bytes.HasPrefix(line, []byte{'>', '>', '>', '>'}) {
+			input := bytes.TrimPrefix(line, []byte{'>', '>', '>', '>'})
+			id, name, ok := bytes.Cut(input, []byte{'>'})
+			if !ok || len(name) == 0 {
+				name = id
+			}
+			id = bytes.ToLower(bytes.TrimSpace(id))
+			name = bytes.TrimSpace(name)
+			//log.Printf("%s: %s: %d: current turn: %04d-%02d", fid, unitId, lineNo, t.Year, t.Month)
+			log.Printf("%s: %s: %d: special name: %q -> %q", fid, unitId, lineNo, id, name)
+			if t.SpecialNames == nil {
+				t.SpecialNames = make(map[string]*Special_t)
+			}
+			t.SpecialNames[string(id)] = &Special_t{
+				TurnId: t.Id,
+				Id:     string(id),
+				Name:   string(name),
+			}
 		} else if rxFleetMovement.Match(line) {
 			pfx, _, ok := bytes.Cut(line, []byte{':'})
 			if !ok {

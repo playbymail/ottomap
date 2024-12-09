@@ -28,6 +28,11 @@ type Turn_t struct {
 	UnitMoves   map[UnitId_t]*Moves_t
 	SortedMoves []*Moves_t
 
+	// SpecialNames holds the names of the hexes that are special.
+	// It's a hack to get around the fact that the parser doesn't know about the hexes.
+	// They are added to the map when parsing and are forced to lower case.
+	SpecialNames map[string]*Special_t
+
 	Next, Prev *Turn_t
 }
 
@@ -375,6 +380,12 @@ func (s *Settlement_t) String() string {
 		return ""
 	}
 	return s.Name
+}
+
+type Special_t struct {
+	TurnId string // turn the special hex was observed
+	Id     string // id of the special hex, full name converted to lower case
+	Name   string // short name of the special hex (id if name is empty)
 }
 
 type UnitId_t string
