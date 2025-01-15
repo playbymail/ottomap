@@ -343,7 +343,7 @@ var cmdRender = &cobra.Command{
 		}
 
 		// sanity check on the current and prior locations.
-		badLinks, goodLinks := 0, 0
+		changedLinks, staticLinks := 0, 0
 		for _, turn := range consolidatedTurns {
 			if turn.Next == nil { // nothing to update
 				continue
@@ -354,20 +354,22 @@ var cmdRender = &cobra.Command{
 					continue
 				}
 				if unitMoves.ToHex[2:] != nextUnitMoves.FromHex[2:] {
-					badLinks++
-					log.Printf("error: %s: %-6s: from %q\n", turn.Id, unitMoves.UnitId, unitMoves.ToHex)
-					log.Printf("     : %s: %-6s: to   %q\n", turn.Next.Id, nextUnitMoves.UnitId, nextUnitMoves.FromHex)
+					changedLinks++
+					log.Printf("warning: %s: %-6s: from %q\n", turn.Id, unitMoves.UnitId, unitMoves.ToHex)
+					log.Printf("       : %s: %-6s: to   %q\n", turn.Next.Id, nextUnitMoves.UnitId, nextUnitMoves.FromHex)
 				} else {
-					goodLinks++
+					staticLinks++
 				}
 				nextUnitMoves.FromHex = unitMoves.ToHex
 			}
 		}
-		log.Printf("links: %d good, %d bad\n", goodLinks, badLinks)
-		if badLinks != 0 {
-			// this should never happen. if it does then something is wrong with the report generator.
-			log.Printf("sorry: the previous and current hexes don't align in some reports\n")
-			log.Fatalf("please report this error")
+		log.Printf("links: %d same, %d changed\n", staticLinks, changedLinks)
+		if changedLinks != 0 {
+			// this can happen when an element is destroyed and another created with the same name
+			// during a single turn.
+			log.Printf("warning: the previous and current hexes don't align in some reports\n")
+			log.Printf("warning: if you didn't destroy a unit and create another with the\n")
+			log.Printf("warning: same name in a single turn, then there may be a bug here.\n")
 		}
 
 		// proactively patch some of the obscured locations.
