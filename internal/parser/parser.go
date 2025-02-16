@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/edges"
+	"github.com/playbymail/ottomap/internal/norm"
 	"github.com/playbymail/ottomap/internal/resources"
 	"github.com/playbymail/ottomap/internal/results"
 	"github.com/playbymail/ottomap/internal/terrain"
@@ -575,6 +576,16 @@ func ParseTribeMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line [
 func parseMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, isScout bool, acceptLoneDash, debugSteps, debugNodes, debugFleetMoves bool, experimentalUnitSplit, scoutStill bool) ([]*Move_t, error) {
 	var moves []*Move_t
 
+	//doLog := bytes.Contains(line, []byte{'0', '9', '8', '7'}) || bytes.Contains(line, []byte(`Pass SW 0134`))
+	// scrub the line and fix the things that we can
+	line = bytes.TrimSpace(line)
+	//if doLog {
+	//	log.Printf("pml: line pre  \"%s\"\n", line)
+	//}
+	line = norm.NormalizeLine(line)
+	//if doLog {
+	//	log.Printf("pml: line post \"%s\"\n", line)
+	//}
 	line = bytes.TrimSpace(line)
 
 	// we've done this over and over. movement results look like step (\ step)*.
