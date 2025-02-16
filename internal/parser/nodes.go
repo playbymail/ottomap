@@ -85,7 +85,12 @@ func hexReportToNodes(hexReport []byte, debugNodes bool, experimentalUnitSplit b
 	// there are components that use commas as separators internally.
 	// we need to find them and splice them back together. brute force it.
 	for tmp := root; tmp != nil && tmp.next != nil; {
-		if tmp.isFindQuantityItem() {
+		if tmp.isAlpsEdge() {
+			for tmp.next.isDirection() {
+				tmp.addText(tmp.next)
+				tmp.next = tmp.next.next
+			}
+		} else if tmp.isFindQuantityItem() {
 			for tmp.next.isQuantityItem() {
 				tmp.addText(tmp.next)
 				tmp.next = tmp.next.next
@@ -222,6 +227,10 @@ func (n *node) hasPrefix(pfx string) bool {
 		return false
 	}
 	return bytes.HasPrefix(bytes.ToUpper(n.text[:len(pfx)]), []byte(pfx))
+}
+
+func (n *node) isAlpsEdge() bool {
+	return n.hasPrefix("ALPS ")
 }
 
 // isDirection returns true if the node is a direction.
