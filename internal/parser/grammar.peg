@@ -646,10 +646,12 @@ RESOURCE <- "Coal"i {
 
 TERRAIN <- "ALPS" {
     return terrain.Alps, nil
+} / "ARID HILLS" {
+    return terrain.AridHills, nil
 } / "ARID TUNDRA" {
     return terrain.AridTundra, nil
 } / "ARID" {
-    return terrain.AridHills, nil
+    return terrain.AridTundra, nil
 } / "BRUSH FLAT" {
     return terrain.BrushFlat, nil
 } / "BRUSH HILLS" {
