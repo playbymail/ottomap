@@ -84,7 +84,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
 				log.Printf("%s: %s: %d: location %q: %v\n", fid, unitId, lineNo, slug(line, 14), err)
-				return t, nil
+				return t, err
 			} else if _, ok := t.UnitMoves[unitId]; ok {
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 14))
 				return t, fmt.Errorf("duplicate unit in turn")
@@ -102,7 +102,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
 				log.Printf("%s: %s: %d: location %q: %v\n", fid, unitId, lineNo, slug(line, 14), err)
-				return t, nil
+				return t, err
 			} else if _, ok := t.UnitMoves[unitId]; ok {
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 14))
 				return t, fmt.Errorf("duplicate unit in turn")
@@ -116,7 +116,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
 				log.Printf("%s: %s: %d: location %q: %v\n", fid, unitId, lineNo, slug(line, 12), err)
-				return t, nil
+				return t, err
 			} else if _, ok := t.UnitMoves[unitId]; ok {
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 12))
 				return t, fmt.Errorf("duplicate unit in turn")
@@ -130,7 +130,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
 				log.Printf("%s: %s: %d: location %q: %v\n", fid, unitId, lineNo, slug(line, 15), err)
-				return t, nil
+				return t, err
 			} else if _, ok := t.UnitMoves[unitId]; ok {
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 15))
 				return t, fmt.Errorf("duplicate unit in turn")
@@ -144,7 +144,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
 				log.Printf("%s: %s: %d: location %q: %v\n", fid, unitId, lineNo, slug(line, 10), err)
-				return t, nil
+				return t, err
 			} else if _, ok := t.UnitMoves[unitId]; ok {
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 10))
 				return t, fmt.Errorf("duplicate unit in turn")
