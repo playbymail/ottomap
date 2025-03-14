@@ -921,6 +921,9 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 			for _, unit := range v {
 				m.Report.MergeEncounters(&Encounter_t{TurnId: tid, UnitId: unit.Id})
 			}
+		case InsufficientCapacity_t: // ignore
+			//log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
+			m.Result, m.Still = results.Failed, true
 		case Longhouse_t: // ignore
 		case MissingEdge_t:
 			m.Result, m.Still, m.Advance = results.Failed, true, v.Direction

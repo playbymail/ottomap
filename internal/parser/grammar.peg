@@ -224,8 +224,15 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
         Direction: d.(direction.Direction_e),
         Terrain:   terrain.UnknownJungleSwamp,
     }, nil
+} / "Cannot Move Wagons into Swamp" SP "to" SP d:DIRECTION SP "of HEX" EOF {
+    return &ProhibitedFrom_t{
+        Direction: d.(direction.Direction_e),
+        Terrain:   terrain.Swamp,
+    }, nil
 } / "Group did not return" EOF {
     return DidNotReturn_t{}, nil
+} / "failed due to Insufficient capacity to carry" EOF {
+    return InsufficientCapacity_t{}, nil
 } / "Find" SP r:RESOURCE EOF {
     return r, nil
 } / "Find" SP n:NUMBER SP i:ITEM EOF {
