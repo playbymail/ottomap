@@ -17,7 +17,7 @@ var (
 
 func init() {
 	// initialize the lookup table for valid input characters
-	for _, ch := range []byte(`abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789 -,.'/\`) {
+	for _, ch := range []byte(`abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789 -,.'/\()`) {
 		isValid[ch] = true
 	}
 }
