@@ -50,6 +50,22 @@ const (
 // NumberOfTerrainTypes must be updated if we add new terrain types
 const NumberOfTerrainTypes = int(UnknownWater + 1)
 
+func (e Terrain_e) IsAnyLand() bool {
+	return e == Alps || e == AridHills || e == AridTundra ||
+		e == BrushFlat || e == BrushHills ||
+		e == ConiferHills ||
+		e == Deciduous || e == DeciduousHills || e == Desert ||
+		e == GrassyHills || e == GrassyHillsPlateau ||
+		e == HighSnowyMountains ||
+		e == Jungle || e == JungleHills ||
+		e == LowAridMountains || e == LowConiferMountains || e == LowJungleMountains || e == LowSnowyMountains || e == LowVolcanicMountains ||
+		e == PolarIce || e == Prairie || e == PrairiePlateau ||
+		e == RockyHills ||
+		e == SnowyHills || e == Swamp ||
+		e == Tundra ||
+		e == UnknownLand || e == UnknownMountain
+}
+
 func (e Terrain_e) IsAnyMountain() bool {
 	return e == Alps ||
 		e == HighSnowyMountains ||
@@ -58,6 +74,10 @@ func (e Terrain_e) IsAnyMountain() bool {
 		e == LowJungleMountains ||
 		e == LowSnowyMountains ||
 		e == LowVolcanicMountains
+}
+
+func (e Terrain_e) IsAnyWater() bool {
+	return e == Lake || e == Ocean || e == UnknownWater
 }
 
 func (e Terrain_e) IsJungle() bool {

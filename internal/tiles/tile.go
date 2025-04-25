@@ -237,6 +237,17 @@ func (t *Tile_t) MergeTerrain(n terrain.Terrain_e, warnOnTerrainChange bool) {
 		return
 	}
 
+	// if the new terrain is unknown land and the existing terrain is any type of land,
+	// then we want to keep the existing terrain and not report an error. likewise, if the new terrain is
+	// any type of land and the existing terrain is unknown land, we want to use the new
+	// terrain and not report an error. this only happens from fleet observations
+	if n == terrain.UnknownLand && (t.Terrain.IsAnyLand()) {
+		return
+	} else if n.IsAnyLand() && t.Terrain == terrain.UnknownLand {
+		t.Terrain = n
+		return
+	}
+
 	// if the new terrain is unknown mountain and the existing terrain is any type of mountain,
 	// then we want to keep the existing terrain and not report an error. likewise, if the new terrain is
 	// any type of mountain and the existing terrain is unknown mountain, we want to use the new
@@ -244,6 +255,17 @@ func (t *Tile_t) MergeTerrain(n terrain.Terrain_e, warnOnTerrainChange bool) {
 	if n == terrain.UnknownMountain && t.Terrain.IsAnyMountain() {
 		return
 	} else if n.IsAnyMountain() && t.Terrain == terrain.UnknownMountain {
+		t.Terrain = n
+		return
+	}
+
+	// if the new terrain is unknown water and the existing terrain is any type of water,
+	// then we want to keep the existing terrain and not report an error. likewise, if the new terrain is
+	// any type of water and the existing terrain is unknown water, we want to use the new
+	// terrain and not report an error. this only happens from fleet observations
+	if n == terrain.UnknownWater && (t.Terrain.IsAnyWater()) {
+		return
+	} else if n.IsAnyWater() && t.Terrain == terrain.UnknownWater {
 		t.Terrain = n
 		return
 	}
