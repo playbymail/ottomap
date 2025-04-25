@@ -85,6 +85,18 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 		R, G, B          float64
 	}
 
+	neverScoutedLabel := niceLabel{
+		OffsetFromCenter: Point{X: 75, Y: 75},
+	}
+	if neverScoutedLabel.R, neverScoutedLabel.G, neverScoutedLabel.B, err = hexToRGB("#ff0000"); err != nil {
+		panic(err)
+	}
+	neverVisitedLabel := niceLabel{
+		OffsetFromCenter: Point{X: -75, Y: 75},
+	}
+	if neverVisitedLabel.R, neverVisitedLabel.G, neverVisitedLabel.B, err = hexToRGB("#ff0000"); err != nil {
+		panic(err)
+	}
 	notVisitedLabel := niceLabel{
 		OffsetFromCenter: Point{X: -2, Y: 45},
 	}
@@ -182,6 +194,8 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 	w.Println(`<maplayer name="Tribenet Settlements" isVisible="true"/>`)
 	w.Println(`<maplayer name="Tribenet Clan Units" isVisible="true"/>`)
 	w.Println(`<maplayer name="Tribenet Encounters" isVisible="true"/>`)
+	w.Println(`<maplayer name="Tribenet Never Scouted" isVisible="false"/>`)
+	w.Println(`<maplayer name="Tribenet Never Visited" isVisible="false"/>`)
 	w.Println(`<maplayer name="Tribenet Visited" isVisible="true"/>`)
 	w.Println(`<maplayer name="Tribenet Coords" isVisible="true"/>`)
 	w.Println(`<maplayer name="Tribenet Origin" isVisible="true"/>`)
@@ -428,6 +442,27 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 					labelXY := points[0].Translate(scoutedLabel.OffsetFromCenter)
 					w.Printf(`<label  mapLayer="Tribenet Visited" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, scoutedLabel.R, scoutedLabel.G, scoutedLabel.B)
 					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="12.5" />`, labelXY.X, labelXY.Y)
+					w.Printf("S")
+					w.Printf("</label>/n")
+				}
+
+				// we're looking to make the scouting/unit-visited labels a bit more visible. we're going to do that on a new layer so that it is opt-in for players.
+				// we assume that there are only four states for a tile: never visited, visited but not scouted, scouted but not visited, and visited and scouted.
+				// those states are represented by the WasVisited and WasScouted flags.
+				// if the hex has never been visited or scouted, it should be blank, but there are a few exceptions.
+				// for example, if a hex is a mountain, it should be visible from a neighboring hex. also, ships see over the horizon.
+				// so for never visited and never scouted, we'll show a giant yellow X in the center of the hex.
+				if !t.WasVisited { // never visited
+					labelXY := points[0].Translate(neverVisitedLabel.OffsetFromCenter)
+					w.Printf(`<label  mapLayer="Tribenet Never Visited" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, neverVisitedLabel.R, neverVisitedLabel.G, neverVisitedLabel.B)
+					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="50.0" />`, labelXY.X, labelXY.Y)
+					w.Printf("V")
+					w.Printf("</label>/n")
+				}
+				if !t.WasScouted { // never scouted
+					labelXY := points[0].Translate(neverScoutedLabel.OffsetFromCenter)
+					w.Printf(`<label  mapLayer="Tribenet Never Scouted" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, neverScoutedLabel.R, neverScoutedLabel.G, neverScoutedLabel.B)
+					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="50.0" />`, labelXY.X, labelXY.Y)
 					w.Printf("S")
 					w.Printf("</label>/n")
 				}
