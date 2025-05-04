@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 43, Patch: 0}
+	version = semver.Version{Major: 0, Minor: 44, Patch: 0}
 )
 
 func main() {
@@ -118,6 +118,7 @@ func Execute() error {
 	cmdRender.Flags().StringVar(&argsRender.maxTurn.id, "max-turn", "", "last turn to map (yyyy-mm format)")
 	cmdRender.Flags().StringVar(&argsRender.originGrid, "origin-grid", "", "grid id to substitute for ##")
 	cmdRender.Flags().StringVar(&argsRender.soloElement, "solo-element", "", "limit parsing to a single element of a clan")
+	cmdRender.Flags().BoolVar(&argsRender.experimental.blankMap, "blank-map", false, "experimental: create a blank map, AA..ZP")
 
 	cmdRoot.AddCommand(cmdScrub)
 	cmdScrub.AddCommand(cmdScrubFile)

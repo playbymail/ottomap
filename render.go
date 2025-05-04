@@ -62,6 +62,7 @@ var argsRender struct {
 		newWaterTiles      bool
 		cleanUpScoutStill  bool
 		splitTrailingUnits bool
+		blankMap           bool
 		stripCR            bool
 	}
 	saveWithTurnId bool
@@ -503,12 +504,20 @@ var cmdRender = &cobra.Command{
 
 		// now we can create the Worldographer map!
 		var mapName string
-		if argsRender.saveWithTurnId {
+		if argsRender.experimental.blankMap {
+			mapName = filepath.Join(argsRender.paths.output, "blank-maps.wxx")
+		} else if argsRender.saveWithTurnId {
 			mapName = filepath.Join(argsRender.paths.output, fmt.Sprintf("%s.%s.wxx", maxTurnId, argsRender.clanId))
 		} else {
 			mapName = filepath.Join(argsRender.paths.output, fmt.Sprintf("%s.wxx", argsRender.clanId))
 		}
-		if err := wxxMap.Create(mapName, turnId, upperLeft, lowerRight, argsRender.render); err != nil {
+		if argsRender.experimental.blankMap {
+			log.Printf("creating starmap %s\n", mapName)
+			if err := wxxMap.CreateBlankMap(mapName); err != nil {
+				log.Printf("creating %s\n", mapName)
+				log.Fatalf("error: %v\n", err)
+			}
+		} else if err := wxxMap.Create(mapName, turnId, upperLeft, lowerRight, argsRender.render); err != nil {
 			log.Printf("creating %s\n", mapName)
 			log.Fatalf("error: %v\n", err)
 		}

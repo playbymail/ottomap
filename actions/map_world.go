@@ -23,6 +23,7 @@ type MapConfig struct {
 	Render struct {
 		FordsAsPills bool // if true, draw ford icons as pills
 		ShiftMap     bool // if true, shift the map up and left to make it smaller
+		StarMap      bool // if true, draw a star map
 	}
 	Show struct {
 		Origin bool // if set, put a marker in the origin hex
