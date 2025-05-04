@@ -62,8 +62,9 @@ var argsRender struct {
 		newWaterTiles      bool
 		cleanUpScoutStill  bool
 		splitTrailingUnits bool
-		blankMap           bool
 		stripCR            bool
+		blankMapSmall      bool
+		blankMapFull       bool
 	}
 	saveWithTurnId bool
 	show           struct {
@@ -504,16 +505,24 @@ var cmdRender = &cobra.Command{
 
 		// now we can create the Worldographer map!
 		var mapName string
-		if argsRender.experimental.blankMap {
-			mapName = filepath.Join(argsRender.paths.output, "blank-maps.wxx")
+		if argsRender.experimental.blankMapSmall {
+			mapName = filepath.Join(argsRender.paths.output, "blank-map.wxx")
+		} else if argsRender.experimental.blankMapFull {
+			mapName = filepath.Join(argsRender.paths.output, "blank-map-full.wxx")
 		} else if argsRender.saveWithTurnId {
 			mapName = filepath.Join(argsRender.paths.output, fmt.Sprintf("%s.%s.wxx", maxTurnId, argsRender.clanId))
 		} else {
 			mapName = filepath.Join(argsRender.paths.output, fmt.Sprintf("%s.wxx", argsRender.clanId))
 		}
-		if argsRender.experimental.blankMap {
+		if argsRender.experimental.blankMapSmall {
 			log.Printf("creating starmap %s\n", mapName)
-			if err := wxxMap.CreateBlankMap(mapName); err != nil {
+			if err := wxxMap.CreateBlankMap(mapName, false); err != nil {
+				log.Printf("creating %s\n", mapName)
+				log.Fatalf("error: %v\n", err)
+			}
+		} else if argsRender.experimental.blankMapFull {
+			log.Printf("creating starmap %s\n", mapName)
+			if err := wxxMap.CreateBlankMap(mapName, true); err != nil {
 				log.Printf("creating %s\n", mapName)
 				log.Fatalf("error: %v\n", err)
 			}

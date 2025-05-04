@@ -14,7 +14,7 @@ import (
 	"unicode/utf8"
 )
 
-func (w *WXX) CreateBlankMap(path string) error {
+func (w *WXX) CreateBlankMap(path string, fullMap bool) error {
 	// start writing the XML
 	w.buffer = &bytes.Buffer{}
 
@@ -42,11 +42,11 @@ func (w *WXX) CreateBlankMap(path string) error {
 		}
 		terrainSlice = append(terrainSlice, value)
 	}
-	for n, terrain := range terrainSlice {
+	for n, t := range terrainSlice {
 		if n == 0 {
-			w.Printf("%s\t%d", terrain, n)
+			w.Printf("%s\t%d", t, n)
 		} else {
-			w.Printf("\t%s\t%d", terrain, n)
+			w.Printf("\t%s\t%d", t, n)
 		}
 	}
 	w.Printf("</terrainmap>\n")
@@ -62,8 +62,10 @@ func (w *WXX) CreateBlankMap(path string) error {
 	w.Println(`<maplayer name="Terrain Water" isVisible="true"/>`)
 	w.Println(`<maplayer name="Below All" isVisible="true"/>`)
 
-	//tilesWide, tilesHigh, labelsCreated := 30*26, 21*26, 0 // AA .. ZZ
 	tilesWide, tilesHigh, labelsCreated := 30*16, 21*26, 0 // AA .. ZP
+	if fullMap {
+		tilesWide, tilesHigh = 30*26, 21*26 // AA .. ZZ
+	}
 
 	// width is the number of columns, height is the number of rows.
 	w.Println(`<tiles viewLevel="WORLD" tilesWide="%d" tilesHigh="%d">`, tilesWide, tilesHigh)
