@@ -319,10 +319,10 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				}
 			}
 			if len(unitNotes[0].units) > 1 {
-				unitNotes[0].name = "CLAN"
+				unitNotes[0].name = fmt.Sprintf("%d Units", len(unitNotes[0].units))
 			}
 			if len(unitNotes[1].units) > 1 {
-				unitNotes[1].name = "XXXX"
+				unitNotes[1].name = fmt.Sprintf("%d Units", len(unitNotes[1].units))
 			}
 
 			for _, un := range unitNotes {
