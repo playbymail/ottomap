@@ -48,6 +48,11 @@ type ParseConfig struct {
 }
 
 func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debugSections, debugSteps, debugNodes, debugFleetMovement bool, experimentalUnitSplit, experimentalScoutStill bool, cfg ParseConfig) (*Turn_t, error) {
+	//if tid == "0903-04" {
+	//	debugParser = true
+	//	debugSections = true
+	//	debugSteps = true
+	//}
 	debugfm := func(format string, args ...any) {
 		if debugFleetMovement {
 			log.Printf(format, args...)
@@ -554,11 +559,15 @@ func ParseTribeMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line [
 		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, line)
 	}
 
-	// remove the prefix
-	if !bytes.HasPrefix(line, []byte{'M', 'o', 'v', 'e'}) {
-		return nil, fmt.Errorf("expected 'Move', found '%s'", slug(line, 8))
+	// remove the "Move" prefix from the line if it exists. if the line is actually the wagons error, then
+	// just force the move to be a single (empty) step.
+	if bytes.HasPrefix(line, []byte{'M', 'o', 'v', 'e'}) {
+		line = bytes.TrimPrefix(line, []byte{'M', 'o', 'v', 'e'})
+	} else if strings.ToLower(string(line)) == "not enough animals to pull wagons. movement is not possible." {
+		line = []byte{' ', '\\'}
+	} else {
+		return nil, fmt.Errorf("%d: Tribe Movement: expected 'Move', found '%s'", lineNo, slug(line, 8))
 	}
-	line = bytes.TrimPrefix(line, []byte{'M', 'o', 'v', 'e'})
 
 	moves, err := parseMovementLine(fid, tid, unitId, lineNo, line, false, acceptLoneDash, debugSteps, debugNodes, false, experimentalUnitSplit, false)
 	if err != nil {
