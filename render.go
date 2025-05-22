@@ -336,12 +336,15 @@ var cmdRender = &cobra.Command{
 			for _, unitMoves := range turn.UnitMoves {
 				if unitMoves.FromHex == "N/A" {
 					naLocationCount++
-					log.Printf("%s: %-6s: location %q: invalid location\n", unitMoves.TurnId, unitMoves.UnitId, unitMoves.FromHex)
+					if naLocationCount == 1 {
+						log.Printf("error: ottomap found units that have 'N/A' in the Previous Hex field\n")
+					}
+					log.Printf("turn %s: unit %-6s: Previous Hex is 'N/A'\n", unitMoves.TurnId, unitMoves.UnitId)
 				}
 			}
 		}
 		if naLocationCount != 0 {
-			log.Fatalf("please update the invalid locations and restart\n")
+			log.Fatalf("please update the Previous Hex field for these units and restart\n")
 		}
 
 		// sanity check on the current and prior locations.

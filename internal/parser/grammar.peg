@@ -229,6 +229,11 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
         Direction: d.(direction.Direction_e),
         Terrain:   terrain.UnknownMountain,
     }, nil
+} / "Cannot Move Wagons into Snowy hills" SP "to" SP d:DIRECTION SP "of HEX" EOF {
+    return &ProhibitedFrom_t{
+        Direction: d.(direction.Direction_e),
+        Terrain:   terrain.SnowyHills,
+    }, nil
 } / "Cannot Move Wagons into Swamp/Jungle Hill to" SP d:DIRECTION SP "of HEX" EOF {
     return &ProhibitedFrom_t{
         Direction: d.(direction.Direction_e),
