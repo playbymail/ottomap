@@ -114,5 +114,5 @@ func midpoint(p1, p2 Point) Point {
 }
 
 func settlementLabelXY(label string, v [7]Point) Point {
-	return edgeCenter(direction.South, v).Translate(Point{X: float64(-3 * len(label)), Y: -25})
+	return edgeCenter(direction.South, v).Translate(Point{X: float64(len(label)), Y: -35})
 }

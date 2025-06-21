@@ -486,13 +486,13 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				if t.Features.CoordsLabel != "" {
 					labelXY := bottomLeftCenter(points).Translate(Point{32, 0})
 					w.Printf(`<label  mapLayer="Tribenet Large Coords" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
-					w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="15.0" />`, labelXY.X, labelXY.Y)
+					w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="12.5" />`, labelXY.X, labelXY.Y)
 					w.Printf("%s", t.Features.CoordsLabel)
 					w.Printf("</label>\n")
 				} else if t.Features.NumbersLabel != "" {
 					labelXY := bottomLeftCenter(points).Translate(Point{32, 0})
 					w.Printf(`<label  mapLayer="Tribenet Large Coords" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
-					w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="15.0" />`, labelXY.X, labelXY.Y)
+					w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="12.5" />`, labelXY.X, labelXY.Y)
 					w.Printf("%s", t.Features.NumbersLabel)
 					w.Printf("</label>\n")
 				}
