@@ -95,59 +95,59 @@ func (e Terrain_e) MPCost() string {
 	case Alps:
 		return "∞"
 	case AridHills:
-		return "8"
-	case AridTundra:
-		return "8"
+		return "5"
+	case AridTundra: // Wagons not allowed
+		return "9W"
 	case BrushFlat:
-		return "8"
+		return "4"
 	case BrushHills:
-		return "8"
+		return "6"
 	case ConiferHills:
-		return "8"
+		return "6"
 	case Deciduous:
-		return "8"
+		return "5"
 	case DeciduousHills:
-		return "8"
+		return "6"
 	case Desert:
-		return "8"
+		return "5"
 	case GrassyHills:
-		return "8"
+		return "5"
 	case GrassyHillsPlateau:
-		return "8"
+		return "5"
 	case HighSnowyMountains:
-		return "8"
+		return "∞"
 	case Jungle:
-		return "8"
-	case JungleHills:
-		return "8"
+		return "5"
+	case JungleHills: // Wagons not allowed
+		return "6W"
 	case Lake:
-		return "8"
-	case LowAridMountains:
-		return "8"
-	case LowConiferMountains:
-		return "8"
-	case LowJungleMountains:
-		return "8"
-	case LowSnowyMountains:
-		return "8"
-	case LowVolcanicMountains:
-		return "8"
+		return ""
+	case LowAridMountains: // Wagons not allowed
+		return "9W"
+	case LowConiferMountains: // Wagons not allowed
+		return "10W"
+	case LowJungleMountains: // Wagons not allowed
+		return "10W"
+	case LowSnowyMountains: // Wagons not allowed
+		return "10W"
+	case LowVolcanicMountains: // Wagons not allowed
+		return "10W"
 	case Ocean:
 		return ""
 	case PolarIce:
-		return "8"
+		return "7"
 	case Prairie:
-		return "8"
+		return "3"
 	case PrairiePlateau:
-		return "8"
+		return "6"
 	case RockyHills:
-		return "8"
-	case SnowyHills:
-		return "8"
-	case Swamp:
-		return "8"
+		return "6"
+	case SnowyHills: // Wagons not allowed
+		return "7W"
+	case Swamp: // Wagons not allowed
+		return "8W"
 	case Tundra:
-		return "8"
+		return "4"
 	case UnknownJungleSwamp:
 		return ""
 	case UnknownLand:

@@ -31,6 +31,13 @@ echo " info: building windows executable..."
 WINDOWS_EXE="build/ottomap-windows-${OTTOVER}.exe"
 GOOS=windows GOARCH=amd64 go build -o "${WINDOWS_EXE}" || exit 2
 
+echo " info: pausing ottomap timer..."
+ssh tribenet "systemctl stop ottomap.timer"
+sleep 3
+echo " info: pausing ottomap service..."
+ssh tribenet "systemctl stop ottomap.service"
+sleep 3
+
 # push the executable files to our production server
 echo " info: pushing executable files to mdhender/bin..."
 rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   mdhender@tribenet:"bin/" || {
@@ -57,6 +64,11 @@ rsync -av ${RSYNC_PROGRESS} "${WINDOWS_EXE}" mdhender@tribenet:"/var/www/ottomap
   echo "error: failed to copy the windows executable to the production server"
   exit 2
 }
+
+echo " info: restarting ottomap service..."
+ssh tribenet "systemctl start ottomap.service"
+echo " info: restarting ottomap timer..."
+ssh tribenet "systemctl start ottomap.timer"
 
 echo " info: removing build files..."
 rm -f "${LINUX_EXE}" "${WINDOWS_EXE}"
