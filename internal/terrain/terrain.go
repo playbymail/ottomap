@@ -88,6 +88,78 @@ func (e Terrain_e) IsSwamp() bool {
 	return e == Swamp
 }
 
+func (e Terrain_e) MPCost() string {
+	switch e {
+	case Blank:
+		return ""
+	case Alps:
+		return "∞"
+	case AridHills:
+		return "8"
+	case AridTundra:
+		return "8"
+	case BrushFlat:
+		return "8"
+	case BrushHills:
+		return "8"
+	case ConiferHills:
+		return "8"
+	case Deciduous:
+		return "8"
+	case DeciduousHills:
+		return "8"
+	case Desert:
+		return "8"
+	case GrassyHills:
+		return "8"
+	case GrassyHillsPlateau:
+		return "8"
+	case HighSnowyMountains:
+		return "8"
+	case Jungle:
+		return "8"
+	case JungleHills:
+		return "8"
+	case Lake:
+		return "8"
+	case LowAridMountains:
+		return "8"
+	case LowConiferMountains:
+		return "8"
+	case LowJungleMountains:
+		return "8"
+	case LowSnowyMountains:
+		return "8"
+	case LowVolcanicMountains:
+		return "8"
+	case Ocean:
+		return ""
+	case PolarIce:
+		return "8"
+	case Prairie:
+		return "8"
+	case PrairiePlateau:
+		return "8"
+	case RockyHills:
+		return "8"
+	case SnowyHills:
+		return "8"
+	case Swamp:
+		return "8"
+	case Tundra:
+		return "8"
+	case UnknownJungleSwamp:
+		return ""
+	case UnknownLand:
+		return ""
+	case UnknownMountain:
+		return ""
+	case UnknownWater:
+		return ""
+	}
+	panic(fmt.Sprintf("assert(terrain != %d)", e))
+}
+
 // MarshalJSON implements the json.Marshaler interface.
 func (e Terrain_e) MarshalJSON() ([]byte, error) {
 	return json.Marshal(EnumToString[e])
