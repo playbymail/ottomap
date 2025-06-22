@@ -21,10 +21,11 @@ var (
 	}
 
 	// replacement expressions
-	reBackslashDash  = regexp.MustCompile(`\\+-+ *`)
-	reBackslashUnit  = regexp.MustCompile(`\\+ *(\d{4}(?:[cefg]\d)?)`)
-	reDashSpacesUnit = regexp.MustCompile(`-( *\d{4}([cefg]\d)?)`)
-	reDirectionUnit  = regexp.MustCompile(`\b(NE|SE|SW|NW|N|S) +(\d{4}(?:[cefg]\d)?)`)
+	reBackslashCommaUnit = regexp.MustCompile(`\\+ *, *(\d{4}(?:[cefg]\d)?)`)
+	reBackslashDash      = regexp.MustCompile(`\\+-+ *`)
+	reBackslashUnit      = regexp.MustCompile(`\\+ *(\d{4}(?:[cefg]\d)?)`)
+	reDashSpacesUnit     = regexp.MustCompile(`- *(\d{4}(?:[cefg]\d)?)`)
+	reDirectionUnit      = regexp.MustCompile(`\b(NE|SE|SW|NW|N|S) +(\d{4}(?:[cefg]\d)?)`)
 )
 
 func init() {
@@ -60,13 +61,16 @@ func NormalizeLine(input []byte) []byte {
 	// replace backslash+dash with comma+space
 	line = reBackslashDash.ReplaceAll(line, []byte{',', ' '})
 
-	// replace dash + optionalSpaces + unit with comma+spaces+unit
+	// replace dash + optionalSpaces + unit with comma+unit
 	line = reDashSpacesUnit.ReplaceAll(line, []byte{',', '$', '1'})
 
-	// fix issues with backslash followed by a unit ID
+	// replace backslash followed by a comma and then a unit ID with comma + unit
+	line = reBackslashCommaUnit.ReplaceAll(line, []byte{',', '$', '1'})
+
+	// replace backslash followed by a unit ID with comma + unit
 	line = reBackslashUnit.ReplaceAll(line, []byte{',', '$', '1'})
 
-	// fix issues with direction followed by a unit ID
+	// replace direction followed by a unit ID with direction + comma + unit
 	line = reDirectionUnit.ReplaceAll(line, []byte{'$', '1', ',', '$', '2'})
 
 	return line

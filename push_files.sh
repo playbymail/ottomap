@@ -1,4 +1,5 @@
 #!/bin/bash
+RSYNC_PROGRESS=--progress
 
 # confirm that we're running from the root of the repository
 [ -d build ] || {
@@ -32,27 +33,27 @@ GOOS=windows GOARCH=amd64 go build -o "${WINDOWS_EXE}" || exit 2
 
 # push the executable files to our production server
 echo " info: pushing executable files to mdhender/bin..."
-scp "${LINUX_EXE}"   mdhender@tribenet:bin/ || {
+rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   mdhender@tribenet:"bin/" || {
   echo "error: failed to copy the linux executable to the production server"
   exit 2
 }
-scp "${LINUX_EXE}"   mdhender@tribenet:bin/ottomap.${OTTOVER} || {
+rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   mdhender@tribenet:"bin/ottomap.${OTTOVER}" || {
   echo "error: failed to copy the linux executable to the production server"
   exit 2
 }
 
 echo " info: pushing linux executable files to ottomap.mdhenderson.com/bin..."
-scp "${LINUX_EXE}"   mdhender@tribenet:/var/www/ottomap.mdhenderson.com/bin/ || {
+rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   mdhender@tribenet:"/var/www/ottomap.mdhenderson.com/bin/" || {
   echo "error: failed to copy the linux executable to the production server"
   exit 2
 }
-scp "${LINUX_EXE}"   mdhender@tribenet:/var/www/ottomap.mdhenderson.com/bin/ottomap.${OTTOVER} || {
+rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   mdhender@tribenet:"/var/www/ottomap.mdhenderson.com/bin/ottomap.${OTTOVER}" || {
   echo "error: failed to copy the linux executable to the production server"
   exit 2
 }
 
 echo " info: pushing windows executable files to ottomap.mdhenderson.com/assets/uploads..."
-scp "${WINDOWS_EXE}" mdhender@tribenet:/var/www/ottomap.mdhenderson.com/assets/uploads/ || {
+rsync -av ${RSYNC_PROGRESS} "${WINDOWS_EXE}" mdhender@tribenet:"/var/www/ottomap.mdhenderson.com/assets/uploads/" || {
   echo "error: failed to copy the windows executable to the production server"
   exit 2
 }
