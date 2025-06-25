@@ -947,6 +947,8 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 					Terrain:   neighbor.Terrain,
 				})
 			}
+		case NoGroupsRaided_t:
+			m.Result, m.Still, m.Advance = results.Failed, true, direction.North
 		case *Patrolled_t:
 			if m.Result == results.Unknown { // this is very likely the first item in a "Patrolled and found" step
 				m.Result = results.Succeeded
@@ -1083,3 +1085,5 @@ type Location_t struct {
 type NoDirection_t struct{}
 
 type NoGroupsFound_t struct{}
+
+type NoGroupsRaided_t struct{}

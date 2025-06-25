@@ -271,6 +271,8 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
     }, nil
 } / "No groups found" EOF {
     return NoGroupsFound_t{}, nil
+} / "No Groups Raided" EOF {
+    return NoGroupsRaided_t{}, nil
 } / "No Pass into Mountain to" SP d:DIRECTION SP "of HEX" EOF {
     return &ProhibitedFrom_t{
         Direction: d.(direction.Direction_e),
