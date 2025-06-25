@@ -13,6 +13,48 @@ See the `OTTOMAP.md` file for an overview of running from command line and `BUIL
 
 > ISSUES: Please report any issues on the TribeNet Discord server.
 
+## Deployment
+
+OttoMap uses a two-script deployment system for reliable production deployments:
+
+### bin/deploy.sh
+
+The main deployment script that:
+- Builds Linux and Windows executables for the current version
+- Creates a compressed tarball containing all deployment files
+- Stops services on the production server
+- Transfers the tarball to the production server via rsync
+- Executes the installation remotely
+- Restarts services
+- Cleans up temporary files
+
+Usage:
+```bash
+./bin/deploy.sh
+```
+
+The script provides colored output and comprehensive error checking. It will automatically detect the version from the built executable and handle all deployment steps.
+
+### bin/install.sh
+
+The server-side installation script that:
+- Creates backups of the current installation
+- Installs versioned and current executables to multiple locations
+- Verifies installations by checking versions
+- Updates file permissions appropriately
+- Provides detailed logging of all operations
+
+This script is included in the deployment tarball and executed automatically by `deploy.sh`.
+
+### Migration from push_files.sh
+
+The new deployment system replaces `push_files.sh` and offers several improvements:
+- More reliable transfers using a single tarball instead of multiple files
+- Automatic backup creation before installation
+- Better error handling and recovery
+- Comprehensive verification of installations
+- Cleaner separation between build/deploy and installation logic
+
 ### Status
 OttoMap is in early development.
 The turn report parser is nearly complete for land based movement.
