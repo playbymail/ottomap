@@ -129,7 +129,10 @@ log_info "Pushing tarball to production server..."
 log_info "Local: ${TARBALL}"
 log_info "Remote: ${REMOTE_TARBALL}"
 
-if ! rsync -av ${RSYNC_PROGRESS} "${TARBALL}" "tribenet:${REMOTE_TARBALL}"; then
+RSYNC_SSH_OPTIONS="-o ServerAliveInterval=30 -o ServerAliveCountMax=5 -o TCPKeepAlive=yes -o IPQoS=throughput"
+# rsync -e "ssh $RSYNC_SSH_OPTIONS" ...
+
+if ! rsync -e "ssh $RSYNC_SSH_OPTIONS" -av ${RSYNC_PROGRESS} "${TARBALL}" "tribenet:${REMOTE_TARBALL}"; then
     log_error "Failed to copy tarball to production server"
     exit 2
 fi
@@ -137,7 +140,7 @@ log_success "Tarball pushed to production server"
 
 # Execute install script on production server
 log_info "Executing install script on production server..."
-if ! ssh mdhender@tribenet "cd /tmp && tar -xf ottomap-${OTTOVER}.tar && chmod +x build/install.sh && ./build/install.sh ${OTTOVER}"; then
+if ! ssh mdhender@tribenet "cd /tmp && tar -xf ottomap-${OTTOVER}.tar && chmod +x build/install.sh && cd /tmp/build && ./install.sh ${OTTOVER}"; then
     log_error "Failed to execute install script on production server"
     exit 2
 fi
