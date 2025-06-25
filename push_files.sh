@@ -39,29 +39,34 @@ ssh tribenet "systemctl stop ottomap.service"
 sleep 3
 
 # push the executable files to our production server
-echo " info: pushing executable files to mdhender/bin..."
-rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   mdhender@tribenet:"bin/" || {
-  echo "error: failed to copy the linux executable to the production server"
+echo " info: pushing versioned linux executable file to mdhender/bin..."
+echo "     : '${LINUX_EXE}'   tribenet:/home/mdhender/bin/ottomap.${OTTOVER}"
+rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   tribenet:"/home/mdhender/bin/ottomap.${OTTOVER}" || {
+  echo "error: failed to copy the versioned linux executable to the production server"
   exit 2
 }
-rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   mdhender@tribenet:"bin/ottomap.${OTTOVER}" || {
-  echo "error: failed to copy the linux executable to the production server"
+echo " info: pushing versioned linux executable file to web bin..."
+echo "     : '${LINUX_EXE}'   tribenet:/var/www/ottomap.mdhenderson.com/bin/ottomap.${OTTOVER}"
+rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   tribenet:"/var/www/ottomap.mdhenderson.com/bin/ottomap.${OTTOVER}" || {
+  echo "error: failed to copy the versioned linux executable to the web bin on production server"
   exit 2
 }
-
-echo " info: pushing linux executable files to ottomap.mdhenderson.com/bin..."
-rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   mdhender@tribenet:"/var/www/ottomap.mdhenderson.com/bin/" || {
-  echo "error: failed to copy the linux executable to the production server"
-  exit 2
-}
-rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   mdhender@tribenet:"/var/www/ottomap.mdhenderson.com/bin/ottomap.${OTTOVER}" || {
-  echo "error: failed to copy the linux executable to the production server"
-  exit 2
-}
-
-echo " info: pushing windows executable files to ottomap.mdhenderson.com/assets/uploads..."
-rsync -av ${RSYNC_PROGRESS} "${WINDOWS_EXE}" mdhender@tribenet:"/var/www/ottomap.mdhenderson.com/assets/uploads/" || {
+echo " info: pushing versioned windows executable files to ottomap.mdhenderson.com/assets/uploads..."
+rsync -av ${RSYNC_PROGRESS} "${WINDOWS_EXE}" tribenet:"/var/www/ottomap.mdhenderson.com/assets/uploads/ottomap-windows-${OTTOVER}.exe" || {
   echo "error: failed to copy the windows executable to the production server"
+  exit 2
+}
+
+echo " info: pushing executable file to mdhender/bin..."
+echo "     : '${LINUX_EXE}'   tribenet:/home/mdhender/bin/ottomap"
+rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   tribenet:"/home/mdhender/bin/ottomap" || {
+  echo "error: failed to copy the linux executable to the production server"
+  exit 2
+}
+echo " info: pushing executable file to web bin..."
+echo "     : '${LINUX_EXE}'   tribenet:/var/www/ottomap.mdhenderson.com/bin/ottomap"
+rsync -av ${RSYNC_PROGRESS} "${LINUX_EXE}"   tribenet:"/var/www/ottomap.mdhenderson.com/bin/ottomap" || {
+  echo "error: failed to copy the linux executable to the web bin on production server"
   exit 2
 }
 

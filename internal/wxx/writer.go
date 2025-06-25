@@ -183,11 +183,11 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 	w.Println(`<gridandnumbering color0="0x00000040" color1="0x00000040" color2="0x00000040" color3="0x00000040" color4="0x00000040" width0="1.0" width1="2.0" width2="3.0" width3="4.0" width4="1.0" gridOffsetContinentKingdomX="0.0" gridOffsetContinentKingdomY="0.0" gridOffsetWorldContinentX="0.0" gridOffsetWorldContinentY="0.0" gridOffsetWorldKingdomX="0.0" gridOffsetWorldKingdomY="0.0" gridSquare="0" gridSquareHeight="-1.0" gridSquareWidth="-1.0" gridOffsetX="0.0" gridOffsetY="0.0" numberFont="Arial" numberColor="0x000000ff" numberSize="20" numberStyle="PLAIN" numberFirstCol="0" numberFirstRow="0" numberOrder="COL_ROW" numberPosition="BOTTOM" numberPrePad="DOUBLE_ZERO" numberSeparator="." />`)
 
 	w.Printf("<terrainmap>")
-	for n, terrain := range terrainSlice {
+	for n, t := range terrainSlice {
 		if n == 0 {
-			w.Printf("%s\t%d", terrain, n)
+			w.Printf("%s\t%d", t, n)
 		} else {
-			w.Printf("\t%s\t%d", terrain, n)
+			w.Printf("\t%s\t%d", t, n)
 		}
 	}
 	w.Printf("</terrainmap>\n")
@@ -476,7 +476,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				if t.Terrain.MPCost() != "" {
 					labelXY := points[0].Translate(mpCostLabel.OffsetFromCenter)
 					w.Printf(`<label  mapLayer="Tribenet MP Cost" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, neverScoutedLabel.R, neverScoutedLabel.G, neverScoutedLabel.B)
-					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="50.0" />%s`, labelXY.X, labelXY.Y, t.Terrain.MPCost())
+					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="25.0" />%s`, labelXY.X, labelXY.Y, t.Terrain.MPCost())
 					w.Printf("</label>/n")
 				}
 
