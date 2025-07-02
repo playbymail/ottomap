@@ -4,9 +4,11 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/mdhender/semver"
 	"github.com/playbymail/ottomap/cerrs"
+	"github.com/playbymail/ottomap/internal/config"
 	"github.com/spf13/cobra"
 	"log"
 	"os"
@@ -14,18 +16,26 @@ import (
 )
 
 var (
-	version = semver.Version{Major: 0, Minor: 53, Patch: 1}
+	version      = semver.Version{Major: 0, Minor: 54, Patch: 0}
+	globalConfig *config.Config
 )
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.Ltime)
 
-	if err := Execute(); err != nil {
+	cfg, err := config.Load("data/input/ottomap.json", false)
+	if err != nil {
+		log.Printf("[config] %v\n", err)
+	} else if data, err := json.MarshalIndent(cfg, "", "  "); err == nil {
+		log.Printf("[config] %s\n", data)
+	}
+
+	if err := Execute(cfg); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func Execute() error {
+func Execute(cfg *config.Config) error {
 	cmdRoot.PersistentFlags().BoolVar(&argsRoot.showVersion, "show-version", false, "show version")
 	cmdRoot.PersistentFlags().StringVar(&argsRoot.logFile.name, "log-file", "", "set log file")
 
@@ -126,6 +136,11 @@ func Execute() error {
 	cmdScrub.AddCommand(cmdScrubFiles)
 
 	cmdRoot.AddCommand(cmdVersion)
+
+	globalConfig = cfg
+	if cfg == nil || !cfg.AllowConfig {
+		globalConfig = config.Default()
+	}
 
 	return cmdRoot.Execute()
 }

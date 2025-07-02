@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/playbymail/ottomap/internal/config"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/resources"
@@ -41,7 +42,7 @@ type FeatureNote struct {
 	Origin Point // origin of the feature
 }
 
-func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Map, cfg RenderConfig) error {
+func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Map, cfg RenderConfig, gcfg *config.Config) error {
 	if len(w.tiles) == 0 {
 		return fmt.Errorf("wxx: create: no tiles")
 	}
@@ -191,7 +192,9 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 	const hexWidth, hexHeight = 46.18, 40.0
 
 	w.Println(`<map type="WORLD" version="1.74" lastViewLevel="WORLD" continentFactor="0" kingdomFactor="0" provinceFactor="0" worldToContinentHOffset="0.0" continentToKingdomHOffset="0.0" kingdomToProvinceHOffset="0.0" worldToContinentVOffset="0.0" continentToKingdomVOffset="0.0" kingdomToProvinceVOffset="0.0" `)
-	w.Println(`hexWidth="%g" hexHeight="%g" hexOrientation="COLUMNS" mapProjection="FLAT" showNotes="true" showGMOnly="true" showGMOnlyGlow="false" showFeatureLabels="true" showGrid="true" showGridNumbers="false" showShadows="true"  triangleSize="12">`, hexWidth, hexHeight)
+
+	hexZoomWidth, hexZoomHeight := hexWidth*gcfg.Worldographer.Map.Zoom, hexHeight*gcfg.Worldographer.Map.Zoom
+	w.Println(`hexWidth="%g" hexHeight="%g" hexOrientation="COLUMNS" mapProjection="FLAT" showNotes="true" showGMOnly="true" showGMOnlyGlow="false" showFeatureLabels="true" showGrid="true" showGridNumbers="false" showShadows="true"  triangleSize="12">`, hexZoomWidth, hexZoomHeight)
 
 	w.Println(`<gridandnumbering color0="0x00000040" color1="0x00000040" color2="0x00000040" color3="0x00000040" color4="0x00000040" width0="1.0" width1="2.0" width2="3.0" width3="4.0" width4="1.0" gridOffsetContinentKingdomX="0.0" gridOffsetContinentKingdomY="0.0" gridOffsetWorldContinentX="0.0" gridOffsetWorldContinentY="0.0" gridOffsetWorldKingdomX="0.0" gridOffsetWorldKingdomY="0.0" gridSquare="0" gridSquareHeight="-1.0" gridSquareWidth="-1.0" gridOffsetX="0.0" gridOffsetY="0.0" numberFont="Arial" numberColor="0x000000ff" numberSize="20" numberStyle="PLAIN" numberFirstCol="0" numberFirstRow="0" numberOrder="COL_ROW" numberPosition="BOTTOM" numberPrePad="DOUBLE_ZERO" numberSeparator="." />`)
 
@@ -210,13 +213,12 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 	w.Println(`<maplayer name="Tribenet Settlements" isVisible="true"/>`)
 	w.Println(`<maplayer name="Tribenet Clan Units" isVisible="true"/>`)
 	w.Println(`<maplayer name="Tribenet Encounters" isVisible="true"/>`)
-	w.Println(`<maplayer name="Tribenet MP Cost" isVisible="false"/>`)
-	w.Println(`<maplayer name="Tribenet MP Cost Wagon" isVisible="false"/>`)
+	w.Printf(`<maplayer name="Tribenet MP Cost" isVisible="%v"/>`, gcfg.Worldographer.Map.Layers.MPCost)
 	w.Println(`<maplayer name="Tribenet Never Scouted" isVisible="false"/>`)
 	w.Println(`<maplayer name="Tribenet Never Visited" isVisible="false"/>`)
 	w.Println(`<maplayer name="Tribenet Visited" isVisible="true"/>`)
-	w.Println(`<maplayer name="Tribenet Large Coords" isVisible="false"/>`)
-	w.Println(`<maplayer name="Tribenet Coords" isVisible="true"/>`)
+	w.Printf(`<maplayer name="Tribenet Large Coords" isVisible="%v"/>`, gcfg.Worldographer.Map.Layers.LargeCoords)
+	w.Printf(`<maplayer name="Tribenet Coords" isVisible="%v"/>`, !gcfg.Worldographer.Map.Layers.LargeCoords)
 	w.Println(`<maplayer name="Tribenet Origin" isVisible="true"/>`)
 	w.Println(`<maplayer name="Labels" isVisible="true"/>`)
 	w.Println(`<maplayer name="Grid" isVisible="true"/>`)
@@ -486,23 +488,14 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 					w.Printf("</label>/n")
 				}
 
-				// write movement cost
-				if t.Terrain.MPCost() != "" {
-					labelXY := points[0].Translate(mpCostLabel.OffsetFromCenter)
-					w.Printf(`<label  mapLayer="Tribenet MP Cost" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, mpCostLabel.R, mpCostLabel.G, mpCostLabel.B)
-					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="25.0" />%s`, labelXY.X, labelXY.Y, t.Terrain.MPCost())
-					w.Printf("</label>/n")
-				}
-
-				// write movement cost wagon
+				// write movement cost with wagons
 				if t.Terrain.MPCost() != "" {
 					label := mpCostNormalLabel
 					if strings.HasSuffix(t.Terrain.MPCost(), "W") {
 						label = mpCostWagonLabel
 					}
-					//labelXY := points[0].Translate(label.OffsetFromCenter)
 					labelXY := topCenterLabel(points).Translate(Point{-9, 40})
-					w.Printf(`<label  mapLayer="Tribenet MP Cost Wagon" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, label.R, label.G, label.B)
+					w.Printf(`<label  mapLayer="Tribenet MP Cost" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, label.R, label.G, label.B)
 					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="12.5" />%s`, labelXY.X, labelXY.Y, t.Terrain.MPCost())
 					w.Printf("</label>/n")
 				}

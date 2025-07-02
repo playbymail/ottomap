@@ -529,7 +529,7 @@ var cmdRender = &cobra.Command{
 				log.Printf("creating %s\n", mapName)
 				log.Fatalf("error: %v\n", err)
 			}
-		} else if err := wxxMap.Create(mapName, turnId, upperLeft, lowerRight, argsRender.render); err != nil {
+		} else if err := wxxMap.Create(mapName, turnId, upperLeft, lowerRight, argsRender.render, globalConfig); err != nil {
 			log.Printf("creating %s\n", mapName)
 			log.Fatalf("error: %v\n", err)
 		}
