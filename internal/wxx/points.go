@@ -74,6 +74,10 @@ func bottomLeftCenter(v [7]Point) Point {
 	return Point{X: (v[6].X + bc.X) / 2, Y: bc.Y}
 }
 
+func topCenterLabel(v [7]Point) Point {
+	return edgeCenter(direction.North, v)
+}
+
 func offsetSouthEastCenter(v [7]Point) Point {
 	bc := edgeCenter(direction.SouthEast, v)
 	return Point{X: (v[6].X + bc.X) / 2, Y: bc.Y}

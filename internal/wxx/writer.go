@@ -88,6 +88,19 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 	mpCostLabel := niceLabel{
 		OffsetFromCenter: Point{X: 0, Y: 25},
 	}
+	if mpCostLabel.R, mpCostLabel.G, mpCostLabel.B, err = hexToRGB("#ff0000"); err != nil {
+		panic(err)
+	}
+	mpCostNormalLabel := niceLabel{
+		OffsetFromCenter: Point{X: 0, Y: 25},
+	}
+	if mpCostNormalLabel.R, mpCostNormalLabel.G, mpCostNormalLabel.B, err = hexToRGB("#0000ff"); err != nil {
+		panic(err)
+	}
+	mpCostWagonLabel := mpCostLabel
+	if mpCostWagonLabel.R, mpCostWagonLabel.G, mpCostWagonLabel.B, err = hexToRGB("#ff0000"); err != nil {
+		panic(err)
+	}
 	neverScoutedLabel := niceLabel{
 		OffsetFromCenter: Point{X: 75, Y: 75},
 	}
@@ -198,6 +211,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 	w.Println(`<maplayer name="Tribenet Clan Units" isVisible="true"/>`)
 	w.Println(`<maplayer name="Tribenet Encounters" isVisible="true"/>`)
 	w.Println(`<maplayer name="Tribenet MP Cost" isVisible="false"/>`)
+	w.Println(`<maplayer name="Tribenet MP Cost Wagon" isVisible="false"/>`)
 	w.Println(`<maplayer name="Tribenet Never Scouted" isVisible="false"/>`)
 	w.Println(`<maplayer name="Tribenet Never Visited" isVisible="false"/>`)
 	w.Println(`<maplayer name="Tribenet Visited" isVisible="true"/>`)
@@ -475,8 +489,21 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				// write movement cost
 				if t.Terrain.MPCost() != "" {
 					labelXY := points[0].Translate(mpCostLabel.OffsetFromCenter)
-					w.Printf(`<label  mapLayer="Tribenet MP Cost" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, neverScoutedLabel.R, neverScoutedLabel.G, neverScoutedLabel.B)
+					w.Printf(`<label  mapLayer="Tribenet MP Cost" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, mpCostLabel.R, mpCostLabel.G, mpCostLabel.B)
 					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="25.0" />%s`, labelXY.X, labelXY.Y, t.Terrain.MPCost())
+					w.Printf("</label>/n")
+				}
+
+				// write movement cost wagon
+				if t.Terrain.MPCost() != "" {
+					label := mpCostNormalLabel
+					if strings.HasSuffix(t.Terrain.MPCost(), "W") {
+						label = mpCostWagonLabel
+					}
+					//labelXY := points[0].Translate(label.OffsetFromCenter)
+					labelXY := topCenterLabel(points).Translate(Point{-9, 40})
+					w.Printf(`<label  mapLayer="Tribenet MP Cost Wagon" style="null" fontFace="null" color="%g,%g,%g,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, label.R, label.G, label.B)
+					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" scale="12.5" />%s`, labelXY.X, labelXY.Y, t.Terrain.MPCost())
 					w.Printf("</label>/n")
 				}
 
