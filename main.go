@@ -16,17 +16,19 @@ import (
 )
 
 var (
-	version      = semver.Version{Major: 0, Minor: 55, Patch: 0}
+	version      = semver.Version{Major: 0, Minor: 55, Patch: 1}
 	globalConfig *config.Config
 )
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.Ltime)
 
-	const debug = false
-	cfg, err := config.Load("data/input/ottomap.json", debug)
+	const debug, configFileName = false, "data/input/ottomap.json"
+	cfg, err := config.Load(configFileName, debug)
 	if err != nil {
-		log.Printf("[config] %v\n", err)
+		if debug {
+			log.Printf("[config] %q: %v\n", configFileName, err)
+		}
 	} else if debug {
 		if data, err := json.MarshalIndent(cfg, "", "  "); err == nil {
 			log.Printf("[config] %s\n", data)

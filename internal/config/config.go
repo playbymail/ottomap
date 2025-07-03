@@ -72,7 +72,9 @@ func Load(name string, debug bool) (*Config, error) {
 	// create a config with default values for the application
 	cfg := Default()
 	if sb, err := os.Stat(name); errors.Is(err, os.ErrNotExist) || os.IsNotExist(err) {
-		log.Printf("[config] %q: %v\n", name, err)
+		if debug {
+			log.Printf("[config] %q: %v\n", name, err)
+		}
 		return cfg, nil
 	} else if sb.Mode().IsDir() {
 		return cfg, ErrIsDirectory
@@ -82,10 +84,14 @@ func Load(name string, debug bool) (*Config, error) {
 
 	var tmp Config
 	if data, err := os.ReadFile(name); err != nil {
-		log.Printf("[config] %q: %v\n", name, err)
+		if debug {
+			log.Printf("[config] %q: %v\n", name, err)
+		}
 		return cfg, nil
 	} else if err = json.Unmarshal(data, &tmp); err != nil {
-		log.Printf("[config] %q: %v\n", name, err)
+		if debug {
+			log.Printf("[config] %q: %v\n", name, err)
+		}
 		return cfg, nil
 	} else if debug {
 		log.Printf("[config] %q: loaded %s\n", name, string(data))
