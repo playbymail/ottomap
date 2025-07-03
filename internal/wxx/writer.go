@@ -121,7 +121,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 		panic(err)
 	}
 	scoutedLabel := niceLabel{
-		OffsetFromCenter: Point{X: 75, Y: 75},
+		OffsetFromCenter: Point{X: 115, Y: 15},
 	}
 	if scoutedLabel.R, scoutedLabel.G, scoutedLabel.B, err = hexToRGB("#000000"); err != nil {
 		panic(err)
@@ -411,13 +411,21 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				}
 			}
 
+			// do we have both resources and settlements?
+			resourceFeatureOrigin, resourceFeatureScale, resourceLabelOrigin, resourceLabelOffset := points[0], 35.0, Point{X: 0, Y: 0}, -40
+			settlementFeatureOrigin, settlementFeatureScale := points[0], 35.0
+			bothResourcesAndSettlements := len(t.Features.Resources) != 0 && len(t.Features.Settlements) != 0
+			if bothResourcesAndSettlements {
+				resourceFeatureOrigin, resourceFeatureScale, resourceLabelOffset = resourceFeatureOrigin.Translate(Point{X: +50}), resourceFeatureScale*0.65, -55
+				settlementFeatureOrigin, settlementFeatureScale = settlementFeatureOrigin.Translate(Point{X: -50}), settlementFeatureScale*0.65
+			}
+
 			for _, r := range t.Features.Resources {
 				if r != resources.None {
-					origin := points[0]
-					w.Printf(`<feature type="Resource Mines" rotate="0.0" uuid="%s" mapLayer="Tribenet Resources" isFlipHorizontal="false" isFlipVertical="false" scale="35.0" scaleHt="-1.0" tags="" color="null" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, uuid.NewString())
-					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" />`, origin.X, origin.Y)
+					w.Printf(`<feature type="Resource Mines" rotate="0.0" uuid="%s" mapLayer="Tribenet Resources" isFlipHorizontal="false" isFlipVertical="false" scale="%g" scaleHt="-1.0" tags="" color="null" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="%d" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, uuid.NewString(), resourceFeatureScale, resourceLabelOffset)
+					w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" />`, resourceFeatureOrigin.X, resourceFeatureOrigin.Y)
 					w.Printf(`<label  mapLayer="Tribenet Resources" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
-					w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="12.5" />`, origin.X, origin.Y)
+					w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="12.5" />`, resourceLabelOrigin.X, resourceLabelOrigin.Y)
 					w.Printf("%s", r.String())
 					w.Printf(`</label>`)
 					w.Println(`</feature>`)
@@ -426,14 +434,13 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 
 			for _, s := range t.Features.Settlements {
 				if s != nil && s.Name != "" && !strings.HasPrefix(s.Name, "_") {
-					settlement := points[0]
-					w.Printf(`<feature type="Settlement City" rotate="0.0" uuid="%s" mapLayer="Tribenet Settlements" isFlipHorizontal="false" isFlipVertical="false" scale="35.0" scaleHt="-1.0" tags="" color="null" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false"><location viewLevel="WORLD" x="%f" y="%f" />`, uuid.NewString(), settlement.X, settlement.Y)
+					w.Printf(`<feature type="Settlement City" rotate="0.0" uuid="%s" mapLayer="Tribenet Settlements" isFlipHorizontal="false" isFlipVertical="false" scale="%g" scaleHt="-1.0" tags="" color="null" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false"><location viewLevel="WORLD" x="%f" y="%f" />`, uuid.NewString(), settlementFeatureScale, settlementFeatureOrigin.X, settlementFeatureOrigin.Y)
 					w.Println(`</feature>`)
 					break
 				}
 			}
 
-			// we allow multiple special hex names per tile but we can only render one
+			// we allow multiple special hex names per tile, but we can only render one
 			for _, s := range t.Features.Special {
 				//log.Printf("special: %q: %q", s.Id, s.Name)
 				center := points[0]
@@ -571,15 +578,25 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				w.Printf("</label>\n")
 			}
 
+			// we can only have one settlement name. if there are multiple, flag it by appending asterisks to the first name
+			var settlementName string
 			for _, s := range t.Features.Settlements {
 				if s != nil && s.Name != "" {
-					label := strings.Trim(s.Name, "_")
-					labelXY := settlementLabelXY(label, points)
-					w.Printf(`<label  mapLayer="Tribenet Settlements" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
-					w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="12.5" />`, labelXY.X, labelXY.Y)
-					w.Printf("%s", label)
-					w.Printf("</label>\n")
+					if settlementName == "" {
+						// remove the label tags if they are present
+						settlementName = strings.Trim(s.Name, "_")
+					} else {
+						// we can only have one name, so flag this as having multiple
+						settlementName += "*"
+					}
 				}
+			}
+			if settlementName != "" {
+				labelXY := settlementLabelXY(settlementName, points)
+				w.Printf(`<label  mapLayer="Tribenet Settlements" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
+				w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="12.5" />`, labelXY.X, labelXY.Y)
+				w.Printf("%s", settlementName)
+				w.Printf("</label>\n")
 			}
 		}
 	}
