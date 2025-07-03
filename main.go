@@ -16,18 +16,21 @@ import (
 )
 
 var (
-	version      = semver.Version{Major: 0, Minor: 54, Patch: 0}
+	version      = semver.Version{Major: 0, Minor: 55, Patch: 0}
 	globalConfig *config.Config
 )
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.Ltime)
 
-	cfg, err := config.Load("data/input/ottomap.json", false)
+	const debug = false
+	cfg, err := config.Load("data/input/ottomap.json", debug)
 	if err != nil {
 		log.Printf("[config] %v\n", err)
-	} else if data, err := json.MarshalIndent(cfg, "", "  "); err == nil {
-		log.Printf("[config] %s\n", data)
+	} else if debug {
+		if data, err := json.MarshalIndent(cfg, "", "  "); err == nil {
+			log.Printf("[config] %s\n", data)
+		}
 	}
 
 	if err := Execute(cfg); err != nil {
@@ -137,9 +140,13 @@ func Execute(cfg *config.Config) error {
 
 	cmdRoot.AddCommand(cmdVersion)
 
-	globalConfig = cfg
 	if cfg == nil || !cfg.AllowConfig {
 		globalConfig = config.Default()
+	} else {
+		globalConfig = cfg
+		//if data, err := json.MarshalIndent(globalConfig, "", "  "); err == nil {
+		//	log.Printf("[global] %s\n", data)
+		//}
 	}
 
 	return cmdRoot.Execute()

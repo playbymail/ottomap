@@ -31,11 +31,23 @@ type Worldographer_t struct {
 type Map_t struct {
 	Zoom   float64  `json:"Zoom"`
 	Layers Layers_t `json:"Layers"`
+	Units  Units_t  `json:"Units"`
 }
 
 type Layers_t struct {
 	LargeCoords bool `json:"LargeCoords,omitempty"`
 	MPCost      bool `json:"MPCost,omitempty"`
+}
+
+type Units_t struct {
+	Default  string `json:"Default,omitempty"`
+	Clan     string `json:"Clan,omitempty"`
+	Courier  string `json:"Courier,omitempty"`
+	Element  string `json:"Element,omitempty"`
+	Fleet    string `json:"Fleet,omitempty"`
+	Multiple string `json:"Multiple,omitempty"`
+	Garrison string `json:"Garrison,omitempty"`
+	Tribe    string `json:"Tribe,omitempty"`
 }
 
 const (
@@ -48,6 +60,10 @@ func Default() *Config {
 		Worldographer: Worldographer_t{
 			Map: Map_t{
 				Zoom: 1.0,
+				Units: Units_t{
+					Default:  "Military Ancient Soldier",
+					Multiple: "Military Ancient Soldier",
+				},
 			},
 		},
 	}
@@ -56,6 +72,7 @@ func Load(name string, debug bool) (*Config, error) {
 	// create a config with default values for the application
 	cfg := Default()
 	if sb, err := os.Stat(name); errors.Is(err, os.ErrNotExist) || os.IsNotExist(err) {
+		log.Printf("[config] %q: %v\n", name, err)
 		return cfg, nil
 	} else if sb.Mode().IsDir() {
 		return cfg, ErrIsDirectory
@@ -65,8 +82,10 @@ func Load(name string, debug bool) (*Config, error) {
 
 	var tmp Config
 	if data, err := os.ReadFile(name); err != nil {
+		log.Printf("[config] %q: %v\n", name, err)
 		return cfg, nil
 	} else if err = json.Unmarshal(data, &tmp); err != nil {
+		log.Printf("[config] %q: %v\n", name, err)
 		return cfg, nil
 	} else if debug {
 		log.Printf("[config] %q: loaded %s\n", name, string(data))

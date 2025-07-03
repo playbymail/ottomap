@@ -351,8 +351,41 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				if un.id == "" {
 					continue
 				}
-
-				w.Printf(`<feature type="Military Ancient Soldier" rotate="0.0" uuid="%s" mapLayer=%q isFlipHorizontal=%q isFlipVertical="false" scale="25.0" scaleHt="-1.0" tags="" color=%q ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="12:00" labelDistance="-50" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, un.id, un.mapLayer, un.isFlipHorizontal, un.color)
+				var unitFeature string
+				if gcfg.AllowConfig {
+					if len(un.units) == 1 {
+						uid := un.units[0]
+						if len(uid) == 4 { // tribe or clan
+							if strings.HasPrefix(uid, "0") {
+								unitFeature = gcfg.Worldographer.Map.Units.Clan
+							} else {
+								unitFeature = gcfg.Worldographer.Map.Units.Tribe
+							}
+						} else if len(uid) == 6 {
+							switch uid[4] {
+							case 'c':
+								unitFeature = gcfg.Worldographer.Map.Units.Courier
+							case 'e':
+								unitFeature = gcfg.Worldographer.Map.Units.Element
+							case 'f':
+								unitFeature = gcfg.Worldographer.Map.Units.Fleet
+							case 'g':
+								unitFeature = gcfg.Worldographer.Map.Units.Garrison
+							}
+						} else { // unknown unit id
+							unitFeature = gcfg.Worldographer.Map.Units.Default
+						}
+					} else {
+						unitFeature = gcfg.Worldographer.Map.Units.Multiple
+					}
+					if unitFeature == "" {
+						unitFeature = gcfg.Worldographer.Map.Units.Default
+					}
+				}
+				if unitFeature == "" {
+					unitFeature = "Military Ancient Soldier"
+				}
+				w.Printf(`<feature type=%q rotate="0.0" uuid=%q mapLayer=%q isFlipHorizontal=%q isFlipVertical="false" scale="25.0" scaleHt="-1.0" tags="" color=%q ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="12:00" labelDistance="-50" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, unitFeature, un.id, un.mapLayer, un.isFlipHorizontal, un.color)
 				w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" />`, un.origin.X, un.origin.Y)
 				w.Printf(`<label  mapLayer=%q style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`, un.mapLayer)
 				w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="6.25" />`, un.origin.X, un.origin.Y)
