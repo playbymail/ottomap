@@ -59,7 +59,6 @@ var argsRender struct {
 		steps         bool
 	}
 	experimental struct {
-		newWaterTiles      bool
 		cleanUpScoutStill  bool
 		splitTrailingUnits bool
 		stripCR            bool
@@ -181,13 +180,6 @@ var cmdRender = &cobra.Command{
 		if argsRoot.soloClan {
 			log.Printf("clan %q: running solo\n", argsRender.clanId)
 		}
-
-		if argsRender.experimental.newWaterTiles {
-			log.Printf("experimental: newWaterTiles enabled\n")
-			terrain.TileTerrainNames[terrain.Lake] = "Water Sea"
-			terrain.TileTerrainNames[terrain.Ocean] = "Water Ocean"
-		}
-
 		argsRender.originGrid = "RR"
 		argsRender.quitOnInvalidGrid = false
 
@@ -500,7 +492,7 @@ var cmdRender = &cobra.Command{
 		}
 
 		// map the data
-		wxxMap, err := actions.MapWorld(worldMap, consolidatedSpecialNames, parser.UnitId_t(argsRender.clanId), argsRender.mapper)
+		wxxMap, err := actions.MapWorld(worldMap, consolidatedSpecialNames, parser.UnitId_t(argsRender.clanId), argsRender.mapper, globalConfig)
 		if err != nil {
 			log.Fatalf("error: %v\n", err)
 		}

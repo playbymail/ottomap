@@ -4,6 +4,7 @@ package actions
 
 import (
 	"fmt"
+	"github.com/playbymail/ottomap/internal/config"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/edges"
@@ -30,7 +31,7 @@ type MapConfig struct {
 	}
 }
 
-func MapWorld(allTiles *tiles.Map_t, allSpecialNames map[string]*parser.Special_t, clan parser.UnitId_t, cfg MapConfig, options ...wxx.Option) (*wxx.WXX, error) {
+func MapWorld(allTiles *tiles.Map_t, allSpecialNames map[string]*parser.Special_t, clan parser.UnitId_t, cfg MapConfig, gcfg *config.Config, options ...wxx.Option) (*wxx.WXX, error) {
 	if allTiles.Length() == 0 {
 		log.Fatalf("error: no tiles to map\n")
 	}
@@ -45,7 +46,7 @@ func MapWorld(allTiles *tiles.Map_t, allSpecialNames map[string]*parser.Special_
 		//}
 	}
 
-	consolidatedMap, err := wxx.NewWXX(options...)
+	consolidatedMap, err := wxx.NewWXX(gcfg, options...)
 	if err != nil {
 		log.Fatalf("error: wxx: %v\n", err)
 	}

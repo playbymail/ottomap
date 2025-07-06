@@ -168,21 +168,6 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 		allTiles[t.RenderAt.Row][t.RenderAt.Column] = t
 	}
 
-	// create the slice that maps our terrains to the Worldographer terrain names.
-	// todo: this is a hack and should be extracted into the terrain package.
-	var terrainSlice []string // the first row must be the Blank terrain
-	for n := 0; n < terrain.NumberOfTerrainTypes; n++ {
-		value, ok := terrain.TileTerrainNames[terrain.Terrain_e(n)]
-		// all rows must have a value
-		if !ok {
-			panic(fmt.Sprintf(`assert(terrains[%d] != false)`, n))
-		} else if value == "" {
-			panic(fmt.Sprintf(`assert(terrains[%d] != "")`, n))
-		}
-		terrainSlice = append(terrainSlice, value)
-	}
-	//log.Printf("terrains: %d: %v\n", len(terrainSlice), terrainSlice)
-
 	// start writing the XML
 	w.buffer = &bytes.Buffer{}
 
@@ -199,11 +184,11 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 	w.Println(`<gridandnumbering color0="0x00000040" color1="0x00000040" color2="0x00000040" color3="0x00000040" color4="0x00000040" width0="1.0" width1="2.0" width2="3.0" width3="4.0" width4="1.0" gridOffsetContinentKingdomX="0.0" gridOffsetContinentKingdomY="0.0" gridOffsetWorldContinentX="0.0" gridOffsetWorldContinentY="0.0" gridOffsetWorldKingdomX="0.0" gridOffsetWorldKingdomY="0.0" gridSquare="0" gridSquareHeight="-1.0" gridSquareWidth="-1.0" gridOffsetX="0.0" gridOffsetY="0.0" numberFont="Arial" numberColor="0x000000ff" numberSize="20" numberStyle="PLAIN" numberFirstCol="0" numberFirstRow="0" numberOrder="COL_ROW" numberPosition="BOTTOM" numberPrePad="DOUBLE_ZERO" numberSeparator="." />`)
 
 	w.Printf("<terrainmap>")
-	for n, t := range terrainSlice {
-		if n == 0 {
-			w.Printf("%s\t%d", t, n)
+	for k, v := range w.terrainTileSlot {
+		if k == 0 {
+			w.Printf("%s\t%d", v, k)
 		} else {
-			w.Printf("\t%s\t%d", t, n)
+			w.Printf("\t%s\t%d", v, k)
 		}
 	}
 	w.Printf("</terrainmap>\n")
@@ -244,8 +229,6 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				// this will happen when there are holes in the map.
 				t = &Tile{}
 			}
-
-			// todo: this should be replaced with a call to terrainToTile() and then use the slot.
 			w.Printf("%d\t%d", int(t.Terrain), t.Elevation)
 			if t.IsIcy {
 				w.Printf("\t1")

@@ -4,10 +4,9 @@ package wxx
 
 import (
 	"bytes"
-	"fmt"
+	"github.com/playbymail/ottomap/internal/config"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/terrain"
-	"sort"
 )
 
 type WXX struct {
@@ -15,21 +14,50 @@ type WXX struct {
 
 	tiles map[coords.Map]*Tile
 
-	// terrainTileName maps our terrain type to the name of a Worldographer tile.
-	terrainTileName map[terrain.Terrain_e]string
-
-	// terrainTileSlot maps our terrain type to a slot in the Worldographer tile map.
-	terrainTileSlot map[terrain.Terrain_e]int
-
-	// tileNameList is the list of Worldographer terrain tile names that we output.
-	// this list is sorted, with "Blank" at index 0.
-	tileNameList []string
+	// terrainTileSlot maps our terrain type to the name of a Worldographer tile.
+	// this list is indexed by Terrain_e, with "Blank" at index 0.
+	terrainTileSlot []string
 }
 
-func NewWXX(options ...Option) (*WXX, error) {
+func NewWXX(gcfg *config.Config, options ...Option) (*WXX, error) {
 	w := &WXX{
-		tiles: map[coords.Map]*Tile{},
+		tiles:           map[coords.Map]*Tile{},
+		terrainTileSlot: make([]string, terrain.NumberOfTerrainTypes, terrain.NumberOfTerrainTypes),
 	}
+	// this is a terrible hack - initialize the terrain tile names from the global configuration
+	w.terrainTileSlot[terrain.Blank] = gcfg.Worldographer.Map.Terrain.Blank
+	w.terrainTileSlot[terrain.Alps] = gcfg.Worldographer.Map.Terrain.Alps
+	w.terrainTileSlot[terrain.AridHills] = gcfg.Worldographer.Map.Terrain.AridHills
+	w.terrainTileSlot[terrain.AridTundra] = gcfg.Worldographer.Map.Terrain.AridTundra
+	w.terrainTileSlot[terrain.BrushFlat] = gcfg.Worldographer.Map.Terrain.BrushFlat
+	w.terrainTileSlot[terrain.BrushHills] = gcfg.Worldographer.Map.Terrain.BrushHills
+	w.terrainTileSlot[terrain.ConiferHills] = gcfg.Worldographer.Map.Terrain.ConiferHills
+	w.terrainTileSlot[terrain.Deciduous] = gcfg.Worldographer.Map.Terrain.Deciduous
+	w.terrainTileSlot[terrain.DeciduousHills] = gcfg.Worldographer.Map.Terrain.DeciduousHills
+	w.terrainTileSlot[terrain.Desert] = gcfg.Worldographer.Map.Terrain.Desert
+	w.terrainTileSlot[terrain.GrassyHills] = gcfg.Worldographer.Map.Terrain.GrassyHills
+	w.terrainTileSlot[terrain.GrassyHillsPlateau] = gcfg.Worldographer.Map.Terrain.GrassyHillsPlateau
+	w.terrainTileSlot[terrain.HighSnowyMountains] = gcfg.Worldographer.Map.Terrain.HighSnowyMountains
+	w.terrainTileSlot[terrain.Jungle] = gcfg.Worldographer.Map.Terrain.Jungle
+	w.terrainTileSlot[terrain.JungleHills] = gcfg.Worldographer.Map.Terrain.JungleHills
+	w.terrainTileSlot[terrain.Lake] = gcfg.Worldographer.Map.Terrain.Lake
+	w.terrainTileSlot[terrain.LowAridMountains] = gcfg.Worldographer.Map.Terrain.LowAridMountains
+	w.terrainTileSlot[terrain.LowConiferMountains] = gcfg.Worldographer.Map.Terrain.LowConiferMountains
+	w.terrainTileSlot[terrain.LowJungleMountains] = gcfg.Worldographer.Map.Terrain.LowJungleMountains
+	w.terrainTileSlot[terrain.LowSnowyMountains] = gcfg.Worldographer.Map.Terrain.LowSnowyMountains
+	w.terrainTileSlot[terrain.LowVolcanicMountains] = gcfg.Worldographer.Map.Terrain.LowVolcanicMountains
+	w.terrainTileSlot[terrain.Ocean] = gcfg.Worldographer.Map.Terrain.Ocean
+	w.terrainTileSlot[terrain.PolarIce] = gcfg.Worldographer.Map.Terrain.PolarIce
+	w.terrainTileSlot[terrain.Prairie] = gcfg.Worldographer.Map.Terrain.Prairie
+	w.terrainTileSlot[terrain.PrairiePlateau] = gcfg.Worldographer.Map.Terrain.PrairiePlateau
+	w.terrainTileSlot[terrain.RockyHills] = gcfg.Worldographer.Map.Terrain.RockyHills
+	w.terrainTileSlot[terrain.SnowyHills] = gcfg.Worldographer.Map.Terrain.SnowyHills
+	w.terrainTileSlot[terrain.Swamp] = gcfg.Worldographer.Map.Terrain.Swamp
+	w.terrainTileSlot[terrain.Tundra] = gcfg.Worldographer.Map.Terrain.Tundra
+	w.terrainTileSlot[terrain.UnknownJungleSwamp] = gcfg.Worldographer.Map.Terrain.UnknownJungleSwamp
+	w.terrainTileSlot[terrain.UnknownLand] = gcfg.Worldographer.Map.Terrain.UnknownLand
+	w.terrainTileSlot[terrain.UnknownMountain] = gcfg.Worldographer.Map.Terrain.UnknownMountain
+	w.terrainTileSlot[terrain.UnknownWater] = gcfg.Worldographer.Map.Terrain.UnknownWater
 
 	for _, option := range options {
 		if err := option(w); err != nil {
@@ -37,69 +65,12 @@ func NewWXX(options ...Option) (*WXX, error) {
 		}
 	}
 
-	if w.terrainTileName == nil {
-		w.terrainTileName = map[terrain.Terrain_e]string{}
-		for k, v := range terrain.TileTerrainNames {
-			w.terrainTileName[k] = v
-		}
-	}
-
-	// set missing terrain names to "Floor Mexican Blue".
-	// this is a hack to ensure that the Worldographer tile map is complete.
-	// the choice is arbitrary but very noticeable.
-	for k := range terrain.TileTerrainNames {
-		if _, ok := w.terrainTileName[k]; !ok {
-			w.terrainTileName[k] = "Floor Mexican Blue"
-		}
-	}
-
-	// initialize tileNameList. this is the list of Worldographer terrain tile names that we output
-	// to the map file, ordered by slot. The "Blank" tile must always be the first element in the list.
-	if len(w.terrainTileName) != 0 {
-		// names is a map of every terrain name. we must ensure that it includes "Blank".
-		names := map[string]bool{"Blank": true}
-		for _, v := range w.terrainTileName {
-			names[v] = true
-		}
-		// copy the names into the list so that we can sort them and determine the slot number.
-		for k := range names {
-			w.tileNameList = append(w.tileNameList, k)
-		}
-		// sort the list, ensuring that "Blank" is the first element.
-		sort.Slice(w.tileNameList, func(i, j int) bool {
-			if w.tileNameList[i] == "Blank" {
-				return true
-			}
-			return w.tileNameList[i] < w.tileNameList[j]
-		})
-		// tileNameList is now initialized and contains the list of Worldographer terrain tile names.
-		// the location of the name in the list is the slot number we will use to render the tile.
-	}
-	if len(w.tileNameList) == 0 || w.tileNameList[0] != "Blank" {
-		panic("assert(tileSlot[0] == Blank)")
-	}
-	//for slot, tileName := range w.tileNameList {
-	//	log.Printf("debug: tile %-30q maps to slot %3d", tileName, slot)
+	//// for debugging tiles when we start using tile templates from the user
+	//var msgs []string
+	//for terrainCode, tileName := range w.terrainTileSlot {
+	//	msgs = append(msgs, fmt.Sprintf("%-7s %4d %q", terrain.EnumToString[terrain.Terrain_e(terrainCode)], terrainCode, tileName))
 	//}
-
-	// initialize tileNameSlot. this is the map from the tile name to the slot number.
-	tileNameSlot := map[string]int{}
-	for n, v := range w.tileNameList {
-		tileNameSlot[v] = n
-	}
-
-	// initialize terrainTileSlot. this is the map from the terrain type to the slot number.
-	w.terrainTileSlot = map[terrain.Terrain_e]int{}
-	for k, v := range w.terrainTileName {
-		w.terrainTileSlot[k] = tileNameSlot[v]
-	}
-	var msgs []string
-	for terrainCode, slot := range w.terrainTileSlot {
-		tileName := w.tileNameList[slot]
-		msgs = append(msgs, fmt.Sprintf("%-7s %-32s %4d", terrainCode, tileName, slot))
-	}
-	sort.Strings(msgs)
-	// for debugging tiles when we start using tile templates from the user
+	//sort.Strings(msgs)
 	//log.Printf("terrain tile____________________________ slot\n")
 	//for _, msg := range msgs {
 	//	log.Printf("%s\n", msg)

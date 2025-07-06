@@ -29,14 +29,51 @@ type Worldographer_t struct {
 }
 
 type Map_t struct {
-	Zoom   float64  `json:"Zoom"`
-	Layers Layers_t `json:"Layers"`
-	Units  Units_t  `json:"Units"`
+	Zoom    float64   `json:"Zoom"`
+	Layers  Layers_t  `json:"Layers"`
+	Terrain Terrain_t `json:"Terrain"`
+	Units   Units_t   `json:"Units"`
 }
 
 type Layers_t struct {
 	LargeCoords bool `json:"LargeCoords,omitempty"`
 	MPCost      bool `json:"MPCost,omitempty"`
+}
+
+type Terrain_t struct {
+	Blank                string `json:"Blank,omitempty"`
+	Alps                 string `json:"Alps,omitempty"`
+	AridHills            string `json:"AridHills,omitempty"`
+	AridTundra           string `json:"AridTundra,omitempty"`
+	BrushFlat            string `json:"BrushFlat,omitempty"`
+	BrushHills           string `json:"BrushHills,omitempty"`
+	ConiferHills         string `json:"ConiferHills,omitempty"`
+	Deciduous            string `json:"Deciduous,omitempty"`
+	DeciduousHills       string `json:"DeciduousHills,omitempty"`
+	Desert               string `json:"Desert,omitempty"`
+	GrassyHills          string `json:"GrassyHills,omitempty"`
+	GrassyHillsPlateau   string `json:"GrassyHillsPlateau,omitempty"`
+	HighSnowyMountains   string `json:"HighSnowyMountains,omitempty"`
+	Jungle               string `json:"Jungle,omitempty"`
+	JungleHills          string `json:"JungleHills,omitempty"`
+	Lake                 string `json:"Lake,omitempty"`
+	LowAridMountains     string `json:"LowAridMountains,omitempty"`
+	LowConiferMountains  string `json:"LowConiferMountains,omitempty"`
+	LowJungleMountains   string `json:"LowJungleMountains,omitempty"`
+	LowSnowyMountains    string `json:"LowSnowyMountains,omitempty"`
+	LowVolcanicMountains string `json:"LowVolcanicMountains,omitempty"`
+	Ocean                string `json:"Ocean,omitempty"`
+	PolarIce             string `json:"PolarIce,omitempty"`
+	Prairie              string `json:"Prairie,omitempty"`
+	PrairiePlateau       string `json:"PrairiePlateau,omitempty"`
+	RockyHills           string `json:"RockyHills,omitempty"`
+	SnowyHills           string `json:"SnowyHills,omitempty"`
+	Swamp                string `json:"Swamp,omitempty"`
+	Tundra               string `json:"Tundra,omitempty"`
+	UnknownJungleSwamp   string `json:"UnknownJungleSwamp,omitempty"`
+	UnknownLand          string `json:"UnknownLand,omitempty"`
+	UnknownMountain      string `json:"UnknownMountain,omitempty"`
+	UnknownWater         string `json:"UnknownWater,omitempty"`
 }
 
 type Units_t struct {
@@ -60,9 +97,56 @@ func Default() *Config {
 		Worldographer: Worldographer_t{
 			Map: Map_t{
 				Zoom: 1.0,
+				Terrain: Terrain_t{
+					Blank:                "Blank",
+					Alps:                 "Mountains",
+					AridHills:            "Hills",
+					AridTundra:           "Flat Moss",
+					BrushFlat:            "Flat Shrubland",
+					BrushHills:           "Hills Shrubland",
+					ConiferHills:         "Hills Forest Evergreen",
+					Deciduous:            "Flat Forest Deciduous Heavy",
+					DeciduousHills:       "Hills Forest Deciduous",
+					Desert:               "Flat Desert Sandy",
+					GrassyHills:          "Hills Grassland",
+					GrassyHillsPlateau:   "Hills Grassy",
+					HighSnowyMountains:   "Mountain Snowcapped",
+					Jungle:               "Flat Forest Jungle Heavy",
+					JungleHills:          "Hills Forest Jungle",
+					Lake:                 "Water Shoals",
+					LowAridMountains:     "Mountains Dead Forest",
+					LowConiferMountains:  "Mountains Forest Evergreen",
+					LowJungleMountains:   "Mountain Forest Jungle",
+					LowSnowyMountains:    "Mountains Snowcapped",
+					LowVolcanicMountains: "Mountain Volcano Dormant",
+					Ocean:                "Water Sea",
+					PolarIce:             "Mountains Glacier",
+					Prairie:              "Flat Grazing Land",
+					PrairiePlateau:       "Flat Grassland",
+					RockyHills:           "Underdark Broken Lands",
+					SnowyHills:           "Flat Snowfields",
+					Swamp:                "Flat Swamp",
+					Tundra:               "Flat Steppe",
+					UnknownJungleSwamp:   "Flat Forest Wetlands",
+					UnknownLand:          "Flat Moss",
+					UnknownMountain:      "Mountain Forest Mixed",
+					UnknownWater:         "Water Reefs",
+				},
 				Units: Units_t{
 					Default:  "Military Ancient Soldier",
+					Clan:     "Military Ancient Soldier",
+					Courier:  "Military Ancient Soldier",
+					Fleet:    "Military Sailship",
+					Garrison: "Military Ancient Soldier",
 					Multiple: "Military Ancient Soldier",
+					Tribe:    "Military Ancient Soldier",
+					//Default:  "Military Ancient Soldier",
+					//Clan:     "Building Palace",
+					//Courier:  "Military Knight",
+					//Fleet:    "Military Sailship",
+					//Garrison: "Military Camp",
+					//Multiple: "Military Ancient Soldier",
+					//Tribe:    "Settlement Village",
 				},
 			},
 		},
