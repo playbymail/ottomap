@@ -17,14 +17,12 @@ import (
 
 type MapConfig struct {
 	Dump struct {
-		All          bool
-		BorderCounts bool
+		All bool
 	}
 	Origin coords.Map
 	Render struct {
-		FordsAsPills bool // if true, draw ford icons as pills
-		ShiftMap     bool // if true, shift the map up and left to make it smaller
-		StarMap      bool // if true, draw a star map
+		ShiftMap bool // if true, shift the map up and left to make it smaller
+		StarMap  bool // if true, draw a star map
 	}
 	Show struct {
 		Origin bool // if set, put a marker in the origin hex
@@ -37,7 +35,7 @@ func MapWorld(allTiles *tiles.Map_t, allSpecialNames map[string]*parser.Special_
 	}
 	log.Printf("map: collected %8d tiles\n", allTiles.Length())
 
-	if cfg.Dump.BorderCounts {
+	if gcfg.DebugFlags.DumpBorderCounts {
 		panic("border counts not implemented")
 		//for _, report := range allTiles {
 		//	gridCoords := report.Location.GridString()

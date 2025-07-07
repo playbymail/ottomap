@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/mdhender/semver"
 	"github.com/playbymail/ottomap/cerrs"
@@ -16,23 +15,22 @@ import (
 )
 
 var (
-	version      = semver.Version{Major: 0, Minor: 57, Patch: 0}
+	version      = semver.Version{Major: 0, Minor: 58, Patch: 0}
 	globalConfig *config.Config
 )
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.Ltime)
 
-	const debug, configFileName = false, "data/input/ottomap.json"
-	cfg, err := config.Load(configFileName, debug)
-	if err != nil {
-		if debug {
-			log.Printf("[config] %q: %v\n", configFileName, err)
-		}
-	} else if debug {
-		if data, err := json.MarshalIndent(cfg, "", "  "); err == nil {
-			log.Printf("[config] %s\n", data)
-		}
+	const configFileName = "data/input/ottomap.json"
+	// set the debug flag only if there is a configuration file to debug
+	debugConfigFile := false
+	if sb, err := os.Stat(configFileName); err == nil && sb.Mode().IsRegular() {
+		debugConfigFile = true
+	}
+	cfg, err := config.Load(configFileName, debugConfigFile)
+	if err != nil && debugConfigFile {
+		log.Printf("[config] %q: %v\n", configFileName, err)
 	}
 
 	if err := Execute(cfg); err != nil {
@@ -79,7 +77,6 @@ func Execute(cfg *config.Config) error {
 	cmdDbLoadPath.Flags().StringVar(&argsDb.load.path, "report-path", argsDb.load.path, "path to report files")
 
 	cmdRoot.AddCommand(cmdDump)
-	cmdDump.Flags().BoolVar(&argsDump.defaultTileMap, "default-tile-map", false, "dump the default tile map")
 
 	cmdRoot.AddCommand(cmdList)
 	cmdList.AddCommand(cmdListClans)
@@ -97,22 +94,7 @@ func Execute(cfg *config.Config) error {
 	//}
 
 	cmdRoot.AddCommand(cmdRender)
-	cmdRender.Flags().BoolVar(&argsRender.acceptLoneDash, "accept-lone-dash", false, "ignore lone dashes in movement results")
 	cmdRender.Flags().BoolVar(&argsRender.autoEOL, "auto-eol", true, "automatically convert line endings")
-	cmdRender.Flags().BoolVar(&argsRender.debug.dumpAllTiles, "debug-dump-all-tiles", false, "dump all tiles")
-	cmdRender.Flags().BoolVar(&argsRender.debug.dumpAllTurns, "debug-dump-all-turns", false, "dump all turns")
-	cmdRender.Flags().BoolVar(&argsRender.debug.fleetMovement, "debug-fleet-movement", false, "enable fleet movement debugging")
-	cmdRender.Flags().BoolVar(&argsRender.debug.logFile, "debug-log-file", false, "enable file name in log output")
-	cmdRender.Flags().BoolVar(&argsRender.debug.logTime, "debug-log-time", false, "enable time in log output")
-	cmdRender.Flags().BoolVar(&argsRender.debug.maps, "debug-maps", false, "enable maps debugging")
-	cmdRender.Flags().BoolVar(&argsRender.debug.nodes, "debug-nodes", false, "enable node debugging")
-	cmdRender.Flags().BoolVar(&argsRender.debug.parser, "debug-parser", false, "enable parser debugging")
-	cmdRender.Flags().BoolVar(&argsRender.debug.sections, "debug-sections", false, "enable sections debugging")
-	cmdRender.Flags().BoolVar(&argsRender.debug.steps, "debug-steps", false, "enable step debugging")
-	cmdRender.Flags().BoolVar(&argsRender.experimental.splitTrailingUnits, "x-split-units", false, "experimental: split trailing units")
-	cmdRender.Flags().BoolVar(&argsRender.mapper.Dump.BorderCounts, "dump-border-counts", false, "dump border counts")
-	cmdRender.Flags().BoolVar(&argsRender.render.FordsAsPills, "fords-as-pills", true, "render fords as pills")
-	cmdRender.Flags().BoolVar(&argsRender.parser.Ignore.Scouts, "ignore-scouts", false, "ignore scout reports")
 	cmdRender.Flags().BoolVar(&argsRender.warnOnInvalidGrid, "warn-on-invalid-grid", true, "warn on invalid grid id")
 	cmdRender.Flags().BoolVar(&argsRender.warnOnNewSettlement, "warn-on-new-settlement", true, "warn on new settlement")
 	cmdRender.Flags().BoolVar(&argsRender.warnOnTerrainChange, "warn-on-terrain-change", true, "warn when terrain changes")
@@ -122,8 +104,6 @@ func Execute(cfg *config.Config) error {
 	cmdRender.Flags().BoolVar(&argsRoot.soloClan, "solo", false, "limit parsing to a single clan")
 	cmdRender.Flags().BoolVar(&argsRender.show.origin, "show-origin", false, "show origin hex")
 	cmdRender.Flags().BoolVar(&argsRender.show.shiftMap, "shift-map", true, "shift map up and left")
-	cmdRender.Flags().BoolVar(&argsRender.experimental.stripCR, "strip-cr", false, "experimental: enable conversion of DOS EOL")
-	cmdRender.Flags().BoolVar(&argsRender.experimental.cleanUpScoutStill, "x-clean-up-scout-still", false, "experimental: clean up 'scout still' entries")
 	cmdRender.Flags().StringVar(&argsRender.clanId, "clan-id", "", "clan for output file names")
 	if err := cmdRender.MarkFlagRequired("clan-id"); err != nil {
 		log.Fatalf("error: clan-id: %v\n", err)

@@ -16,16 +16,37 @@ import (
 type Config struct {
 	Clan          string          `json:"Clan,omitempty"`
 	AllowConfig   bool            `json:"AllowConfig,omitempty"`
+	DebugFlags    DebugFlags_t    `json:"DebugFlags"`
 	Experimental  Experimental_t  `json:"Experimental"`
+	Parser        Parser_t        `json:"Parser"`
 	Worldographer Worldographer_t `json:"Worldographer"`
 }
 
+type DebugFlags_t struct {
+	DumpAllTiles       bool `json:"DumpAllTiles,omitempty"`
+	DumpAllTurns       bool `json:"DumpAllTurns,omitempty"`
+	DumpBorderCounts   bool `json:"DumpBorderCounts,omitempty"`
+	DumpDefaultTileMap bool `json:"DumpDefaultTileMap,omitempty"`
+	FleetMovement      bool `json:"FleetMovement,omitempty"`
+	IgnoreScouts       bool `json:"IgnoreScouts,omitempty"`
+	LogFile            bool `json:"LogFile,omitempty"`
+	LogTime            bool `json:"LogTime,omitempty"`
+	Maps               bool `json:"Maps,omitempty"`
+	Nodes              bool `json:"Nodes,omitempty"`
+	Parser             bool `json:"Parser,omitempty"`
+	Sections           bool `json:"Sections,omitempty"`
+	Steps              bool `json:"Steps,omitempty"`
+}
+
 type Experimental_t struct {
-	AllowConfig bool `json:"AllowConfig,omitempty"`
+	CleanupScoutStill  bool `json:"CleanupScoutStill,omitempty"`
+	SplitTrailingUnits bool `json:"SplitTrailingUnits,omitempty"`
+	StripCR            bool `json:"StripCR,omitempty"`
 }
 
 type Worldographer_t struct {
-	Map Map_t `json:"Map"`
+	Map    Map_t    `json:"Map"`
+	Render Render_t `json:"Render"`
 }
 
 type Map_t struct {
@@ -38,6 +59,14 @@ type Map_t struct {
 type Layers_t struct {
 	LargeCoords bool `json:"LargeCoords,omitempty"`
 	MPCost      bool `json:"MPCost,omitempty"`
+}
+
+type Parser_t struct {
+	AcceptLoneDash bool `json:"AcceptLoneDash,omitempty"`
+}
+
+type Render_t struct {
+	FordsAsGaps bool `json:"FordsAsGaps,omitempty"`
 }
 
 type Terrain_t struct {
@@ -153,6 +182,9 @@ func Default() *Config {
 	}
 }
 func Load(name string, debug bool) (*Config, error) {
+	if debug {
+		log.Printf("[config] %q: loading configuration...\n", name)
+	}
 	// create a config with default values for the application
 	cfg := Default()
 	if sb, err := os.Stat(name); errors.Is(err, os.ErrNotExist) || os.IsNotExist(err) {
@@ -178,7 +210,11 @@ func Load(name string, debug bool) (*Config, error) {
 		}
 		return cfg, nil
 	} else if debug {
-		log.Printf("[config] %q: loaded %s\n", name, string(data))
+		if nice, err := json.MarshalIndent(tmp, "", "  "); err == nil {
+			log.Printf("[config] %s\n", nice)
+		} else {
+			log.Printf("[config] %q: loaded %s\n", name, string(data))
+		}
 	}
 
 	// copy over every value from tmp to config that isn't the default (zero) value

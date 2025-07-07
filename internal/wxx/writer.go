@@ -21,8 +21,7 @@ import (
 )
 
 type RenderConfig struct {
-	FordsAsPills bool // if true, draw ford icons as pills
-	Show         struct {
+	Show struct {
 		Grid struct {
 			Centers bool
 			Coords  bool
@@ -667,7 +666,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				// rivers, then canals, then stone roads, then fords, then passes.
 
 				// set a flag to indicate if we should draw fords as a gap or pillbox.
-				drawFordGap := fordEdges[dir] && !cfg.FordsAsPills
+				drawFordGap := fordEdges[dir] && gcfg.Worldographer.Render.FordsAsGaps
 
 				// the test for river is odd because the report says "ford" for "river" edges sometimes.
 				// but it says "ford and canal" for canal edges that are also fords.
@@ -731,7 +730,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 
 				// fords as drawn as gaps or pills. gaps were handled in the river and canal code above,
 				// so we only need to draw pills here.
-				if fordEdges[dir] && cfg.FordsAsPills {
+				if fordEdges[dir] && !gcfg.Worldographer.Render.FordsAsGaps {
 					// get the midpoint of the segment from the center to the edge
 					segmentEnd := edgeCenter(dir, points)
 					segmentStart := midpoint(midpoint(midpoint(center, segmentEnd), segmentEnd), segmentEnd)

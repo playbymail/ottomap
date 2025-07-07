@@ -34,7 +34,6 @@ var argsRender struct {
 	clanId              string
 	soloElement         string // when set, only this element is rendered
 	originGrid          string
-	acceptLoneDash      bool
 	autoEOL             bool
 	quitOnInvalidGrid   bool
 	warnOnInvalidGrid   bool
@@ -46,24 +45,11 @@ var argsRender struct {
 		month int
 	}
 	debug struct {
-		dumpAllTiles  bool
-		dumpAllTurns  bool
-		fleetMovement bool
-		logFile       bool
-		logTime       bool
-		maps          bool
-		merge         bool
-		nodes         bool
-		parser        bool
-		sections      bool
-		steps         bool
+		merge bool
 	}
 	experimental struct {
-		cleanUpScoutStill  bool
-		splitTrailingUnits bool
-		stripCR            bool
-		blankMapSmall      bool
-		blankMapFull       bool
+		blankMapSmall bool
+		blankMapFull  bool
 	}
 	saveWithTurnId bool
 	show           struct {
@@ -77,11 +63,12 @@ var cmdRender = &cobra.Command{
 	Short: "Create a map from a report",
 	Long:  `Load and parse turn report and create a map.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
+		gcfg := globalConfig
 		logFlags := 0
-		if argsRender.debug.logFile {
+		if gcfg.DebugFlags.LogFile {
 			logFlags |= log.Lshortfile
 		}
-		if argsRender.debug.logTime {
+		if gcfg.DebugFlags.LogTime {
 			logFlags |= log.Ltime
 		}
 		log.SetFlags(logFlags)
@@ -174,6 +161,8 @@ var cmdRender = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		gcfg := globalConfig
+
 		if argsRoot.showVersion {
 			log.Printf("ottomap version %s\n", version)
 		}
@@ -199,6 +188,8 @@ var cmdRender = &cobra.Command{
 		totalUnitMoves := 0
 		var turnId, maxTurnId string // will be set to the last/maximum turnId we process
 		for _, i := range inputs {
+			gcfg := globalConfig
+
 			started := time.Now()
 			data, err := os.ReadFile(i.Path)
 			if err != nil {
@@ -210,7 +201,7 @@ var cmdRender = &cobra.Command{
 			if argsRender.autoEOL {
 				data = bytes.ReplaceAll(data, []byte{'\r', '\n'}, []byte{'\n'})
 				data = bytes.ReplaceAll(data, []byte{'\r'}, []byte{'\n'})
-			} else if argsRender.experimental.stripCR {
+			} else if gcfg.Experimental.StripCR {
 				data = bytes.ReplaceAll(data, []byte{'\r', '\n'}, []byte{'\n'})
 			}
 			if i.Turn.Year < 899 || i.Turn.Year > 9999 || i.Turn.Month < 1 || i.Turn.Month > 12 {
@@ -235,7 +226,7 @@ var cmdRender = &cobra.Command{
 			if turnId > maxTurnId {
 				maxTurnId = turnId
 			}
-			turn, err := parser.ParseInput(i.Id, turnId, data, argsRender.acceptLoneDash, argsRender.debug.parser, argsRender.debug.sections, argsRender.debug.steps, argsRender.debug.nodes, argsRender.debug.fleetMovement, argsRender.experimental.splitTrailingUnits, argsRender.experimental.cleanUpScoutStill, argsRender.parser)
+			turn, err := parser.ParseInput(i.Id, turnId, data, gcfg.Parser.AcceptLoneDash, gcfg.DebugFlags.Parser, gcfg.DebugFlags.Sections, gcfg.DebugFlags.Steps, gcfg.DebugFlags.Nodes, gcfg.DebugFlags.FleetMovement, gcfg.Experimental.SplitTrailingUnits, gcfg.Experimental.CleanupScoutStill, argsRender.parser)
 			if err != nil {
 				log.Fatal(err)
 			} else if turnId != fmt.Sprintf("%04d-%02d", turn.Year, turn.Month) {
@@ -433,7 +424,7 @@ var cmdRender = &cobra.Command{
 		}
 
 		// walk the data
-		worldMap, err := turns.Walk(consolidatedTurns, consolidatedSpecialNames, argsRender.originGrid, argsRender.quitOnInvalidGrid, argsRender.warnOnInvalidGrid, argsRender.warnOnNewSettlement, argsRender.warnOnTerrainChange, argsRender.debug.maps)
+		worldMap, err := turns.Walk(consolidatedTurns, consolidatedSpecialNames, argsRender.originGrid, argsRender.quitOnInvalidGrid, argsRender.warnOnInvalidGrid, argsRender.warnOnNewSettlement, argsRender.warnOnTerrainChange, gcfg.DebugFlags.Maps)
 		if err != nil {
 			log.Fatalf("error: %v\n", err)
 		}
@@ -444,7 +435,7 @@ var cmdRender = &cobra.Command{
 			worldMap = solo
 		}
 
-		if argsRender.debug.dumpAllTurns {
+		if gcfg.DebugFlags.DumpAllTurns {
 			log.Printf("hey, dumping it all\n")
 			for _, turn := range consolidatedTurns {
 				log.Printf("%s: sortedMoves %d\n", turn.Id, len(turn.SortedMoves))
@@ -487,7 +478,7 @@ var cmdRender = &cobra.Command{
 		}
 		upperLeft, lowerRight := worldMap.Bounds()
 
-		if argsRender.debug.dumpAllTiles {
+		if gcfg.DebugFlags.DumpAllTiles {
 			worldMap.Dump()
 		}
 

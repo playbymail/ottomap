@@ -10,16 +10,15 @@ import (
 	"os"
 )
 
-var argsDump struct {
-	defaultTileMap bool
-}
+var argsDump struct{}
 
 var cmdDump = &cobra.Command{
 	Use:   "dump",
 	Short: "dump data to a file",
 	Long:  `Dump data to a file.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if argsDump.defaultTileMap {
+		gcfg := globalConfig
+		if gcfg.DebugFlags.DumpDefaultTileMap {
 			var chester = map[string]string{}
 			for k, v := range terrain.TileTerrainNames {
 				if k == terrain.Blank {
