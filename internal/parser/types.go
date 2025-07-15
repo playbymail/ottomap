@@ -96,6 +96,9 @@ type Moves_t struct {
 	Follows UnitId_t
 	GoesTo  string
 
+	// all the scry results for this turn
+	Scries []*Scry_t
+
 	// Scouts are optional and move at the end of the turn
 	Scouts []*Scout_t
 

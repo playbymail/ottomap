@@ -71,7 +71,9 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 		// walk the moves for all the units in this turn
 		for _, moves := range turn.SortedMoves {
 			unit := moves.UnitId
-			//log.Printf("walk: turn %s unit %-8s goto %-8s follows %-8s %-8s    %s\n", turn.Id, unit, moves.GoesTo, moves.Follows, moves.FromHex, moves.Location.GridString())
+			//if unit == "0988" {
+			//	log.Printf("walk: turn %s unit %-8s goto %-8s follows %-8s %-8s    %s\n", turn.Id, unit, moves.GoesTo, moves.Follows, moves.FromHex, moves.Location.GridString())
+			//}
 			// if we're missing the location, can we derive it from the previous turn?
 			if moves.Location.IsZero() {
 				panic("location is zero")
@@ -117,6 +119,33 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 					}
 					//log.Printf("%s: %-6s: %d: step %d: result %q: to %q\n", turn.Id, unit, move.LineNo, move.StepNo, move.Result, location)
 					current = location
+				}
+			}
+
+			// this is where we should stitch in the scry lines
+			for _, scry := range moves.Scries {
+				//debug = true
+				fromHex := scry.Location // each move will start in the scry's location
+				for _, move := range scry.Moves {
+					//log.Printf("%s: %-6s: %d: step %d: result %q: to %q\n", turn.Id, unit, move.LineNo, move.StepNo, move.Result, scry.Origin)
+					toHex, err := Step(turn.Id, move, fromHex, leader, worldMap, specialNames, false, warnOnNewSettlement, warnOnTerrainChange, debug)
+					if err != nil {
+						panic(err)
+					}
+					//log.Printf("scry: status: from %q: to %q\n", fromHex.ToHex(), toHex.ToHex())
+					fromHex = toHex
+				}
+				fromHex = scry.Location // each scout will start in the scry's origin
+				if scry.Scouts != nil {
+					for _, move := range scry.Scouts.Moves {
+						//log.Printf("%s: %-6s: %d: step %d: result %q: to %q\n", turn.Id, unit, move.LineNo, move.StepNo, move.Result, scry.Origin)
+						toHex, err := Step(turn.Id, move, fromHex, leader, worldMap, specialNames, true, warnOnNewSettlement, warnOnTerrainChange, debug)
+						if err != nil {
+							panic(err)
+						}
+						//log.Printf("scry: scout: from %q: to %q\n", fromHex.ToHex(), toHex.ToHex())
+						fromHex = toHex
+					}
 				}
 			}
 		}

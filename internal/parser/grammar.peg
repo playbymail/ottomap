@@ -190,6 +190,17 @@ ScoutMovement <- "Scout" SP no:[1-8] ":" _ results:ToEOL EOF {
     return mt, nil
 }
 
+ScryLine <- u:UNIT_ID SP "Scry" _ ":" _ oh:COORDS _ ":" _ results:ToEOL EOF {
+    st := &Scry_t{
+        UnitId: u.(UnitId_t),
+        Origin: oh.(string),
+    }
+    if results != nil {
+        st.Text = bdup(results.([]byte))
+    }
+    return st, nil
+}
+
 SpaceDirection <- SP d:DIRECTION {
     return d, nil
 }

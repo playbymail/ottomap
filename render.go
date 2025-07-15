@@ -274,7 +274,7 @@ var cmdRender = &cobra.Command{
 					turn.SortedMoves = append(turn.SortedMoves, unitMoves)
 				}
 				if unitTurn.SpecialNames != nil {
-					// consolidate any the special hexes
+					// consolidate any special hexes
 					for id, special := range unitTurn.SpecialNames {
 						consolidatedSpecialNames[id] = special
 					}
@@ -376,13 +376,13 @@ var cmdRender = &cobra.Command{
 				if turn.Next != nil {
 					nextTurnMoves = turn.Next.UnitMoves[unitMoves.UnitId]
 				}
-				//if unitMoves.Id == "0138" {
-				//	log.Printf("this: %s: %-6s: this prior %q current %q\n", unitMoves.TurnId, unitMoves.Id, unitMoves.FromHex, unitMoves.ToHex)
+				//if unitMoves.UnitId == "0988" {
+				//	log.Printf("this: %s: %-6s: this prior %q current %q\n", unitMoves.TurnId, unitMoves.UnitId, unitMoves.FromHex, unitMoves.ToHex)
 				//	if prevTurnMoves != nil {
-				//		log.Printf("      %s: %-6s: prev prior %q current %q\n", prevTurnMoves.TurnId, prevTurnMoves.Id, prevTurnMoves.FromHex, prevTurnMoves.ToHex)
+				//		log.Printf("      %s: %-6s: prev prior %q current %q\n", prevTurnMoves.TurnId, prevTurnMoves.UnitId, prevTurnMoves.FromHex, prevTurnMoves.ToHex)
 				//	}
 				//	if nextTurnMoves != nil {
-				//		log.Printf("      %s: %-6s: next prior %q current %q\n", nextTurnMoves.TurnId, nextTurnMoves.Id, nextTurnMoves.FromHex, nextTurnMoves.ToHex)
+				//		log.Printf("      %s: %-6s: next prior %q current %q\n", nextTurnMoves.TurnId, nextTurnMoves.UnitId, nextTurnMoves.FromHex, nextTurnMoves.ToHex)
 				//	}
 				//}
 

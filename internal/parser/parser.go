@@ -5,6 +5,7 @@ package parser
 import (
 	"bytes"
 	"fmt"
+	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/edges"
 	"github.com/playbymail/ottomap/internal/norm"
@@ -76,7 +77,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 	var unitId UnitId_t // current unit being parsed
 	var moves *Moves_t  // current move being parsed
 
-	var statusLinePrefix []byte
+	var scriesLinePrefix, statusLinePrefix []byte
 	for n, line := range bytes.Split(input, []byte("\n")) {
 		if len(line) == 0 {
 			continue
@@ -100,6 +101,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			}
 			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
 			t.UnitMoves[moves.UnitId] = moves
+			scriesLinePrefix = []byte(fmt.Sprintf("%s Scry: ", unitId))
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if rxElementSection.Match(line) {
 			unitId = UnitId_t(line[8:14])
@@ -114,6 +116,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			}
 			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
 			t.UnitMoves[moves.UnitId] = moves
+			scriesLinePrefix = []byte(fmt.Sprintf("%s Scry: ", unitId))
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if rxFleetSection.Match(line) {
 			unitId = UnitId_t(line[6:12])
@@ -142,6 +145,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			}
 			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
 			t.UnitMoves[moves.UnitId] = moves
+			scriesLinePrefix = []byte(fmt.Sprintf("%s Scry: ", unitId))
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if rxTribeSection.Match(line) {
 			unitId = UnitId_t(line[6:10])
@@ -156,6 +160,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			}
 			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
 			t.UnitMoves[moves.UnitId] = moves
+			scriesLinePrefix = []byte(fmt.Sprintf("%s Scry: ", unitId))
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if moves == nil {
 			log.Printf("%s: %s: %d: found line outside of section: %q\n", fid, unitId, lineNo, slug(line, 20))
@@ -259,6 +264,14 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 				}
 				moves.Scouts = append(moves.Scouts, scoutMoves)
 			}
+		} else if bytes.HasPrefix(line, scriesLinePrefix) {
+			debugs("%s: %s: %d: found %q\n", fid, unitId, lineNo, scriesLinePrefix)
+			scry, err := ParseScryLine(fid, tid, unitId, lineNo, line, acceptLoneDash, debugSteps, debugNodes, experimentalUnitSplit, experimentalScoutStill)
+			if err != nil {
+				return t, err
+			}
+			//log.Printf("scries %q %d\n", scry.Type, len(scry.Moves))
+			moves.Scries = append(moves.Scries, scry)
 		} else if bytes.HasPrefix(line, statusLinePrefix) {
 			debugs("%s: %s: %d: found %q\n", fid, unitId, lineNo, statusLinePrefix)
 			statusMoves, err := ParseStatusLine(fid, tid, unitId, lineNo, line, acceptLoneDash, debugSteps, debugNodes, experimentalUnitSplit)
@@ -278,6 +291,17 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 		for _, move := range v.Moves {
 			move.TurnId = turnId
 		}
+		for _, scout := range v.Scouts {
+			scout.TurnId = turnId
+		}
+		for _, scry := range v.Scries {
+			for _, move := range scry.Moves {
+				move.TurnId = turnId
+			}
+			if scry.Scouts != nil {
+				scry.Scouts.TurnId = turnId
+			}
+		}
 	}
 
 	return t, nil
@@ -288,6 +312,16 @@ func slug(b []byte, n int) string {
 		return string(b)
 	}
 	return string(b[:n])
+}
+
+type Scry_t struct {
+	UnitId   UnitId_t // the unit scrying
+	Type     unit_movement.Type_e
+	Origin   string // the hex the scry originates in
+	Location coords.Map
+	Text     []byte // the results of scrying in that hex
+	Moves    []*Move_t
+	Scouts   *Scout_t
 }
 
 type Movement_t struct {
@@ -442,7 +476,50 @@ func ParseScoutMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line [
 	return scout, nil
 }
 
+// ParseScryLine expects input to be like a Status line or Scout line.
+func ParseScryLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes, experimentalUnitSplit, experimentalScoutStill bool) (*Scry_t, error) {
+	log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, line)
+	va, err := Parse(fid, line, Entrypoint("ScryLine"))
+	if err != nil {
+		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, string(line))
+		log.Printf("status %v\n", err)
+		return nil, err
+	}
+	s, ok := va.(*Scry_t)
+	if !ok {
+		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, line)
+		log.Printf("error: want *Scry_t, got %T\n", va)
+		log.Printf("please report this error\n")
+		panic(fmt.Errorf("unexpected type %T\n", va))
+	}
+	//log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, s.Origin)
+	s.Location, err = coords.HexToMap(s.Origin)
+	if err != nil {
+		panic(err)
+	}
+	//log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, s.Location.ToHex())
+	if bytes.HasPrefix(s.Text, []byte{'S', 'c', 'o', 'u', 't'}) {
+		s.Type = unit_movement.Scouts
+		//log.Printf("scry: unit %q: origin %q: text %q: type %v\n", s.UnitId, s.Origin, s.Text, s.Type)
+		hack := fmt.Sprintf("Scout 1:%s", s.Text)
+		s.Scouts, err = ParseScoutMovementLine(fid, tid, unitId, lineNo, []byte(hack), acceptLoneDash, debugSteps, debugNodes, experimentalUnitSplit, experimentalScoutStill)
+		if err != nil {
+			log.Printf("scry: %v\n", err)
+		}
+	} else {
+		s.Type = unit_movement.Status
+		//log.Printf("scry: unit %q: origin %q: text %q: type %v\n", s.UnitId, s.Origin, s.Text, s.Type)
+		hack := fmt.Sprintf("%s %s", s.UnitId, s.Text)
+		s.Moves, err = ParseStatusLine(fid, tid, unitId, lineNo, []byte(hack), acceptLoneDash, debugSteps, debugNodes, experimentalUnitSplit)
+	}
+
+	return s, err
+}
+
 func ParseStatusLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes bool, experimentalUnitSplit bool) ([]*Move_t, error) {
+	if debugSteps {
+		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, line)
+	}
 	if va, err := Parse(fid, line, Entrypoint("StatusLine")); err != nil {
 		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, string(line))
 		log.Printf("status %v\n", err)
