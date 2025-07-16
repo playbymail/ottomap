@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	version      = semver.Version{Major: 0, Minor: 59, Patch: 0}
+	version      = semver.Version{Major: 0, Minor: 60, Patch: 0}
 	globalConfig *config.Config
 )
 

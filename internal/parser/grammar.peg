@@ -745,6 +745,8 @@ TERRAIN <- "ALPS" {
     return terrain.Swamp, nil
 } / "TUNDRA" {
     return terrain.Tundra, nil
+} / "UNKNOWN" {
+    return terrain.Blank, nil
 }
 
 TERRAIN_CODE <- "ALPS" { return terrain.Alps, nil
