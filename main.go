@@ -5,17 +5,18 @@ package main
 
 import (
 	"errors"
+	"log"
+	"os"
+	"path/filepath"
+
 	"github.com/mdhender/semver"
 	"github.com/playbymail/ottomap/cerrs"
 	"github.com/playbymail/ottomap/internal/config"
 	"github.com/spf13/cobra"
-	"log"
-	"os"
-	"path/filepath"
 )
 
 var (
-	version      = semver.Version{Major: 0, Minor: 60, Patch: 0}
+	version      = semver.Version{Major: 0, Minor: 61, Patch: 0}
 	globalConfig *config.Config
 )
 

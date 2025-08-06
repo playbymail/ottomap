@@ -95,14 +95,20 @@ EdgeType <- "Canal" {
     return edges.StoneRoad, nil
 }
 
-FleetMovement <- ws:WINDSTRENGTH SP d:DIRECTION SP "Fleet Movement:" _ results:ToEOL EOF {
+FleetMovement <- ws:WINDSTRENGTH SP d:DIRECTION SP "Fleet Movement:" _ "Move" _ results:FleetMovementResults EOF {
     mt := Movement_t{Type: unit_movement.Fleet}
     mt.Winds.Strength = ws.(winds.Strength_e)
     mt.Winds.From = d.(direction.Direction_e)
     if results != nil {
-        mt.Text = bdup(results.([]byte))
+        mt.Text = append([]byte("Move "), bytes.TrimSpace(results.([]byte))...)
     }
     return mt, nil
+}
+
+FleetMovementResults <- results:"is not possible with this ship combination" {
+    return []byte{'\\'}, nil
+} / results:ToEOL {
+    return results, nil
 }
 
 Location <- ("Courier" / "Element" / "Fleet" / "Garrison" / "Tribe") SP u:UNIT_ID "," SP MiscNote? "," SP "Current Hex =" SP ch:COORDS "," SP "(Previous Hex =" SP ph:COORDS ")" _ EOF {

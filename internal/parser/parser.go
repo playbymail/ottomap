@@ -5,6 +5,14 @@ package parser
 import (
 	"bytes"
 	"fmt"
+	"log"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"unicode"
+	"unicode/utf8"
+
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/edges"
@@ -14,13 +22,6 @@ import (
 	"github.com/playbymail/ottomap/internal/terrain"
 	"github.com/playbymail/ottomap/internal/unit_movement"
 	"github.com/playbymail/ottomap/internal/winds"
-	"log"
-	"regexp"
-	"sort"
-	"strconv"
-	"strings"
-	"unicode"
-	"unicode/utf8"
 )
 
 //go:generate pigeon -o grammar.go grammar.peg
@@ -53,6 +54,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 	//	debugParser = true
 	//	debugSections = true
 	//	debugSteps = true
+	//	debugFleetMovement = true
 	//}
 	debugfm := func(format string, args ...any) {
 		if debugFleetMovement {
@@ -401,7 +403,7 @@ func ParseFleetMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line [
 		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, slug(line, 44))
 	}
 
-	// remove the prefix and trim the line
+	// remove the prefix and trim the line.
 	if !bytes.HasPrefix(line, []byte{'M', 'o', 'v', 'e'}) {
 		return nil, fmt.Errorf("expected 'Move', found '%s'", slug(line, 12))
 	}
