@@ -317,13 +317,15 @@ var cmdRender = &cobra.Command{
 					naLocationCount++
 					invalidLocations = append(invalidLocations, fmt.Sprintf("turn %s: unit %-6s: Previous Hex is 'N/A'", unitMoves.TurnId, unitMoves.UnitId))
 				}
-				if strings.HasPrefix(unitMoves.FromHex, "##") {
-					obscuredLocationCount++
-					invalidLocations = append(invalidLocations, fmt.Sprintf("turn %s: unit %-6s: Previous Hex starts with '##'", unitMoves.TurnId, unitMoves.UnitId))
-				}
-				if strings.HasPrefix(unitMoves.ToHex, "##") {
-					obscuredLocationCount++
-					invalidLocations = append(invalidLocations, fmt.Sprintf("turn %s: unit %-6s: Current  Hex starts with '##'", unitMoves.TurnId, unitMoves.UnitId))
+				if gcfg.Parser.CheckObscuredGrids {
+					if strings.HasPrefix(unitMoves.FromHex, "##") {
+						obscuredLocationCount++
+						invalidLocations = append(invalidLocations, fmt.Sprintf("turn %s: unit %-6s: Previous Hex starts with '##'", unitMoves.TurnId, unitMoves.UnitId))
+					}
+					if strings.HasPrefix(unitMoves.ToHex, "##") {
+						obscuredLocationCount++
+						invalidLocations = append(invalidLocations, fmt.Sprintf("turn %s: unit %-6s: Current  Hex starts with '##'", unitMoves.TurnId, unitMoves.UnitId))
+					}
 				}
 			}
 		}

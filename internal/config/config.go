@@ -69,6 +69,7 @@ type Layers_t struct {
 
 type Parser_t struct {
 	AcceptLoneDash      bool `json:"AcceptLoneDash,omitempty"`
+	CheckObscuredGrids  bool `json:"CheckObscuredGrids,omitempty"`
 	QuitOnObscuredGrids bool `json:"QuitOnObscuredGrids,omitempty"`
 }
 
@@ -236,6 +237,9 @@ func Load(name string, debug bool) (*Config, error) {
 		}
 	}
 	// validate some stuff
+	if tmp.Parser.QuitOnObscuredGrids {
+		tmp.Parser.CheckObscuredGrids = true
+	}
 	for _, v := range tmp.Worldographer.Mentee {
 		if v.Unit == "" || strings.TrimSpace(v.Unit) != v.Unit {
 			return nil, fmt.Errorf("mentee: invalid unit %q", v.Unit)
@@ -269,6 +273,9 @@ func Load(name string, debug bool) (*Config, error) {
 
 	// copy over every value from tmp to config that isn't the default (zero) value
 	copyNonZeroFields(&tmp, cfg)
+	if cfg.Parser.QuitOnObscuredGrids {
+		cfg.Parser.CheckObscuredGrids = true
+	}
 
 	return cfg, nil
 }
