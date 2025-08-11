@@ -3,12 +3,13 @@
 package turns
 
 import (
-	"github.com/playbymail/ottomap/internal/coords"
-	"github.com/playbymail/ottomap/internal/parser"
-	"github.com/playbymail/ottomap/internal/tiles"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/playbymail/ottomap/internal/coords"
+	"github.com/playbymail/ottomap/internal/parser"
+	"github.com/playbymail/ottomap/internal/tiles"
 )
 
 func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, originGrid string, quitOnInvalidGrid, warnOnInvalidGrid, warnOnNewSettlement, warnOnTerrainChange, debug bool) (*tiles.Map_t, error) {
@@ -100,6 +101,11 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 					log.Printf("%s: %-6s: %d: step %d: result %q: to %q\n", turn.Id, unit, move.LineNo, move.StepNo, move.Result, location)
 				}
 				current = location
+			}
+			// log.Printf("walk: %s: %q: %q\n", moves.TurnId, moves.UnitId, current.GridString())
+			if current.Column < 0 || current.Row < 0 {
+				log.Printf("walk: %s: %q: %q (%d, %d)\n", moves.TurnId, moves.UnitId, current.GridString(), current.Column, current.Row)
+				panic("!")
 			}
 			if strings.Contains(current.GridString(), "-") {
 				log.Printf("walk: %s: %s: %s\n", moves.TurnId, moves.UnitId, current.GridString())

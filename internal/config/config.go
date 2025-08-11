@@ -5,10 +5,14 @@ package config
 import (
 	"encoding/json"
 	"errors"
-	"github.com/playbymail/ottomap/cerrs"
+	"fmt"
 	"log"
 	"os"
 	"reflect"
+	"strconv"
+	"strings"
+
+	"github.com/playbymail/ottomap/cerrs"
 )
 
 // Config allows each player to have their own configuration.
@@ -45,8 +49,10 @@ type Experimental_t struct {
 }
 
 type Worldographer_t struct {
-	Map    Map_t    `json:"Map"`
-	Render Render_t `json:"Render"`
+	Map    Map_t       `json:"Map"`
+	Render Render_t    `json:"Render"`
+	Mentee []*Mentee_t `json:"Mentee,omitempty"`
+	Solo   []*Solo_t   `json:"Solo,omitempty"`
 }
 
 type Map_t struct {
@@ -62,7 +68,8 @@ type Layers_t struct {
 }
 
 type Parser_t struct {
-	AcceptLoneDash bool `json:"AcceptLoneDash,omitempty"`
+	AcceptLoneDash      bool `json:"AcceptLoneDash,omitempty"`
+	QuitOnObscuredGrids bool `json:"QuitOnObscuredGrids,omitempty"`
 }
 
 type Render_t struct {
@@ -103,6 +110,18 @@ type Terrain_t struct {
 	UnknownLand          string `json:"UnknownLand,omitempty"`
 	UnknownMountain      string `json:"UnknownMountain,omitempty"`
 	UnknownWater         string `json:"UnknownWater,omitempty"`
+}
+
+type Mentee_t struct {
+	Unit      string `json:"Unit"`  // unit being mentored
+	StartTurn string `json:"Start"` // turn id to start mentoring
+	StopTurn  string `json:"Stop"`  // turn id to stop mentoring
+}
+
+type Solo_t struct {
+	Unit      string `json:"Unit"`  // unit to create solo map for
+	StartTurn string `json:"Start"` // turn id to start soloing
+	StopTurn  string `json:"Stop"`  // turn id to stop soloing
 }
 
 type Units_t struct {
@@ -216,6 +235,37 @@ func Load(name string, debug bool) (*Config, error) {
 			log.Printf("[config] %q: loaded %s\n", name, string(data))
 		}
 	}
+	// validate some stuff
+	for _, v := range tmp.Worldographer.Mentee {
+		if v.Unit == "" || strings.TrimSpace(v.Unit) != v.Unit {
+			return nil, fmt.Errorf("mentee: invalid unit %q", v.Unit)
+		}
+		if year, month, err := strToTurnId(v.StartTurn); err != nil {
+			return nil, fmt.Errorf("mentee: %s:%s: invalid start date", v.Unit, v.StartTurn)
+		} else {
+			v.StartTurn = fmt.Sprintf("%04d-%02d", year, month)
+		}
+		if year, month, err := strToTurnId(v.StopTurn); err != nil {
+			return nil, fmt.Errorf("mentee: %s:%s: invalid stop date", v.Unit, v.StopTurn)
+		} else {
+			v.StopTurn = fmt.Sprintf("%04d-%02d", year, month)
+		}
+	}
+	for _, v := range tmp.Worldographer.Solo {
+		if v.Unit == "" || strings.TrimSpace(v.Unit) != v.Unit {
+			return nil, fmt.Errorf("solo: invalid unit %q", v.Unit)
+		}
+		if year, month, err := strToTurnId(v.StartTurn); err != nil {
+			return nil, fmt.Errorf("solo: %s:%s: invalid start date", v.Unit, v.StartTurn)
+		} else {
+			v.StartTurn = fmt.Sprintf("%04d-%02d", year, month)
+		}
+		if year, month, err := strToTurnId(v.StopTurn); err != nil {
+			return nil, fmt.Errorf("solo: %s:%s: invalid stop date", v.Unit, v.StopTurn)
+		} else {
+			v.StopTurn = fmt.Sprintf("%04d-%02d", year, month)
+		}
+	}
 
 	// copy over every value from tmp to config that isn't the default (zero) value
 	copyNonZeroFields(&tmp, cfg)
@@ -265,4 +315,24 @@ func copyNonZeroFields(src, dst interface{}) {
 			dstField.Set(srcField)
 		}
 	}
+}
+
+func strToTurnId(t string) (year, month int, err error) {
+	fields := strings.Split(t, "-")
+	if len(fields) != 2 {
+		return 0, 0, fmt.Errorf("invalid date")
+	}
+	yyyy, mm, ok := strings.Cut(t, "-")
+	if !ok {
+		return 0, 0, fmt.Errorf("invalid date")
+	} else if year, err = strconv.Atoi(yyyy); err != nil {
+		return 0, 0, fmt.Errorf("invalid date")
+	} else if month, err = strconv.Atoi(mm); err != nil {
+		return 0, 0, fmt.Errorf("invalid date")
+	} else if year < 899 || year > 9999 {
+		return 0, 0, fmt.Errorf("invalid date")
+	} else if month < 1 || month > 12 {
+		return 0, 0, fmt.Errorf("invalid date")
+	}
+	return year, month, nil
 }

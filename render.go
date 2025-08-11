@@ -5,14 +5,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/playbymail/ottomap/actions"
-	"github.com/playbymail/ottomap/internal/edges"
-	"github.com/playbymail/ottomap/internal/parser"
-	"github.com/playbymail/ottomap/internal/results"
-	"github.com/playbymail/ottomap/internal/terrain"
-	"github.com/playbymail/ottomap/internal/turns"
-	"github.com/playbymail/ottomap/internal/wxx"
-	"github.com/spf13/cobra"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,6 +12,16 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/playbymail/ottomap/actions"
+	"github.com/playbymail/ottomap/internal/edges"
+	"github.com/playbymail/ottomap/internal/parser"
+	"github.com/playbymail/ottomap/internal/results"
+	"github.com/playbymail/ottomap/internal/terrain"
+	"github.com/playbymail/ottomap/internal/tiles"
+	"github.com/playbymail/ottomap/internal/turns"
+	"github.com/playbymail/ottomap/internal/wxx"
+	"github.com/spf13/cobra"
 )
 
 var argsRender struct {
@@ -132,19 +134,12 @@ var cmdRender = &cobra.Command{
 
 		if argsRender.maxTurn.id == "" {
 			argsRender.maxTurn.year, argsRender.maxTurn.month = 9999, 12
-		} else if yyyy, mm, ok := strings.Cut(argsRender.maxTurn.id, "-"); !ok {
+		} else if year, month, err := strToTurnId(argsRender.maxTurn.id); err != nil {
 			log.Fatalf("error: turn-cutoff %q: must be yyyy-mm format", argsRender.maxTurn.id)
-		} else if year, err := strconv.Atoi(yyyy); err != nil {
-			log.Fatalf("error: turn-cutoff %q: must be yyyy-mm format", argsRender.maxTurn.id)
-		} else if month, err := strconv.Atoi(mm); err != nil {
-			log.Fatalf("error: turn-cutoff %q: must be yyyy-mm format", argsRender.maxTurn.id)
-		} else if year < 899 || year > 9999 {
-			log.Fatalf("error: turn-cutoff %q: invalid year %d", argsRender.maxTurn.id, year)
-		} else if month < 1 || month > 12 {
-			log.Fatalf("error: turn-cutoff %q: invalid month %d", argsRender.maxTurn.id, month)
 		} else {
 			argsRender.maxTurn.year, argsRender.maxTurn.month = year, month
 		}
+		argsRender.maxTurn.id = fmt.Sprintf("%04d-%02d", argsRender.maxTurn.year, argsRender.maxTurn.month)
 
 		if argsRender.maxTurn.year < 0 {
 			argsRender.maxTurn.year = 0
@@ -313,21 +308,42 @@ var cmdRender = &cobra.Command{
 			}
 		}
 
-		// check for N/A values in locations and quit if we find any
-		naLocationCount := 0
+		// check for N/A and obscured locations and quit if we find any
+		var invalidLocations []string
+		naLocationCount, obscuredLocationCount := 0, 0
 		for _, turn := range consolidatedTurns {
 			for _, unitMoves := range turn.UnitMoves {
 				if unitMoves.FromHex == "N/A" {
 					naLocationCount++
-					if naLocationCount == 1 {
-						log.Printf("error: ottomap found units that have 'N/A' in the Previous Hex field\n")
-					}
-					log.Printf("turn %s: unit %-6s: Previous Hex is 'N/A'\n", unitMoves.TurnId, unitMoves.UnitId)
+					invalidLocations = append(invalidLocations, fmt.Sprintf("turn %s: unit %-6s: Previous Hex is 'N/A'", unitMoves.TurnId, unitMoves.UnitId))
+				}
+				if strings.HasPrefix(unitMoves.FromHex, "##") {
+					obscuredLocationCount++
+					invalidLocations = append(invalidLocations, fmt.Sprintf("turn %s: unit %-6s: Previous Hex starts with '##'", unitMoves.TurnId, unitMoves.UnitId))
+				}
+				if strings.HasPrefix(unitMoves.ToHex, "##") {
+					obscuredLocationCount++
+					invalidLocations = append(invalidLocations, fmt.Sprintf("turn %s: unit %-6s: Current  Hex starts with '##'", unitMoves.TurnId, unitMoves.UnitId))
 				}
 			}
 		}
-		if naLocationCount != 0 {
-			log.Fatalf("please update the Previous Hex field for these units and restart\n")
+		if len(invalidLocations) > 0 {
+			if naLocationCount > 0 && obscuredLocationCount == 0 {
+				log.Printf("error: ottomap found units that have 'N/A' in the Previous Hex field\n")
+			} else if naLocationCount == 0 && obscuredLocationCount > 0 {
+				log.Printf("error: ottomap found units that have '##' in the Current or Previous Hex field\n")
+			} else {
+				log.Printf("error: ottomap found units that have 'N/A' or '##' in the Current or Previous Hex field\n")
+			}
+			for _, msg := range invalidLocations {
+				log.Println(msg)
+			}
+			if naLocationCount > 0 || gcfg.Parser.QuitOnObscuredGrids {
+				log.Fatalf("please update the location field for these units and restart\n")
+			} else {
+				// quitting on obscured grids will break many, many maps, so this is just a warning for now
+				log.Printf("please update the location field for these units and restart\n")
+			}
 		}
 
 		// sanity check on the current and prior locations.
@@ -428,11 +444,53 @@ var cmdRender = &cobra.Command{
 		if err != nil {
 			log.Fatalf("error: %v\n", err)
 		}
-		if argsRender.soloElement != "" {
+
+		// generate all the solo maps
+		type soloMap_t struct {
+			unit     string
+			worldMap *tiles.Map_t
+		}
+		var soloMaps []soloMap_t
+
+		if argsRender.soloElement != "" && len(gcfg.Worldographer.Solo) != 0 {
+			log.Fatalf("error: solo-element and config.Worldographer.Solo are both set")
+		} else if argsRender.soloElement != "" {
 			log.Printf("info: rendering only %q\n", argsRender.soloElement)
 			solo := worldMap.Solo(argsRender.soloElement)
 			log.Printf("info: %s: world %d tiles: solo %d\n", argsRender.soloElement, len(worldMap.Tiles), len(solo.Tiles))
 			worldMap = solo
+		} else if len(gcfg.Worldographer.Solo) != 0 {
+			upperLeft, lowerRight := worldMap.Bounds()
+			log.Printf("info: world map:  pre-solo: upper left %4d: lower right %4d\n", upperLeft, lowerRight)
+
+			// create solo maps
+			for _, soloUnit := range gcfg.Worldographer.Solo {
+				log.Printf("info: %s:%s: solo start %q: stop %q\n", turnId, soloUnit.Unit, soloUnit.StartTurn, soloUnit.StopTurn)
+				if !(soloUnit.StartTurn <= turnId && turnId < soloUnit.StopTurn) {
+					log.Printf("info: %s:%s: not rendering solo map (inactive)\n", turnId, soloUnit.Unit)
+					continue
+				}
+				soloMap := worldMap.Solo(soloUnit.Unit)
+				if len(soloMap.Tiles) == 0 {
+					log.Printf("info: %s:%s: not rendering solo map (no tiles)\n", turnId, soloUnit.Unit)
+					continue
+				}
+				log.Printf("info: %s:%s: rendering solo map\n", turnId, soloUnit.Unit)
+				log.Printf("info: %s:%s: world %d tiles: solo %d\n", turnId, soloUnit.Unit, len(worldMap.Tiles), len(soloMap.Tiles))
+				soloMaps = append(soloMaps, soloMap_t{
+					unit:     soloUnit.Unit,
+					worldMap: soloMap,
+				})
+			}
+
+			// remove the solo map tiles from the world map
+			for _, soloMap := range soloMaps {
+				for _, tile := range soloMap.worldMap.Tiles {
+					delete(worldMap.Tiles, tile.Location)
+				}
+			}
+			upperLeft, lowerRight = worldMap.Bounds()
+			log.Printf("info: world map: post-solo: upper left %4d: lower right %4d\n", upperLeft, lowerRight)
 		}
 
 		if gcfg.DebugFlags.DumpAllTurns {
@@ -476,13 +534,14 @@ var cmdRender = &cobra.Command{
 				}
 			}
 		}
-		upperLeft, lowerRight := worldMap.Bounds()
 
 		if gcfg.DebugFlags.DumpAllTiles {
 			worldMap.Dump()
 		}
 
 		// map the data
+		upperLeft, lowerRight := worldMap.Bounds()
+		log.Printf("map: upper left %4d: lower right %4d\n", upperLeft, lowerRight)
 		wxxMap, err := actions.MapWorld(worldMap, consolidatedSpecialNames, parser.UnitId_t(argsRender.clanId), argsRender.mapper, globalConfig)
 		if err != nil {
 			log.Fatalf("error: %v\n", err)
@@ -501,13 +560,13 @@ var cmdRender = &cobra.Command{
 			mapName = filepath.Join(argsRender.paths.output, fmt.Sprintf("%s.wxx", argsRender.clanId))
 		}
 		if argsRender.experimental.blankMapSmall {
-			log.Printf("creating starmap %s\n", mapName)
+			log.Printf("creating blank map %s\n", mapName)
 			if err := wxxMap.CreateBlankMap(mapName, false); err != nil {
 				log.Printf("creating %s\n", mapName)
 				log.Fatalf("error: %v\n", err)
 			}
 		} else if argsRender.experimental.blankMapFull {
-			log.Printf("creating starmap %s\n", mapName)
+			log.Printf("creating blank map %s\n", mapName)
 			if err := wxxMap.CreateBlankMap(mapName, true); err != nil {
 				log.Printf("creating %s\n", mapName)
 				log.Fatalf("error: %v\n", err)
@@ -518,6 +577,45 @@ var cmdRender = &cobra.Command{
 		}
 		log.Printf("created  %s\n", mapName)
 
+		// now we can create the solo maps
+		for _, su := range soloMaps {
+			unit, soloMap := su.unit, su.worldMap
+			mapName := filepath.Join(argsRender.paths.output, fmt.Sprintf("%s.%s.wxx", turnId, unit))
+			log.Printf("solo: %s:%s: creating %s\n", turnId, unit, mapName)
+			upperLeft, lowerRight := soloMap.Bounds()
+			log.Printf("solo: %s:%s: upper left %4d: lower right %4d\n", turnId, unit, upperLeft, lowerRight)
+			wxxMap, err := actions.MapWorld(soloMap, consolidatedSpecialNames, parser.UnitId_t(argsRender.clanId), argsRender.mapper, globalConfig)
+			if err != nil {
+				log.Fatalf("error: %v\n", err)
+			}
+			log.Printf("solo: %s:%s: %8d nodes: elapsed %v\n", turnId, unit, soloMap.Length(), time.Since(started))
+			if err := wxxMap.Create(mapName, turnId, upperLeft, lowerRight, argsRender.render, globalConfig); err != nil {
+				log.Printf("creating %s\n", mapName)
+				log.Fatalf("error: %v\n", err)
+			}
+			log.Printf("solo: %s:%s: created %s\n", turnId, unit, mapName)
+		}
+
 		log.Printf("elapsed: %v\n", time.Since(started))
 	},
+}
+
+func strToTurnId(t string) (year, month int, err error) {
+	fields := strings.Split(t, "-")
+	if len(fields) != 2 {
+		return 0, 0, fmt.Errorf("invalid date")
+	}
+	yyyy, mm, ok := strings.Cut(t, "-")
+	if !ok {
+		return 0, 0, fmt.Errorf("invalid date")
+	} else if year, err = strconv.Atoi(yyyy); err != nil {
+		return 0, 0, fmt.Errorf("invalid date")
+	} else if month, err = strconv.Atoi(mm); err != nil {
+		return 0, 0, fmt.Errorf("invalid date")
+	} else if year < 899 || year > 9999 {
+		return 0, 0, fmt.Errorf("invalid date")
+	} else if month < 1 || month > 12 {
+		return 0, 0, fmt.Errorf("invalid date")
+	}
+	return year, month, nil
 }

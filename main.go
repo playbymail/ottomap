@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	version      = semver.Version{Major: 0, Minor: 61, Patch: 0}
+	version      = semver.Version{Major: 0, Minor: 62, Patch: 0}
 	globalConfig *config.Config
 )
 
@@ -112,6 +112,7 @@ func Execute(cfg *config.Config) error {
 	cmdRender.Flags().StringVar(&argsRender.paths.data, "data", "data", "path to root of data files")
 	cmdRender.Flags().StringVar(&argsRender.maxTurn.id, "max-turn", "", "last turn to map (yyyy-mm format)")
 	cmdRender.Flags().StringVar(&argsRender.originGrid, "origin-grid", "", "grid id to substitute for ##")
+	// todo: remove support for the solo-element flag. can't do it now because it breaks one player's map.
 	cmdRender.Flags().StringVar(&argsRender.soloElement, "solo-element", "", "limit parsing to a single element of a clan")
 	cmdRender.Flags().BoolVar(&argsRender.experimental.blankMapSmall, "blank-map", false, "experimental: create a blank map, AA..ZP")
 	cmdRender.Flags().BoolVar(&argsRender.experimental.blankMapFull, "blank-map-full", false, "experimental: create a blank map, AA..ZZ")

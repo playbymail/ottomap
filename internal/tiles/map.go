@@ -3,11 +3,12 @@
 package tiles
 
 import (
-	"github.com/playbymail/ottomap/internal/coords"
-	"github.com/playbymail/ottomap/internal/parser"
 	"log"
 	"sort"
 	"strings"
+
+	"github.com/playbymail/ottomap/internal/coords"
+	"github.com/playbymail/ottomap/internal/parser"
 )
 
 // Map_t represents a map of tiles.

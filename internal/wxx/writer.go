@@ -7,17 +7,18 @@ import (
 	"compress/gzip"
 	"encoding/binary"
 	"fmt"
+	"log"
+	"os"
+	"strings"
+	"unicode/utf16"
+	"unicode/utf8"
+
 	"github.com/google/uuid"
 	"github.com/playbymail/ottomap/internal/config"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/resources"
 	"github.com/playbymail/ottomap/internal/terrain"
-	"log"
-	"os"
-	"strings"
-	"unicode/utf16"
-	"unicode/utf8"
 )
 
 type RenderConfig struct {
@@ -163,7 +164,10 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 	for row := 0; row <= tilesHigh; row++ {
 		allTiles = append(allTiles, make([]*Tile, tilesWide+1))
 	}
-	for _, t := range w.tiles {
+	for n, t := range w.tiles {
+		if t.RenderAt.Row == -1 || t.RenderAt.Column == -1 {
+			log.Printf("t: %4d: render at: row %4d: column %4d: %s\n", n, t.RenderAt.Row, t.RenderAt.Column, t.Terrain)
+		}
 		allTiles[t.RenderAt.Row][t.RenderAt.Column] = t
 	}
 
