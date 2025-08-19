@@ -4,6 +4,9 @@ package tiles
 
 import (
 	"fmt"
+	"log"
+	"strings"
+
 	"github.com/playbymail/ottomap/internal/compass"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
@@ -11,13 +14,14 @@ import (
 	"github.com/playbymail/ottomap/internal/parser"
 	"github.com/playbymail/ottomap/internal/resources"
 	"github.com/playbymail/ottomap/internal/terrain"
-	"log"
-	"strings"
 )
 
 // Tile_t represents a tile on the map.
 type Tile_t struct {
-	Location coords.Map
+	// warning: we're changing from "location" to "coordinates" for tiles.
+	// this is a breaking change so we're introducing a new field, Coordinates, to help.
+	Coordinates coords.WorldMapCoord
+	Location    coords.Map
 	//Neighbors [direction.NumDirections]*Tile_t
 
 	Visited string // set to the turn the tile was last visited
@@ -96,7 +100,9 @@ func (t *Tile_t) MergeBorder(unitId parser.UnitId_t, border *parser.Border_t, wo
 		return
 	}
 	// create neighbor with terrain
-	neighbor := worldMap.FetchTile(unitId, t.Location.Add(border.Direction))
+	worldMapNeighbor := t.Coordinates.Move(border.Direction)
+	locationNeighbor := t.Location.Add(border.Direction)
+	neighbor := worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	neighbor.MergeTerrain(border.Terrain, warnOnTerrainChange)
 }
 
@@ -132,29 +138,53 @@ func (t *Tile_t) MergeFarHorizon(unitId parser.UnitId_t, fh *parser.FarHorizon_t
 	var neighbor *Tile_t
 	switch fh.Point {
 	case compass.North:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.North, direction.North))
+		worldMapNeighbor := t.Coordinates.Move(direction.North, direction.North)
+		locationNeighbor := t.Location.Move(direction.North, direction.North)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	case compass.NorthNorthEast:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.North, direction.NorthEast))
+		worldMapNeighbor := t.Coordinates.Move(direction.North, direction.NorthEast)
+		locationNeighbor := t.Location.Move(direction.North, direction.NorthEast)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	case compass.NorthEast:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.NorthEast, direction.NorthEast))
+		worldMapNeighbor := t.Coordinates.Move(direction.NorthEast, direction.NorthEast)
+		locationNeighbor := t.Location.Move(direction.NorthEast, direction.NorthEast)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	case compass.East:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.NorthEast, direction.SouthEast))
+		worldMapNeighbor := t.Coordinates.Move(direction.NorthEast, direction.SouthEast)
+		locationNeighbor := t.Location.Move(direction.NorthEast, direction.SouthEast)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	case compass.SouthEast:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.SouthEast, direction.SouthEast))
+		worldMapNeighbor := t.Coordinates.Move(direction.SouthEast, direction.SouthEast)
+		locationNeighbor := t.Location.Move(direction.SouthEast, direction.SouthEast)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	case compass.SouthSouthEast:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.South, direction.SouthEast))
+		worldMapNeighbor := t.Coordinates.Move(direction.South, direction.SouthEast)
+		locationNeighbor := t.Location.Move(direction.South, direction.SouthEast)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	case compass.South:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.South, direction.South))
+		worldMapNeighbor := t.Coordinates.Move(direction.South, direction.South)
+		locationNeighbor := t.Location.Move(direction.South, direction.South)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	case compass.SouthSouthWest:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.South, direction.SouthWest))
+		worldMapNeighbor := t.Coordinates.Move(direction.South, direction.SouthWest)
+		locationNeighbor := t.Location.Move(direction.South, direction.SouthWest)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	case compass.SouthWest:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.SouthWest, direction.SouthWest))
+		worldMapNeighbor := t.Coordinates.Move(direction.SouthWest, direction.SouthWest)
+		locationNeighbor := t.Location.Move(direction.SouthWest, direction.SouthWest)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	case compass.West:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.SouthWest, direction.NorthWest))
+		worldMapNeighbor := t.Coordinates.Move(direction.SouthWest, direction.NorthWest)
+		locationNeighbor := t.Location.Move(direction.SouthWest, direction.NorthWest)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	case compass.NorthWest:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.NorthWest, direction.NorthWest))
+		worldMapNeighbor := t.Coordinates.Move(direction.NorthWest, direction.NorthWest)
+		locationNeighbor := t.Location.Move(direction.NorthWest, direction.NorthWest)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	case compass.NorthNorthWest:
-		neighbor = worldMap.FetchTile(unitId, t.Location.Move(direction.North, direction.NorthWest))
+		worldMapNeighbor := t.Coordinates.Move(direction.North, direction.NorthWest)
+		locationNeighbor := t.Location.Move(direction.North, direction.NorthWest)
+		neighbor = worldMap.FetchTile(unitId, locationNeighbor, worldMapNeighbor)
 	default:
 		panic(fmt.Sprintf("assert(point != %d)", fh.Point))
 	}

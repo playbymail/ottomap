@@ -317,13 +317,14 @@ func slug(b []byte, n int) string {
 }
 
 type Scry_t struct {
-	UnitId   UnitId_t // the unit scrying
-	Type     unit_movement.Type_e
-	Origin   string // the hex the scry originates in
-	Location coords.Map
-	Text     []byte // the results of scrying in that hex
-	Moves    []*Move_t
-	Scouts   *Scout_t
+	UnitId      UnitId_t // the unit scrying
+	Type        unit_movement.Type_e
+	Origin      string // the hex the scry originates in
+	Coordinates coords.WorldMapCoord
+	Location    coords.Map
+	Text        []byte // the results of scrying in that hex
+	Moves       []*Move_t
+	Scouts      *Scout_t
 }
 
 type Movement_t struct {
@@ -494,9 +495,14 @@ func ParseScryLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, ac
 		log.Printf("please report this error\n")
 		panic(fmt.Errorf("unexpected type %T\n", va))
 	}
-	//log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, s.Origin)
+	s.Coordinates, err = coords.NewWorldMapCoord(s.Origin)
+	if err != nil {
+		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, s.Origin)
+		panic(err)
+	}
 	s.Location, err = coords.HexToMap(s.Origin)
 	if err != nil {
+		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, s.Origin)
 		panic(err)
 	}
 	//log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, s.Location.ToHex())
@@ -1088,9 +1094,18 @@ func splitMoves(fid, tid string, unitId UnitId_t, lineNo int, line []byte) (move
 	if len(line) == 0 {
 		return nil
 	}
+	var pm *Move_t
 	for n, text := range bytes.Split(line, []byte{'\\'}) {
 		text = bytes.TrimSpace(bytes.TrimRight(text, ", \t"))
-		moves = append(moves, &Move_t{UnitId: unitId, LineNo: lineNo, StepNo: n + 1, Line: bdup(text), Report: &Report_t{TurnId: tid, UnitId: unitId}})
+		move := &Move_t{UnitId: unitId, LineNo: lineNo, StepNo: n + 1, Line: bdup(text), Report: &Report_t{TurnId: tid, UnitId: unitId}}
+		move.Debug.PriorMove = pm
+		moves = append(moves, move)
+		pm = move
+	}
+	for _, move := range moves {
+		if move.Debug.PriorMove != nil {
+			move.Debug.PriorMove.Debug.NextMove = move
+		}
 	}
 	return moves
 }

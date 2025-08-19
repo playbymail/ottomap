@@ -3,21 +3,25 @@
 package turns
 
 import (
+	"fmt"
 	"log"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/playbymail/ottomap/internal/coords"
+	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/parser"
 	"github.com/playbymail/ottomap/internal/tiles"
 )
 
-func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, originGrid string, quitOnInvalidGrid, warnOnInvalidGrid, warnOnNewSettlement, warnOnTerrainChange, debug bool) (*tiles.Map_t, error) {
+func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, originGrid string, quitOnInvalidGrid, warnOnInvalidGrid, warnOnNewSettlement, warnOnTerrainChange, debug bool, reverseWalker bool) (*tiles.Map_t, error) {
 	started := time.Now()
 	log.Printf("walk: input: %8d turns\n", len(input))
 
 	// last seen is a map containing the last seen location for each unit
 	lastSeen := map[parser.UnitId_t]coords.Map{}
+	lastSeenAt := map[parser.UnitId_t]coords.WorldMapCoord{}
 
 	worldMap := tiles.NewMap()
 	for _, turn := range input {
@@ -34,12 +38,20 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 		// leap of faith, update the location of all units that have a valid FromHex
 		for _, unit := range turn.SortedMoves {
 			if !strings.HasPrefix(unit.FromHex, "##") {
+				if coordinates, err := coords.NewWorldMapCoord(unit.FromHex); err != nil {
+					log.Printf("walk: %s: %s: %q: %v\n", turn.Id, unit.UnitId, unit.FromHex, err)
+					panic(err)
+				} else {
+					unit.Coordinates, lastSeenAt[unit.UnitId] = coordinates, coordinates
+				}
 				if location, err := coords.HexToMap(unit.FromHex); err != nil {
 					log.Printf("walk: %s: %s: %q: %v\n", turn.Id, unit.UnitId, unit.FromHex, err)
 					panic(err)
 				} else {
 					unit.Location, lastSeen[unit.UnitId] = location, location
-					//log.Printf("walk: turn %s unit %-8s goto %-8s follows %-8s %-8s -> %s\n", turn.Id, unit.Id, unit.GoesTo, unit.Follows, unit.FromHex, unit.Location)
+				}
+				if reverseWalker {
+					log.Printf("walk: turn %s unit %-8s goto %-8s follows %-8s %-8s -> %s :: %q\n", turn.Id, unit.UnitId, unit.GoesTo, unit.Follows, unit.FromHex, unit.Location, unit.Coordinates)
 				}
 			}
 		}
@@ -48,6 +60,7 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 		for _, unit := range turn.SortedMoves {
 			if unit.Location.IsZero() {
 				unit.Location = lastSeen[unit.UnitId]
+				unit.Coordinates = lastSeenAt[unit.UnitId]
 			}
 		}
 
@@ -57,6 +70,13 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 		for _, unit := range turn.SortedMoves {
 			if unit.Location.IsZero() {
 				// it should be an error if we can't derive it from the parent's location
+				if parent, ok := lastSeenAt[unit.UnitId.Parent()]; !ok {
+					log.Printf("%s: %-6s: parent %q: missing\n", unit.TurnId, unit.UnitId, unit.UnitId.Parent())
+					log.Fatalf("error: expected unit to have parent\n")
+				} else {
+					//log.Printf("walk: turn %s unit %-8s goto %-8s follows %-8s %-8s -> %s\n", turn.Id, unit.Id, unit.GoesTo, unit.Follows, unit.FromHex, parent)
+					unit.Coordinates, lastSeenAt[unit.UnitId] = parent, parent
+				}
 				if parent, ok := lastSeen[unit.UnitId.Parent()]; !ok {
 					log.Printf("%s: %-6s: parent %q: missing\n", unit.TurnId, unit.UnitId, unit.UnitId.Parent())
 					log.Fatalf("error: expected unit to have parent\n")
@@ -80,6 +100,15 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 				panic("location is zero")
 			}
 
+			// set leader coordinates only if this is a follows move
+			var leaderCoordinates coords.WorldMapCoord
+			if moves.Follows != "" {
+				if coordinates, ok := lastSeenAt[moves.Follows]; !ok {
+					panic("!!!")
+				} else {
+					leaderCoordinates = coordinates
+				}
+			}
 			var leader coords.Map // set only if this is a follows move
 			if moves.Follows != "" {
 				if location, ok := lastSeen[moves.Follows]; !ok {
@@ -89,11 +118,12 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 				}
 			}
 
+			currentCoordinates := moves.Coordinates
 			current := moves.Location
 
 			// step through all the moves this unit makes this turn, tracking the location of the unit after each step
 			for _, move := range moves.Moves {
-				location, err := Step(turn.Id, move, current, leader, worldMap, specialNames, false, warnOnNewSettlement, warnOnTerrainChange, debug)
+				location, err := Step(turn.Id, move, current, leader, currentCoordinates, leaderCoordinates, worldMap, specialNames, false, warnOnNewSettlement, warnOnTerrainChange, debug)
 				if err != nil {
 					panic(err)
 				}
@@ -115,11 +145,12 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 
 			// the unit's final location has been updated, so we can now send out the scouting parties
 			for _, scout := range moves.Scouts {
+				currentCoordinates = moves.Coordinates // start the scout with the unit's current coordinates
 				// each scout will start in the unit's current location
 				current = moves.Location
 				// step through all the moves this scout makes this turn, tracking the location of the scout after each step
 				for _, move := range scout.Moves {
-					location, err := Step(turn.Id, move, current, leader, worldMap, specialNames, true, warnOnNewSettlement, warnOnTerrainChange, debug)
+					location, err := Step(turn.Id, move, current, leader, currentCoordinates, leaderCoordinates, worldMap, specialNames, true, warnOnNewSettlement, warnOnTerrainChange, debug)
 					if err != nil {
 						panic(err)
 					}
@@ -131,10 +162,11 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 			// this is where we should stitch in the scry lines
 			for _, scry := range moves.Scries {
 				//debug = true
-				fromHex := scry.Location // each move will start in the scry's location
+				fromCoordinates := scry.Coordinates // each move will start at the scry's coordinates
+				fromHex := scry.Location            // each move will start in the scry's location
 				for _, move := range scry.Moves {
 					//log.Printf("%s: %-6s: %d: step %d: result %q: to %q\n", turn.Id, unit, move.LineNo, move.StepNo, move.Result, scry.Origin)
-					toHex, err := Step(turn.Id, move, fromHex, leader, worldMap, specialNames, false, warnOnNewSettlement, warnOnTerrainChange, debug)
+					toHex, err := Step(turn.Id, move, fromHex, leader, fromCoordinates, leaderCoordinates, worldMap, specialNames, false, warnOnNewSettlement, warnOnTerrainChange, debug)
 					if err != nil {
 						panic(err)
 					}
@@ -145,7 +177,7 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 				if scry.Scouts != nil {
 					for _, move := range scry.Scouts.Moves {
 						//log.Printf("%s: %-6s: %d: step %d: result %q: to %q\n", turn.Id, unit, move.LineNo, move.StepNo, move.Result, scry.Origin)
-						toHex, err := Step(turn.Id, move, fromHex, leader, worldMap, specialNames, true, warnOnNewSettlement, warnOnTerrainChange, debug)
+						toHex, err := Step(turn.Id, move, fromHex, leader, fromCoordinates, leaderCoordinates, worldMap, specialNames, true, warnOnNewSettlement, warnOnTerrainChange, debug)
 						if err != nil {
 							panic(err)
 						}
@@ -160,4 +192,143 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 	log.Printf("walk: %8d nodes: elapsed %v\n", len(input), time.Since(started))
 
 	return worldMap, nil
+}
+
+// Step_t is one step of a walk.
+type Step_t struct {
+	ReportId string          // report that contains the step
+	TurnId   string          // turn the step was taken
+	UnitId   parser.UnitId_t // unit that took the step
+
+	// From and To are the hexes that the step started and ended up in.
+	// If the unit didn't move, then both will have the same value.
+	From    coords.WorldMapCoord
+	Advance direction.Direction_e // set to Unknown if the unit didn't move
+	To      coords.WorldMapCoord
+
+	// Status is everything that the unit sees in (or from) this hex.
+	// Scouts will populate this every step; other units will populate only on the very last step of a move.
+	Units  []string // other units in this hex
+	Errors []error  // all errors from processing this step
+
+	PrevStep, NextStep *Step_t // links to previous and next steps
+}
+
+// WalkTurn walks through the input in reverse (starting from the last step and working backwards through the move).
+// It returns a slice containing all the steps taken in the turn.
+//
+// The steps for a unit may not be complete. In general, if we find an error we will stop walking the unit.
+func WalkTurn(input *parser.Turn_t, specialNames map[string]*parser.Special_t, debug bool) ([]*Step_t, error) {
+	started := time.Now()
+	log.Printf("%s: walk: units %6d\n", input.Id, len(input.MovesSortedByElement))
+
+	var steps []*Step_t
+	for _, moves := range input.MovesSortedByElement {
+		results, err := walkUnit(moves)
+		if err != nil {
+			log.Printf("error %q\n", err)
+		} else if results != nil {
+			steps = append(steps, results...)
+		}
+	}
+
+	log.Printf("%s: walk: units %6d: steps %8d: elapsed %v\n", input.Id, len(input.MovesSortedByElement), len(steps), time.Since(started))
+	if len(steps) == 0 {
+		return nil, fmt.Errorf("no steps")
+	}
+	return steps, nil
+}
+
+func walkUnit(moves *parser.Moves_t) ([]*Step_t, error) {
+	log.Printf("%s: walk: unit %-8s: from  %q  to  %q\n", moves.TurnId, moves.UnitId, moves.FromHex, moves.ToHex)
+	from, err := coords.NewWorldMapCoord(moves.FromHex)
+	if err != nil {
+		return nil, err
+	}
+	to, err := coords.NewWorldMapCoord(moves.ToHex)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("%s: walk: unit %-8s: start %q: end %q\n", moves.TurnId, moves.UnitId, from, to)
+	var steps []*Step_t
+	for i := len(moves.Moves) - 1; i >= 0; i-- {
+		move := moves.Moves[i]
+		// did the unit move? they may have stayed still, been blocked by terrain, or exhausted their movement allowance
+		if move.Advance == direction.Unknown {
+			//log.Printf("%s: walk: unit %-8s: %4d: did not advance\n", moves.TurnId, moves.UnitId, i+1)
+			from = to
+		} else {
+			from = to.MoveReverse(move.Advance)
+		}
+		//log.Printf("%s: walk: unit %-8s: %4d: %q -> %-2s -> %q\n", moves.TurnId, moves.UnitId, i+1, from, move.Advance, to)
+		step := &Step_t{
+			ReportId: "?",
+			TurnId:   moves.TurnId,
+			UnitId:   moves.UnitId,
+			From:     from,
+			Advance:  move.Advance,
+			To:       to,
+		}
+		steps = append(steps, step)
+		to = from
+	}
+	// put the steps into the right order and then link them. not sure that we need the links, but...
+	slices.Reverse(steps)
+	var prev *Step_t
+	for _, cur := range steps {
+		cur.PrevStep = prev
+		if prev != nil {
+			prev.NextStep = cur
+		}
+		prev = cur
+	}
+	for i, step := range steps {
+		log.Printf("%s: walk: unit %-8s: %4d: %q -> %-2s -> %q\n", step.TurnId, moves.UnitId, i+1, step.From, step.Advance, step.To)
+	}
+	for _, scout := range moves.Scouts {
+		if scout != nil {
+			results, err := walkScout(parser.UnitId_t(fmt.Sprintf("%ss%d", moves.UnitId, scout.No)), from, scout)
+			if err != nil {
+				log.Printf("error %q\n", err)
+			} else if results != nil {
+				steps = append(steps, results...)
+			}
+		}
+	}
+	return steps, nil
+}
+
+func walkScout(scoutId parser.UnitId_t, from coords.WorldMapCoord, scout *parser.Scout_t) ([]*Step_t, error) {
+	log.Printf("%s: walk: unit %-8s: start %q\n", scout.TurnId, scoutId, from)
+	var steps []*Step_t
+	for i, move := range scout.Moves {
+		// did the unit move? they may have stayed still, been blocked by terrain, or exhausted their movement allowance
+		var to coords.WorldMapCoord
+		if move.Advance == direction.Unknown {
+			// log.Printf("%s: walk: unit %-8s: %3d: did not advance\n", moves.TurnId, moves.UnitId, i+1)
+			to = from
+		} else {
+			to = from.Move(move.Advance)
+		}
+		log.Printf("%s: walk: unit %-8s: %4d: %q -> %-2s -> %q\n", scout.TurnId, scoutId, i+1, from, move.Advance, to)
+		step := &Step_t{
+			ReportId: "?",
+			TurnId:   scout.TurnId,
+			UnitId:   scoutId,
+			From:     from,
+			To:       to,
+		}
+		steps = append(steps, step)
+		from = to
+	}
+	// not sure that we need the links, but...
+	var prev *Step_t
+	for _, cur := range steps {
+		cur.PrevStep = prev
+		if prev != nil {
+			prev.NextStep = cur
+		}
+		prev = cur
+	}
+	return steps, nil
 }

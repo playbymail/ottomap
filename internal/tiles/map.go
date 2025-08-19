@@ -77,20 +77,22 @@ func (m *Map_t) Length() int {
 
 // FetchTile returns the tile at the given location.
 // If the tile does not exist, it is created.
-func (m *Map_t) FetchTile(unitId parser.UnitId_t, location coords.Map) *Tile_t {
+func (m *Map_t) FetchTile(unitId parser.UnitId_t, location coords.Map, coordinates coords.WorldMapCoord) *Tile_t {
 	if tile, ok := m.Tiles[location]; ok {
 		return tile
 	}
 
 	// create a new tile to add to the map
 	tile := &Tile_t{
-		SourcedBy: map[string]bool{},
-		Location:  location,
+		SourcedBy:   map[string]bool{},
+		Coordinates: coordinates,
+		Location:    location,
 	}
 	if unitId != "" {
 		tile.SourcedBy[string(unitId)] = true
 	}
 
+	// todo: index this by the coordinates, not the location!
 	// add the tile to the map
 	m.Tiles[tile.Location] = tile
 

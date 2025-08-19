@@ -267,6 +267,9 @@ var cmdRender = &cobra.Command{
 					}
 					turn.UnitMoves[id] = unitMoves
 					turn.SortedMoves = append(turn.SortedMoves, unitMoves)
+					if gcfg.Experimental.ReverseWalker {
+						turn.MovesSortedByElement = append(turn.MovesSortedByElement, unitMoves)
+					}
 				}
 				if unitTurn.SpecialNames != nil {
 					// consolidate any special hexes
@@ -274,6 +277,10 @@ var cmdRender = &cobra.Command{
 						consolidatedSpecialNames[id] = special
 					}
 				}
+			}
+
+			if gcfg.Experimental.ReverseWalker {
+				turn.SortMovesByElement()
 			}
 		}
 		if foundDuplicates {
@@ -442,9 +449,20 @@ var cmdRender = &cobra.Command{
 		}
 
 		// walk the data
-		worldMap, err := turns.Walk(consolidatedTurns, consolidatedSpecialNames, argsRender.originGrid, argsRender.quitOnInvalidGrid, argsRender.warnOnInvalidGrid, argsRender.warnOnNewSettlement, argsRender.warnOnTerrainChange, gcfg.DebugFlags.Maps)
+		worldMap, err := turns.Walk(consolidatedTurns, consolidatedSpecialNames, argsRender.originGrid, argsRender.quitOnInvalidGrid, argsRender.warnOnInvalidGrid, argsRender.warnOnNewSettlement, argsRender.warnOnTerrainChange, gcfg.DebugFlags.Maps, gcfg.Experimental.ReverseWalker)
 		if err != nil {
 			log.Fatalf("error: %v\n", err)
+		}
+
+		if gcfg.Experimental.ReverseWalker {
+			// walk through the data
+			// todo: we should reverse the sort of the consolidated turns
+			for _, turn := range consolidatedTurns {
+				_, err = turns.WalkTurn(turn, consolidatedSpecialNames, true)
+				if err != nil {
+					log.Printf("error: %v\n", err)
+				}
+			}
 		}
 
 		// generate all the solo maps

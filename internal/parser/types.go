@@ -4,6 +4,9 @@ package parser
 
 import (
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/playbymail/ottomap/internal/compass"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
@@ -12,8 +15,6 @@ import (
 	"github.com/playbymail/ottomap/internal/resources"
 	"github.com/playbymail/ottomap/internal/results"
 	"github.com/playbymail/ottomap/internal/terrain"
-	"sort"
-	"strings"
 )
 
 // These are the types returned from the parser and parsing functions.
@@ -25,8 +26,9 @@ type Turn_t struct {
 	Month int
 
 	// UnitMoves holds the units that moved in this turn
-	UnitMoves   map[UnitId_t]*Moves_t
-	SortedMoves []*Moves_t
+	UnitMoves            map[UnitId_t]*Moves_t
+	SortedMoves          []*Moves_t
+	MovesSortedByElement []*Moves_t
 
 	// SpecialNames holds the names of the hexes that are special.
 	// It's a hack to get around the fact that the parser doesn't know about the hexes.
@@ -85,6 +87,13 @@ func (t *Turn_t) TopoSortMoves() {
 	})
 }
 
+// SortMovesByElement sorts the moves in the turn by element (the unit id).
+func (t *Turn_t) SortMovesByElement() {
+	sort.Slice(t.MovesSortedByElement, func(i, j int) bool {
+		return t.MovesSortedByElement[i].UnitId < t.MovesSortedByElement[j].UnitId
+	})
+}
+
 // Moves_t represents the results for a unit that moves and reports in a turn.
 // There will be one instance of this struct for each turn the unit moves in.
 type Moves_t struct {
@@ -112,8 +121,8 @@ type Moves_t struct {
 	// It might be the same as the FromHex if the unit stays in place or fails to move.
 	ToHex string
 
-	// Location is the tile the unit ends the move in
-	Location coords.Map
+	Coordinates coords.WorldMapCoord // coordinates of the tile the unit ends the move in
+	Location    coords.Map           // Location is the tile the unit ends the move in
 }
 
 // Move_t represents a single move by a unit.
@@ -140,12 +149,19 @@ type Move_t struct {
 	TurnId     string
 	CurrentHex string
 
+	// warning: we're changing from "location" to "coordinates" for tiles.
+	// this is a breaking change so we're introducing new fields, FromCoordinates and ToCoordinates, to help.
+	FromCoordinates coords.WorldMapCoord // the tile the unit starts the move in
+	ToCoordinates   coords.WorldMapCoord // the tile the unit ends the move in
+
 	// Location is the tile the unit ends the move in
-	Location coords.Map
+	Location coords.Map // soon to be replaced with FromCoordinates and ToCoordinates
 
 	// Debug settings
 	Debug struct {
 		FleetMoves bool
+		PriorMove  *Move_t
+		NextMove   *Move_t
 	}
 }
 

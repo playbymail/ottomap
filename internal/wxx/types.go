@@ -26,18 +26,21 @@ func (h *Hex) Grid() string {
 
 // Tile is a hex on the Worldographer map.
 type Tile struct {
-	created    string     // turn id when the tile was created
-	updated    string     // turn id when the tile was updated
-	Location   coords.Map // original grid coordinates
-	RenderAt   coords.Map // shifted location to render tile at
-	Terrain    terrain.Terrain_e
-	Elevation  int
-	IsIcy      bool
-	IsGMOnly   bool
-	Resources  Resources
-	WasScouted bool
-	WasVisited bool
-	Features   Features
+	created string // turn id when the tile was created
+	updated string // turn id when the tile was updated
+	// warning: we're changing from "location" to "coordinates" for tiles.
+	// this is a breaking change so we're introducing a new field, Coordinates, to help.
+	Coordinates coords.WorldMapCoord // original world map coordinates
+	Location    coords.Map           // original grid coordinates
+	RenderAt    coords.Map           // shifted location to render tile at
+	Terrain     terrain.Terrain_e
+	Elevation   int
+	IsIcy       bool
+	IsGMOnly    bool
+	Resources   Resources
+	WasScouted  bool
+	WasVisited  bool
+	Features    Features
 }
 
 func newTile(location, renderAt coords.Map) *Tile {

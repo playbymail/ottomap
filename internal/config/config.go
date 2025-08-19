@@ -44,6 +44,7 @@ type DebugFlags_t struct {
 
 type Experimental_t struct {
 	CleanupScoutStill  bool `json:"CleanupScoutStill,omitempty"`
+	ReverseWalker      bool `json:"ReverseWalker,omitempty"`
 	SplitTrailingUnits bool `json:"SplitTrailingUnits,omitempty"`
 	StripCR            bool `json:"StripCR,omitempty"`
 }
