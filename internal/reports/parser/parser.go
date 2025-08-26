@@ -207,7 +207,14 @@ type StatusNode_t struct {
 	SettlementName string
 }
 
-// Parser represents a recursive descent parser for TribeNet turn reports
+// Parser represents a recursive descent parser for TribeNet turn reports.
+// The typical usage pattern is to create a parser and call methods on it:
+//
+//   parser := NewParserWithPosition(input, line, col)
+//   node, err := parser.Header()
+//
+// The convenience function Header(line, input) is also available
+// for simple one-off parsing operations.
 type Parser struct {
 	input     []byte
 	pos       int
@@ -234,20 +241,15 @@ func NewParserWithPosition(input []byte, startLine, startCol int) *Parser {
 	}
 }
 
-// ParseHeader parses a header line and returns the appropriate header node
-func ParseHeader(line []byte) (Node_i, error) {
-	return ParseHeaderWithPosition(line, 1, 1)
+// Header parses a header line at the specified line number (convenience function)
+func Header(line int, input []byte) (Node_i, error) {
+	parser := NewParserWithPosition(input, line, 1)
+	return parser.Header()
 }
 
-// ParseHeaderWithPosition parses a header line with custom starting position
-func ParseHeaderWithPosition(line []byte, startLine, startCol int) (Node_i, error) {
-	parser := NewParserWithPosition(line, startLine, startCol)
-	return parser.parseHeader()
-}
-
-// parseHeader parses a header line following the grammar:
+// Header parses a header line following the grammar:
 // header <- unitId "," nickName? "," currentLocation ", (" previousLocation ")"
-func (p *Parser) parseHeader() (Node_i, error) {
+func (p *Parser) Header() (Node_i, error) {
 	// Capture starting position for this node
 	startPos := Position{Line: p.line, Column: p.col}
 	

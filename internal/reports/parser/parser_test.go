@@ -131,13 +131,13 @@ func TestParseHeader(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			node, err := ParseHeader([]byte(tt.input))
+			node, err := Header(1, []byte(tt.input))
 			
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseHeader() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Header() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			
+				
 			if err != nil {
 				// For error cases, check that the error message contains expected text
 				if tt.expectedErr != "" {
