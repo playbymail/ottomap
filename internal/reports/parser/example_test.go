@@ -135,3 +135,31 @@ func TestParserMethodAPI(t *testing.T) {
 	t.Logf("Successfully used parser.Header() method: Unit=%s, Nick='%s', Pos=%s",
 		tribeNode.Unit.Id, tribeNode.NickName, tribeNode.Location())
 }
+
+func TestTribeValidation(t *testing.T) {
+	// Test that valid tribes (no suffix) are accepted
+	validTribe := "Tribe 0987, , Current Hex = OO 0202, (Previous Hex = OO 0202)"
+	node, err := Header(1, []byte(validTribe))
+	if err != nil {
+		t.Fatalf("Valid tribe should be accepted: %v", err)
+	}
+	
+	tribe := node.(*TribeHeaderNode_t)
+	if tribe.Unit.Sequence != 0 {
+		t.Errorf("Tribe should have sequence 0, got %d", tribe.Unit.Sequence)
+	}
+	
+	// Test that invalid tribes (with suffix) are rejected
+	invalidTribe := "Tribe 0987c1, , Current Hex = OO 0202, (Previous Hex = OO 0202)"
+	_, err = Header(1, []byte(invalidTribe))
+	if err == nil {
+		t.Fatal("Invalid tribe with suffix should be rejected")
+	}
+	
+	expectedErr := "Tribe units must not have suffix or sequence number"
+	if !strings.Contains(err.Error(), expectedErr) {
+		t.Errorf("Expected error to contain %q, got %q", expectedErr, err.Error())
+	}
+	
+	t.Logf("Correctly validated tribes: valid accepted, invalid rejected")
+}

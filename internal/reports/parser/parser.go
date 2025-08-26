@@ -365,17 +365,24 @@ func (p *Parser) parseUnitId() (UnitId_t, error) {
 	}
 
 	// Parse unit number and sequence
-	unitNumber, sequence, fullId, err := p.parseUnitNumber()
+	unitNumber, sequence, suffixChar, fullId, err := p.parseUnitNumber()
 	if err != nil {
 		return UnitId_t{}, err
 	}
 
-	return UnitId_t{
+	unitId := UnitId_t{
 		Id:       fullId,
 		Type:     unitType,
 		Number:   unitNumber,
 		Sequence: sequence,
-	}, nil
+	}
+
+	// Validate unit ID format based on type
+	if err := p.validateUnitId(unitId, suffixChar); err != nil {
+		return UnitId_t{}, err
+	}
+
+	return unitId, nil
 }
 
 // parseUnitType parses the unit type (Tribe, Courier, Element, etc.)
@@ -399,12 +406,12 @@ func (p *Parser) parseUnitType() (UnitType_e, error) {
 }
 
 // parseUnitNumber parses unit numbers like "0987", "0987c1", "0987e1", etc.
-func (p *Parser) parseUnitNumber() (int, int, string, error) {
+func (p *Parser) parseUnitNumber() (int, int, byte, string, error) {
 	start := p.pos
 
 	// Parse base number (4 digits)
 	if !p.isDigit() {
-		return 0, 0, "", fmt.Errorf("expected digit at position %d", p.pos)
+		return 0, 0, 0, "", fmt.Errorf("expected digit at position %d", p.pos)
 	}
 
 	for p.isDigit() {
@@ -412,33 +419,64 @@ func (p *Parser) parseUnitNumber() (int, int, string, error) {
 	}
 
 	if p.pos-start != 4 {
-		return 0, 0, "", fmt.Errorf("expected 4-digit unit number")
+		return 0, 0, 0, "", fmt.Errorf("expected 4-digit unit number")
 	}
 
 	baseNum, err := strconv.Atoi(string(p.input[start:p.pos]))
 	if err != nil {
-		return 0, 0, "", fmt.Errorf("invalid unit number: %w", err)
+		return 0, 0, 0, "", fmt.Errorf("invalid unit number: %w", err)
 	}
 
 	sequence := 0
+	var suffixChar byte
 	fullId := string(p.input[start:p.pos])
 
 	// Check for sequence (e.g., "c1", "e1", "g1", "f1")
 	if p.pos < len(p.input) && (p.current() == 'c' || p.current() == 'e' || p.current() == 'g' || p.current() == 'f') {
+		suffixChar = p.current()
 		p.advance() // consume the letter
 		if p.isDigit() {
 			seqStart := p.pos
 			p.advance()
 			seq, err := strconv.Atoi(string(p.input[seqStart:p.pos]))
 			if err != nil {
-				return 0, 0, "", fmt.Errorf("invalid sequence number: %w", err)
+				return 0, 0, 0, "", fmt.Errorf("invalid sequence number: %w", err)
 			}
 			sequence = seq
 			fullId = string(p.input[start:p.pos])
 		}
 	}
 
-	return baseNum, sequence, fullId, nil
+	return baseNum, sequence, suffixChar, fullId, nil
+}
+
+// validateUnitId validates that unit IDs have correct format based on their type
+func (p *Parser) validateUnitId(unitId UnitId_t, suffixChar byte) error {
+	switch unitId.Type {
+	case Tribe:
+		// Tribes must not have any suffix or sequence number (other than 0)
+		if suffixChar != 0 || unitId.Sequence != 0 {
+			return fmt.Errorf("Tribe units must not have suffix or sequence number")
+		}
+		return nil
+	case Courier:
+		if suffixChar != 'c' || unitId.Sequence < 1 || unitId.Sequence > 9 {
+			return fmt.Errorf("Courier units must have suffix 'c' and sequence number 1-9")
+		}
+	case Element:
+		if suffixChar != 'e' || unitId.Sequence < 1 || unitId.Sequence > 9 {
+			return fmt.Errorf("Element units must have suffix 'e' and sequence number 1-9")
+		}
+	case Garrison:
+		if suffixChar != 'g' || unitId.Sequence < 1 || unitId.Sequence > 9 {
+			return fmt.Errorf("Garrison units must have suffix 'g' and sequence number 1-9")
+		}
+	case Fleet:
+		if suffixChar != 'f' || unitId.Sequence < 1 || unitId.Sequence > 9 {
+			return fmt.Errorf("Fleet units must have suffix 'f' and sequence number 1-9")
+		}
+	}
+	return nil
 }
 
 // parseOptionalNickname parses an optional nickname between commas

@@ -58,6 +58,26 @@ func TestParseHeader(t *testing.T) {
 			wantErr:      false,
 		},
 		{
+			name:         "Garrison with correct suffix",
+			input:        "Garrison 0987g1, , Current Hex = OO 0202, (Previous Hex = OO 0202)",
+			expectedType: Garrison,
+			expectedId:   "0987g1",
+			expectedNum:  987,
+			expectedSeq:  1,
+			expectedNick: "",
+			wantErr:      false,
+		},
+		{
+			name:         "Fleet with correct suffix",
+			input:        "Fleet 0987f3, , Current Hex = OO 0202, (Previous Hex = OO 0202)",
+			expectedType: Fleet,
+			expectedId:   "0987f3",
+			expectedNum:  987,
+			expectedSeq:  3,
+			expectedNick: "",
+			wantErr:      false,
+		},
+		{
 			name:         "Obscured coordinates",
 			input:        "Tribe 0987, , Current Hex = ## 0202, (Previous Hex = ## 0202)",
 			expectedType: Tribe,
@@ -127,6 +147,62 @@ func TestParseHeader(t *testing.T) {
 			wantErr:     true,
 			expectedErr: "expected closing parenthesis",
 		},
+		// Unit ID validation errors - non-Tribe units must have correct suffix and sequence
+		{
+			name:        "Element missing suffix and sequence",
+			input:       "Element 0987, , Current Hex = OO 0303, (Previous Hex = OO 0303)",
+			wantErr:     true,
+			expectedErr: "Element units must have suffix 'e' and sequence number 1-9",
+		},
+		{
+			name:        "Garrison with wrong suffix",
+			input:       "Garrison 0987e1, , Current Hex = OO 0303, (Previous Hex = OO 0303)",
+			wantErr:     true,
+			expectedErr: "Garrison units must have suffix 'g' and sequence number 1-9",
+		},
+		{
+			name:        "Fleet missing sequence number",
+			input:       "Fleet 0987f, , Current Hex = OO 0303, (Previous Hex = OO 0303)",
+			wantErr:     true,
+			expectedErr: "Fleet units must have suffix 'f' and sequence number 1-9",
+		},
+		{
+			name:        "Fleet with sequence 0",
+			input:       "Fleet 0987f0, , Current Hex = OO 0303, (Previous Hex = OO 0303)",
+			wantErr:     true,
+			expectedErr: "Fleet units must have suffix 'f' and sequence number 1-9",
+		},
+		{
+			name:        "Element with wrong suffix",
+			input:       "Element 0987g1, , Current Hex = OO 0303, (Previous Hex = OO 0303)",
+			wantErr:     true,
+			expectedErr: "Element units must have suffix 'e' and sequence number 1-9",
+		},
+		// Tribe validation errors - Tribes must not have suffixes
+		{
+			name:        "Tribe with courier suffix",
+			input:       "Tribe 0987c1, , Current Hex = OO 0303, (Previous Hex = OO 0303)",
+			wantErr:     true,
+			expectedErr: "Tribe units must not have suffix or sequence number",
+		},
+		{
+			name:        "Tribe with element suffix", 
+			input:       "Tribe 0987e1, , Current Hex = OO 0303, (Previous Hex = OO 0303)",
+			wantErr:     true,
+			expectedErr: "Tribe units must not have suffix or sequence number",
+		},
+		{
+			name:        "Tribe with garrison suffix",
+			input:       "Tribe 0987g1, , Current Hex = OO 0303, (Previous Hex = OO 0303)",
+			wantErr:     true,
+			expectedErr: "Tribe units must not have suffix or sequence number",
+		},
+		{
+			name:        "Tribe with fleet suffix",
+			input:       "Tribe 0987f1, , Current Hex = OO 0303, (Previous Hex = OO 0303)",
+			wantErr:     true,
+			expectedErr: "Tribe units must not have suffix or sequence number",
+		},
 	}
 
 	for _, tt := range tests {
@@ -183,6 +259,38 @@ func TestParseHeader(t *testing.T) {
 					t.Errorf("Expected nickname %v, got %v", tt.expectedNick, headerNode.NickName)
 				}
 			case *ElementHeaderNode_t:
+				if headerNode.Unit.Type != tt.expectedType {
+					t.Errorf("Expected type %v, got %v", tt.expectedType, headerNode.Unit.Type)
+				}
+				if headerNode.Unit.Id != tt.expectedId {
+					t.Errorf("Expected ID %v, got %v", tt.expectedId, headerNode.Unit.Id)
+				}
+				if headerNode.Unit.Number != tt.expectedNum {
+					t.Errorf("Expected number %v, got %v", tt.expectedNum, headerNode.Unit.Number)
+				}
+				if headerNode.Unit.Sequence != tt.expectedSeq {
+					t.Errorf("Expected sequence %v, got %v", tt.expectedSeq, headerNode.Unit.Sequence)
+				}
+				if headerNode.NickName != tt.expectedNick {
+					t.Errorf("Expected nickname %v, got %v", tt.expectedNick, headerNode.NickName)
+				}
+			case *GarrisonHeaderNode_t:
+				if headerNode.Unit.Type != tt.expectedType {
+					t.Errorf("Expected type %v, got %v", tt.expectedType, headerNode.Unit.Type)
+				}
+				if headerNode.Unit.Id != tt.expectedId {
+					t.Errorf("Expected ID %v, got %v", tt.expectedId, headerNode.Unit.Id)
+				}
+				if headerNode.Unit.Number != tt.expectedNum {
+					t.Errorf("Expected number %v, got %v", tt.expectedNum, headerNode.Unit.Number)
+				}
+				if headerNode.Unit.Sequence != tt.expectedSeq {
+					t.Errorf("Expected sequence %v, got %v", tt.expectedSeq, headerNode.Unit.Sequence)
+				}
+				if headerNode.NickName != tt.expectedNick {
+					t.Errorf("Expected nickname %v, got %v", tt.expectedNick, headerNode.NickName)
+				}
+			case *FleetHeaderNode_t:
 				if headerNode.Unit.Type != tt.expectedType {
 					t.Errorf("Expected type %v, got %v", tt.expectedType, headerNode.Unit.Type)
 				}
