@@ -136,6 +136,55 @@ func TestParserMethodAPI(t *testing.T) {
 		tribeNode.Unit.Id, tribeNode.NickName, tribeNode.Location())
 }
 
+func TestNACoordinateHandling(t *testing.T) {
+	// Test that N/A coordinates are properly handled using the IsNA() method
+	testCases := []struct {
+		name  string
+		input string
+	}{
+		{
+			name:  "Uppercase N/A",
+			input: "Tribe 0987, , Current Hex = N/A, (Previous Hex = OO 0202)",
+		},
+		{
+			name:  "Lowercase n/a",
+			input: "Tribe 0987, , Current Hex = n/a, (Previous Hex = OO 0202)",
+		},
+		{
+			name:  "Mixed case N/a",
+			input: "Tribe 0987, , Current Hex = N/a, (Previous Hex = OO 0202)",
+		},
+		{
+			name:  "Both coordinates N/A",
+			input: "Tribe 0987, , Current Hex = N/A, (Previous Hex = n/a)",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			node, err := Header(1, []byte(tc.input))
+			if err != nil {
+				t.Fatalf("Failed to parse: %v", err)
+			}
+
+			tribe := node.(*TribeHeaderNode_t)
+
+			// Use IsNA() method to check if coordinate represents N/A
+			if !tribe.Current.IsNA() {
+				t.Errorf("Expected current coordinate to be N/A, but IsNA() returned false. String: %s", tribe.Current.String())
+			}
+
+			// Previous coordinate should be regular coordinate or N/A depending on test case
+			if strings.Contains(tc.input, "Previous Hex = n/a") && !tribe.Previous.IsNA() {
+				t.Errorf("Expected previous coordinate to be N/A, but IsNA() returned false. String: %s", tribe.Previous.String())
+			}
+
+			t.Logf("✅ N/A coordinate handling: %s -> Current.IsNA()=%v, Previous.IsNA()=%v",
+				tc.input, tribe.Current.IsNA(), tribe.Previous.IsNA())
+		})
+	}
+}
+
 func TestTribeValidation(t *testing.T) {
 	// Test that valid tribes (no suffix) are accepted
 	validTribe := "Tribe 0987, , Current Hex = OO 0202, (Previous Hex = OO 0202)"

@@ -213,6 +213,11 @@ func (c WorldMapCoord) Equals(b WorldMapCoord) bool {
 	return c.id == b.id
 }
 
+// IsNA returns true if the id of the coordinates is "N/A"
+func (c WorldMapCoord) IsNA() bool {
+	return c.id == "N/A"
+}
+
 func (c WorldMapCoord) Move(ds ...direction.Direction_e) WorldMapCoord {
 	to := c.cube
 	for _, d := range ds {

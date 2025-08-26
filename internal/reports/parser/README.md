@@ -96,8 +96,14 @@ header <- unitId "," nickName? "," currentLocation ", (" previousLocation ")"
 Headers support:
 - **Unit Types**: Tribe, Courier, Element, Garrison, Fleet
 - **Coordinates**: Normal (`AA 0101`), obscured (`## 0101`), unknown (`N/A`)
+- **Case Normalization**: Grid letters normalized to uppercase (`oo` → `OO`, `n/a` → `N/A`)
+- **Spacing Flexibility**: Accepts `OO0202`, `OO 0202`, `OO  0202` (all normalized internally)
 - **Nicknames**: Optional, comma-delimited
 - **Position Validation**: Must start in column 1
+
+**Note**: The `coords.WorldMapCoord` constructor handles special coordinate translation:
+- `"N/A"` coordinates are translated to a default grid position by the coords package
+- `"##"` obscured coordinates are mapped to grid "QQ" internally
 
 ## Examples
 

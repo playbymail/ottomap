@@ -264,7 +264,8 @@ func (p *Parser) Header() (Node_i, error) {
 		return nil, fmt.Errorf("failed to parse unit ID: %w", err)
 	}
 
-	// Expect comma
+	// Skip optional spaces and expect comma
+	p.skipWhitespace()
 	if err := p.expectString(","); err != nil {
 		return nil, fmt.Errorf("expected comma after unit ID: %w", err)
 	}
@@ -272,34 +273,38 @@ func (p *Parser) Header() (Node_i, error) {
 	// Parse optional nickname
 	nickname := p.parseOptionalNickname()
 
-	// Expect comma
+	// Expect comma  
 	if err := p.expectString(","); err != nil {
 		return nil, fmt.Errorf("expected comma after nickname: %w", err)
 	}
 
 	// Parse current location
-	current, err := p.parseLocation("Current Hex =")
+	current, err := p.parseLocation("Current Hex")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse current location: %w", err)
 	}
 
-	// Expect comma and space
-	if err := p.expectString(", "); err != nil {
-		return nil, fmt.Errorf("expected comma and space before previous location: %w", err)
+	// Skip optional spaces after coordinate and expect comma
+	p.skipWhitespace()
+	if err := p.expectString(","); err != nil {
+		return nil, fmt.Errorf("expected comma before previous location: %w", err)
 	}
+	p.skipWhitespace()
 
-	// Expect opening parenthesis
+	// Expect opening parenthesis, skip optional spaces
 	if err := p.expectString("("); err != nil {
 		return nil, fmt.Errorf("expected opening parenthesis: %w", err)
 	}
+	p.skipWhitespace()
 
 	// Parse previous location
-	previous, err := p.parseLocation("Previous Hex =")
+	previous, err := p.parseLocation("Previous Hex")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse previous location: %w", err)
 	}
 
-	// Expect closing parenthesis
+	// Skip optional spaces and expect closing parenthesis
+	p.skipWhitespace()
 	if err := p.expectString(")"); err != nil {
 		return nil, fmt.Errorf("expected closing parenthesis: %w", err)
 	}
@@ -359,9 +364,15 @@ func (p *Parser) parseUnitId() (UnitId_t, error) {
 		return UnitId_t{}, err
 	}
 
-	// Expect space
-	if err := p.expectString(" "); err != nil {
-		return UnitId_t{}, fmt.Errorf("expected space after unit type: %w", err)
+	// Expect exactly one space between unit type and ID
+	if p.pos >= len(p.input) || p.input[p.pos] != ' ' {
+		return UnitId_t{}, fmt.Errorf("expected single space between unit type and ID")
+	}
+	p.advance() // consume the space
+	
+	// Check for multiple spaces (not allowed)
+	if p.pos < len(p.input) && p.input[p.pos] == ' ' {
+		return UnitId_t{}, fmt.Errorf("expected single space between unit type and ID, found multiple spaces")
 	}
 
 	// Parse unit number and sequence
@@ -496,17 +507,21 @@ func (p *Parser) parseOptionalNickname() string {
 	return nickname
 }
 
-// parseLocation parses a location like "Current Hex = OO 0202"
+// parseLocation parses a location like "Current Hex = OO 0202" with flexible spacing
 func (p *Parser) parseLocation(prefix string) (coords.WorldMapCoord, error) {
 	// Skip any leading whitespace
 	p.skipWhitespace()
 	
-	// Expect the prefix
+	// Expect the prefix (e.g., "Current Hex" or "Previous Hex")
 	if err := p.expectString(prefix); err != nil {
 		return coords.WorldMapCoord{}, err
 	}
 
-	// Skip whitespace
+	// Skip optional whitespace around equals sign
+	p.skipWhitespace()
+	if err := p.expectString("="); err != nil {
+		return coords.WorldMapCoord{}, fmt.Errorf("expected '=' after %s: %w", prefix, err)
+	}
 	p.skipWhitespace()
 
 	// Parse coordinate
@@ -514,19 +529,39 @@ func (p *Parser) parseLocation(prefix string) (coords.WorldMapCoord, error) {
 }
 
 // parseCoordinate parses coordinates like "OO 0202", "## 0202", or "N/A"
+// Note: The WorldMapCoord constructor handles "N/A" by translating it to a default coordinate
 func (p *Parser) parseCoordinate() (coords.WorldMapCoord, error) {
-	// Handle N/A case
-	if p.matchString("N/A") {
-		return coords.NewWorldMapCoord("N/A")
+	// Handle N/A case (case-insensitive)
+	// The coords package will handle "N/A" by translating it to a default coordinate
+	if p.matchStringIgnoreCase("N/A") {
+		return coords.NewWorldMapCoord("N/A") // Always pass uppercase to constructor
 	}
 
-	// Parse the full coordinate string (e.g., "OO 0202")
-	if p.pos+7 > len(p.input) {
+	// Parse coordinate character by character to handle spacing flexibly
+	// Parse first two characters (grid)
+	if p.pos+2 > len(p.input) {
 		return coords.WorldMapCoord{}, fmt.Errorf("incomplete coordinate at position %d", p.pos)
 	}
-
-	coordStr := string(p.input[p.pos : p.pos+7])
-	p.pos += 7
+	
+	gridStr := strings.ToUpper(string(p.input[p.pos : p.pos+2]))
+	p.pos += 2
+	
+	// Skip optional space(s) between grid and numbers
+	// If no space is present, we'll still accept it and normalize internally
+	for p.pos < len(p.input) && p.current() == ' ' {
+		p.advance()
+	}
+	
+	// Parse the 4-digit coordinate
+	if p.pos+4 > len(p.input) {
+		return coords.WorldMapCoord{}, fmt.Errorf("incomplete coordinate numbers at position %d", p.pos)
+	}
+	
+	numbersStr := string(p.input[p.pos : p.pos+4])
+	p.pos += 4
+	
+	// Construct full coordinate string
+	coordStr := gridStr + " " + numbersStr
 
 	// Use the existing NewWorldMapCoord function to parse and validate
 	coord, err := coords.NewWorldMapCoord(coordStr)
@@ -584,4 +619,15 @@ func (p *Parser) expectString(s string) error {
 		return fmt.Errorf("expected %q at position %d", s, p.pos)
 	}
 	return nil
+}
+
+func (p *Parser) matchStringIgnoreCase(s string) bool {
+	if p.pos+len(s) > len(p.input) {
+		return false
+	}
+	if strings.EqualFold(string(p.input[p.pos:p.pos+len(s)]), s) {
+		p.pos += len(s)
+		return true
+	}
+	return false
 }
