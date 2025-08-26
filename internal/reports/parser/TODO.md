@@ -3,25 +3,25 @@
 ## Phase 1: Foundation & Header Parser
 
 ### Core Infrastructure
-- [ ] **Parser struct** - Create main parser struct with input buffer and position tracking
-- [ ] **Error handling** - Define parser-specific error types with line/column info
-- [ ] **Token utilities** - Helper functions for consuming whitespace, commas, literals
-- [ ] **Position tracking** - Track current position for meaningful error messages
+- [x] **Parser struct** - Create main parser struct with input buffer and position tracking
+- [x] **Error handling** - Define parser-specific error types with line/column info  
+- [x] **Token utilities** - Helper functions for consuming whitespace, commas, literals
+- [x] **Position tracking** - Track current position for meaningful error messages
 
-### Header Parser (Priority: High)
-- [ ] **Header entry point** - `ParseHeader([]byte) (HeaderNode_t, error)`
-- [ ] **UnitId parsing** - Extract unit identifier (alphanumeric + special chars)
-- [ ] **Nickname parsing** - Handle optional nickname between commas
-- [ ] **Location parsing** - Parse "Current Hex = " + coordinates/obscured/"N/A"
-- [ ] **Previous location** - Parse parenthetical "(Previous Hex = location)"
-- [ ] **Coordinate validation** - Validate format: "AA 0101" to "ZZ 3021" 
-- [ ] **Obscured coordinates** - Handle "## 0101" to "## 3021" format
-- [ ] **Header tests** - Unit tests covering all header variations
+### Header Parser (Priority: High) ✅ COMPLETED
+- [x] **Header entry point** - `ParseHeader([]byte) (HeaderNode_t, error)`
+- [x] **UnitId parsing** - Extract unit identifier (alphanumeric + special chars)
+- [x] **Nickname parsing** - Handle optional nickname between commas
+- [x] **Location parsing** - Parse "Current Hex = " + coordinates/obscured/"N/A"
+- [x] **Previous location** - Parse parenthetical "(Previous Hex = location)"
+- [x] **Coordinate validation** - Validate format: "AA 0101" to "ZZ 3021" 
+- [x] **Obscured coordinates** - Handle "## 0101" to "## 3021" format
+- [x] **Header tests** - Unit tests covering all header variations
 
 ### Data Structures
-- [ ] **HeaderNode_t** - Define struct for parsed header data
-- [ ] **Location_t** - Struct for coordinates (normal, obscured, N/A)
-- [ ] **Coordinate_t** - Struct for grid coordinates with validation
+- [x] **HeaderNode_t** - Define struct for parsed header data
+- [x] **Location_t** - Struct for coordinates (normal, obscured, N/A) - using WorldMapCoord
+- [x] **Coordinate_t** - Struct for grid coordinates with validation - using WorldMapCoord
 
 ## Phase 2: Section Parsers (High Level)
 
