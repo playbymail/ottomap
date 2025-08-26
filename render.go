@@ -17,6 +17,7 @@ import (
 	"github.com/playbymail/ottomap/internal/edges"
 	"github.com/playbymail/ottomap/internal/parser"
 	"github.com/playbymail/ottomap/internal/results"
+	"github.com/playbymail/ottomap/internal/runners"
 	"github.com/playbymail/ottomap/internal/terrain"
 	"github.com/playbymail/ottomap/internal/tiles"
 	"github.com/playbymail/ottomap/internal/turns"
@@ -171,6 +172,15 @@ var cmdRender = &cobra.Command{
 		log.Printf("data:   %s\n", argsRender.paths.data)
 		log.Printf("input:  %s\n", argsRender.paths.input)
 		log.Printf("output: %s\n", argsRender.paths.output)
+
+		if gcfg.Experimental.ReverseWalker {
+			log.Printf("walk: reverse walk enabled\n")
+			err := runners.Run(argsRender.paths.input)
+			if err != nil {
+				log.Fatal(err)
+			}
+			return
+		}
 
 		inputs, err := turns.CollectInputs(argsRender.paths.input, argsRender.maxTurn.year, argsRender.maxTurn.month, argsRoot.soloClan, argsRender.clanId)
 		if err != nil {

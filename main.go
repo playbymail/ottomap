@@ -5,22 +5,33 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/mdhender/semver"
+	"github.com/maloquacious/semver"
 	"github.com/playbymail/ottomap/cerrs"
 	"github.com/playbymail/ottomap/internal/config"
 	"github.com/spf13/cobra"
 )
 
 var (
-	version      = semver.Version{Major: 0, Minor: 62, Patch: 2}
+	version      = semver.Version{Major: 0, Minor: 62, Patch: 3, Build: semver.Commit()}
 	globalConfig *config.Config
 )
 
 func main() {
+	// if version is on the command line, show it and exit
+	for _, arg := range os.Args {
+		if arg == "-version" || arg == "--version" {
+			fmt.Printf("%s\n", version.Short())
+			return
+		} else if arg == "-build-info" || arg == "--build-info" {
+			fmt.Printf("%s\n", version.String())
+			return
+		}
+	}
 	log.SetFlags(log.Lshortfile | log.Ltime)
 
 	const configFileName = "data/input/ottomap.json"
