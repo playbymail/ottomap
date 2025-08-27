@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	version      = semver.Version{Major: 0, Minor: 62, Patch: 8, Build: semver.Commit()}
+	version      = semver.Version{Major: 0, Minor: 62, Patch: 9, Build: semver.Commit()}
 	globalConfig *config.Config
 )
 

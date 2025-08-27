@@ -8,15 +8,15 @@ import (
 func TestRealExample(t *testing.T) {
 	// Test with the actual line from the user's example file
 	input := "Tribe 0987, , Current Hex = OO 0202, (Previous Hex = OO 0202)"
-	
+
 	node, err := Header(1, []byte(input))
 	if err != nil {
 		t.Fatalf("Header() failed: %v", err)
 	}
 
-	tribeNode, ok := node.(*TribeHeaderNode_t)
+	headerNode, ok := node.(*HeaderNode_t)
 	if !ok {
-		t.Fatalf("Expected TribeHeaderNode_t, got %T", node)
+		t.Fatalf("Expected HeaderNode_t, got %T", node)
 	}
 
 	// Verify the expected values from the user's specification:
@@ -24,43 +24,44 @@ func TestRealExample(t *testing.T) {
 	// * A current coordinate of OO 0202
 	// * A previous coordinate of OO 0202
 
-	if tribeNode.Unit.Id != "0987" {
-		t.Errorf("Expected ID '0987', got '%s'", tribeNode.Unit.Id)
+	if headerNode.Unit.Id != "0987" {
+		t.Errorf("Expected ID '0987', got '%s'", headerNode.Unit.Id)
 	}
 
-	if tribeNode.Unit.Type != Tribe {
-		t.Errorf("Expected type Tribe, got %v", tribeNode.Unit.Type)
+	if headerNode.Unit.Type != Tribe {
+		t.Errorf("Expected type Tribe, got %v", headerNode.Unit.Type)
 	}
 
-	if tribeNode.Unit.Number != 987 {
-		t.Errorf("Expected number 987, got %d", tribeNode.Unit.Number)
+	if headerNode.Unit.Number != 987 {
+		t.Errorf("Expected number 987, got %d", headerNode.Unit.Number)
 	}
 
-	if tribeNode.Unit.Sequence != 0 {
-		t.Errorf("Expected sequence 0, got %d", tribeNode.Unit.Sequence)
+	if headerNode.Unit.Sequence != 0 {
+		t.Errorf("Expected sequence 0, got %d", headerNode.Unit.Sequence)
 	}
 
-	if tribeNode.NickName != "" {
-		t.Errorf("Expected empty nickname, got '%s'", tribeNode.NickName)
+	// Note: HeaderNode_t doesn't have a Nickname field since it's included in UnitId_t
+	if headerNode.Unit.Nickname != "" {
+		t.Errorf("Expected empty nickname, got '%s'", headerNode.Unit.Nickname)
 	}
 
 	// Check coordinates by converting to string
-	currentStr := tribeNode.Current.String()
+	currentStr := headerNode.Current.String()
 	if currentStr != "OO 0202" {
 		t.Errorf("Expected current coordinate 'OO 0202', got '%s'", currentStr)
 	}
 
-	previousStr := tribeNode.Previous.String()
+	previousStr := headerNode.Previous.String()
 	if previousStr != "OO 0202" {
 		t.Errorf("Expected previous coordinate 'OO 0202', got '%s'", previousStr)
 	}
 
 	t.Logf("Successfully parsed: Unit=%s, Type=%s, Number=%d, Sequence=%d, Nick='%s', Current=%s, Previous=%s",
-		tribeNode.Unit.Id,
-		tribeNode.Unit.Type.String(),
-		tribeNode.Unit.Number,
-		tribeNode.Unit.Sequence,
-		tribeNode.NickName,
+		headerNode.Unit.Id,
+		headerNode.Unit.Type.String(),
+		headerNode.Unit.Number,
+		headerNode.Unit.Sequence,
+		headerNode.Unit.Nickname,
 		currentStr,
 		previousStr,
 	)
@@ -70,7 +71,7 @@ func TestRealIndentedExample(t *testing.T) {
 	// Test with the actual indented line from line 11 of the test file
 	// This should be rejected since headers must start in column 1
 	input := "    Element 0987e1, , Current Hex = OO 0303, (Previous Hex = OO 0303)"
-	
+
 	_, err := Header(11, []byte(input))
 	if err == nil {
 		t.Fatal("Expected error for indented header, but got none")
@@ -87,7 +88,7 @@ func TestRealIndentedExample(t *testing.T) {
 func TestCustomPositionTracking(t *testing.T) {
 	// Test custom starting position
 	input := "Tribe 0987, , Current Hex = OO 0202, (Previous Hex = OO 0202)"
-	
+
 	node, err := Header(42, []byte(input))
 	if err != nil {
 		t.Fatalf("Header() failed: %v", err)
@@ -105,7 +106,7 @@ func TestCustomPositionTracking(t *testing.T) {
 func TestParserMethodAPI(t *testing.T) {
 	// Test the new object-oriented API
 	input := "Tribe 0987, TestName, Current Hex = AA 0101, (Previous Hex = BB 0202)"
-	
+
 	// Create parser and call Header() method directly
 	parser := NewParserWithPosition([]byte(input), 5, 1)
 	node, err := parser.Header()
@@ -113,27 +114,27 @@ func TestParserMethodAPI(t *testing.T) {
 		t.Fatalf("parser.Header() failed: %v", err)
 	}
 
-	// Verify it's a tribe node
-	tribeNode, ok := node.(*TribeHeaderNode_t)
+	// Verify it's a header node
+	headerNode, ok := node.(*HeaderNode_t)
 	if !ok {
-		t.Fatalf("Expected TribeHeaderNode_t, got %T", node)
+		t.Fatalf("Expected HeaderNode_t, got %T", node)
 	}
 
 	// Verify basic properties
-	if tribeNode.Unit.Id != "0987" {
-		t.Errorf("Expected ID '0987', got '%s'", tribeNode.Unit.Id)
+	if headerNode.Unit.Id != "0987" {
+		t.Errorf("Expected ID '0987', got '%s'", headerNode.Unit.Id)
 	}
 
-	if tribeNode.NickName != "TestName" {
-		t.Errorf("Expected nickname 'TestName', got '%s'", tribeNode.NickName)
+	if headerNode.Unit.Nickname != "TestName" {
+		t.Errorf("Expected nickname 'TestName', got '%s'", headerNode.Unit.Nickname)
 	}
 
-	if tribeNode.Location() != "5:1" {
-		t.Errorf("Expected position '5:1', got '%s'", tribeNode.Location())
+	if headerNode.Location() != "5:1" {
+		t.Errorf("Expected position '5:1', got '%s'", headerNode.Location())
 	}
 
 	t.Logf("Successfully used parser.Header() method: Unit=%s, Nick='%s', Pos=%s",
-		tribeNode.Unit.Id, tribeNode.NickName, tribeNode.Location())
+		headerNode.Unit.Id, headerNode.Unit.Nickname, headerNode.Location())
 }
 
 func TestNACoordinateHandling(t *testing.T) {
@@ -167,20 +168,20 @@ func TestNACoordinateHandling(t *testing.T) {
 				t.Fatalf("Failed to parse: %v", err)
 			}
 
-			tribe := node.(*TribeHeaderNode_t)
+			header := node.(*HeaderNode_t)
 
 			// Use IsNA() method to check if coordinate represents N/A
-			if !tribe.Current.IsNA() {
-				t.Errorf("Expected current coordinate to be N/A, but IsNA() returned false. String: %s", tribe.Current.String())
+			if !header.Current.IsNA() {
+				t.Errorf("Expected current coordinate to be N/A, but IsNA() returned false. String: %s", header.Current.String())
 			}
 
 			// Previous coordinate should be regular coordinate or N/A depending on test case
-			if strings.Contains(tc.input, "Previous Hex = n/a") && !tribe.Previous.IsNA() {
-				t.Errorf("Expected previous coordinate to be N/A, but IsNA() returned false. String: %s", tribe.Previous.String())
+			if strings.Contains(tc.input, "Previous Hex = n/a") && !header.Previous.IsNA() {
+				t.Errorf("Expected previous coordinate to be N/A, but IsNA() returned false. String: %s", header.Previous.String())
 			}
 
 			t.Logf("✅ N/A coordinate handling: %s -> Current.IsNA()=%v, Previous.IsNA()=%v",
-				tc.input, tribe.Current.IsNA(), tribe.Previous.IsNA())
+				tc.input, header.Current.IsNA(), header.Previous.IsNA())
 		})
 	}
 }
@@ -192,23 +193,23 @@ func TestTribeValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Valid tribe should be accepted: %v", err)
 	}
-	
-	tribe := node.(*TribeHeaderNode_t)
-	if tribe.Unit.Sequence != 0 {
-		t.Errorf("Tribe should have sequence 0, got %d", tribe.Unit.Sequence)
+
+	header := node.(*HeaderNode_t)
+	if header.Unit.Sequence != 0 {
+		t.Errorf("Tribe should have sequence 0, got %d", header.Unit.Sequence)
 	}
-	
+
 	// Test that invalid tribes (with suffix) are rejected
 	invalidTribe := "Tribe 0987c1, , Current Hex = OO 0202, (Previous Hex = OO 0202)"
 	_, err = Header(1, []byte(invalidTribe))
 	if err == nil {
 		t.Fatal("Invalid tribe with suffix should be rejected")
 	}
-	
+
 	expectedErr := "Tribe units must not have suffix or sequence number"
 	if !strings.Contains(err.Error(), expectedErr) {
 		t.Errorf("Expected error to contain %q, got %q", expectedErr, err.Error())
 	}
-	
+
 	t.Logf("Correctly validated tribes: valid accepted, invalid rejected")
 }

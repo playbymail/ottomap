@@ -49,7 +49,7 @@ Each header node contains:
 ```go
 type TribeHeaderNode_t struct {
     Unit     UnitId_t                // Parsed unit information
-    NickName string                  // Optional nickname
+    Nickname string                  // Optional nickname
     Current  coords.WorldMapCoord    // Current hex coordinates
     Previous coords.WorldMapCoord    // Previous hex coordinates  
     Pos      Position                // Source position for debugging
@@ -90,7 +90,7 @@ _, err := parser.Header(1, []byte("Tribe 0987, , Current Hex = ZZ 9999, ..."))
 The parser follows the grammar defined in `../grammar.txt`:
 
 ```
-header <- unitId "," nickName? "," currentLocation ", (" previousLocation ")"
+header <- unitId "," nickname? "," currentLocation ", (" previousLocation ")"
 ```
 
 Headers support:

@@ -17,6 +17,8 @@ import (
 type Node_i interface {
 	// Location returns the line and column of the node in the source in the format line:col
 	Location() string
+	// String returns a the text of the node and all its children, formatted to look like the original input
+	String() string
 }
 
 // Position represents a position in the source file
@@ -34,13 +36,13 @@ func (p Position) String() string {
 // Tribe 0987, , Current Hex = QQ 1208, (Previous Hex = QQ 1309)
 //
 // A valid header line with a nickname looks like:
-// Tribe 0987, NickName, Current Hex = QQ 1208, (Previous Hex = QQ 1309)
+// Tribe 0987, Nickname, Current Hex = QQ 1208, (Previous Hex = QQ 1309)
 //
 // The line can start with Courier, Element, Fleet, Garrison, or Tribe.
 // The unit id must match - for example, "Courier 0987c1" is valid,
 // but "Courier 0987f1" will be rejected.
 //
-// The NickName is optional and (todo: document limits on the name here).
+// The Nickname is optional and (todo: document limits on the name here).
 // If you don't have a nickname, you must still include the comma for the field
 // or the parser will reject the line.
 //
@@ -50,84 +52,42 @@ func (p Position) String() string {
 // the walker may reject them. You should read the notes in the walker to
 // understand why.
 
-// CourierHeaderNode_t is a Node with courier header information.
+// HeaderNode_t is a Node with header information for any unit type.
 //
-// A valid courier header line looks like:
-// Courier 0987c1, NickName, Current Hex = QQ 1208, (Previous Hex = QQ 1309)
-type CourierHeaderNode_t struct {
+// A valid header line looks like:
+// Tribe 0987, Nickname, Current Hex = QQ 1208, (Previous Hex = QQ 1309)
+// Courier 0987c1, Nickname, Current Hex = QQ 1208, (Previous Hex = QQ 1309)
+// Element 0987e1, Nickname, Current Hex = QQ 1208, (Previous Hex = QQ 1309)
+type HeaderNode_t struct {
 	Unit     UnitId_t
-	NickName string
 	Current  coords.WorldMapCoord
 	Previous coords.WorldMapCoord
 	Pos      Position // position in source file
 }
 
-func (n *CourierHeaderNode_t) Location() string {
+func (n *HeaderNode_t) Location() string {
 	return n.Pos.String()
 }
 
-// ElementHeaderNode_t is a Node with element header information.
-//
-// A valid element header line looks like:
-// Element 0987e1, NickName, Current Hex = QQ 1208, (Previous Hex = QQ 1309)
-type ElementHeaderNode_t struct {
-	Unit     UnitId_t
-	NickName string
-	Current  coords.WorldMapCoord
-	Previous coords.WorldMapCoord
-	Pos      Position // position in source file
-}
-
-func (n *ElementHeaderNode_t) Location() string {
-	return n.Pos.String()
-}
-
-// FleetHeaderNode_t is a Node with fleet header information.
-//
-// A valid fleet header line looks like:
-// Fleet 0987f1, NickName, Current Hex = QQ 1208, (Previous Hex = QQ 1309)
-type FleetHeaderNode_t struct {
-	Unit     UnitId_t
-	NickName string
-	Current  coords.WorldMapCoord
-	Previous coords.WorldMapCoord
-	Pos      Position // position in source file
-}
-
-func (n *FleetHeaderNode_t) Location() string {
-	return n.Pos.String()
-}
-
-// GarrisonHeaderNode_t is a Node with garrison header information.
-//
-// A valid garrison header line looks like:
-// Garrison 0987g1, NickName, Current Hex = QQ 1208, (Previous Hex = QQ 1309)
-type GarrisonHeaderNode_t struct {
-	Unit     UnitId_t
-	NickName string
-	Current  coords.WorldMapCoord
-	Previous coords.WorldMapCoord
-	Pos      Position // position in source file
-}
-
-func (n *GarrisonHeaderNode_t) Location() string {
-	return n.Pos.String()
-}
-
-// TribeHeaderNode_t is a Node with tribe header information.
-//
-// A valid tribe header line looks like:
-// Tribe 0987, NickName, Current Hex = QQ 1208, (Previous Hex = QQ 1309)
-type TribeHeaderNode_t struct {
-	Unit     UnitId_t
-	NickName string
-	Current  coords.WorldMapCoord
-	Previous coords.WorldMapCoord
-	Pos      Position // position in source file
-}
-
-func (n *TribeHeaderNode_t) Location() string {
-	return n.Pos.String()
+// String returns the node and any children formatted like a pretty-print.
+func (n *HeaderNode_t) String() string {
+	var nickname, currentHex, previousHex string
+	if n.Unit.Nickname == "" {
+		nickname = " "
+	} else {
+		nickname = n.Unit.Nickname
+	}
+	if n.Current.IsNA() {
+		currentHex = "N/A"
+	} else {
+		currentHex = n.Current.String()
+	}
+	if n.Previous.IsNA() {
+		previousHex = "N/A"
+	} else {
+		previousHex = n.Previous.String()
+	}
+	return fmt.Sprintf("%s,%s, Current Hex = %s, (Previous Hex = %s)", n.Unit.Id, nickname, currentHex, previousHex)
 }
 
 type UnitId_t struct {
@@ -210,8 +170,8 @@ type StatusNode_t struct {
 // Parser represents a recursive descent parser for TribeNet turn reports.
 // The typical usage pattern is to create a parser and call methods on it:
 //
-//   parser := NewParserWithPosition(input, line, col)
-//   node, err := parser.Header()
+//	parser := NewParserWithPosition(input, line, col)
+//	node, err := parser.Header()
 //
 // The convenience function Header(line, input) is also available
 // for simple one-off parsing operations.
@@ -252,7 +212,7 @@ func Header(line int, input []byte) (Node_i, error) {
 func (p *Parser) Header() (Node_i, error) {
 	// Capture starting position for this node
 	startPos := Position{Line: p.line, Column: p.col}
-	
+
 	// Headers must start in column 1 (no leading whitespace)
 	if p.pos < len(p.input) && (p.input[p.pos] == ' ' || p.input[p.pos] == '\t') {
 		return nil, fmt.Errorf("header must start in column 1, found leading whitespace")
@@ -270,10 +230,11 @@ func (p *Parser) Header() (Node_i, error) {
 		return nil, fmt.Errorf("expected comma after unit ID: %w", err)
 	}
 
-	// Parse optional nickname
+	// Parse optional nickname and store it in the unit ID
 	nickname := p.parseOptionalNickname()
+	unitId.Nickname = nickname
 
-	// Expect comma  
+	// Expect comma
 	if err := p.expectString(","); err != nil {
 		return nil, fmt.Errorf("expected comma after nickname: %w", err)
 	}
@@ -309,51 +270,13 @@ func (p *Parser) Header() (Node_i, error) {
 		return nil, fmt.Errorf("expected closing parenthesis: %w", err)
 	}
 
-	// Create appropriate header node based on unit type
-	switch unitId.Type {
-	case Tribe:
-		return &TribeHeaderNode_t{
-			Unit:     unitId,
-			NickName: nickname,
-			Current:  current,
-			Previous: previous,
-			Pos:      startPos,
-		}, nil
-	case Courier:
-		return &CourierHeaderNode_t{
-			Unit:     unitId,
-			NickName: nickname,
-			Current:  current,
-			Previous: previous,
-			Pos:      startPos,
-		}, nil
-	case Element:
-		return &ElementHeaderNode_t{
-			Unit:     unitId,
-			NickName: nickname,
-			Current:  current,
-			Previous: previous,
-			Pos:      startPos,
-		}, nil
-	case Garrison:
-		return &GarrisonHeaderNode_t{
-			Unit:     unitId,
-			NickName: nickname,
-			Current:  current,
-			Previous: previous,
-			Pos:      startPos,
-		}, nil
-	case Fleet:
-		return &FleetHeaderNode_t{
-			Unit:     unitId,
-			NickName: nickname,
-			Current:  current,
-			Previous: previous,
-			Pos:      startPos,
-		}, nil
-	default:
-		return nil, fmt.Errorf("unknown unit type: %s", unitId.Type)
-	}
+	// Create header node - unit type is already validated
+	return &HeaderNode_t{
+		Unit:     unitId,
+		Current:  current,
+		Previous: previous,
+		Pos:      startPos,
+	}, nil
 }
 
 // parseUnitId parses a unit ID like "Tribe 0987" or "Element 0987e1"
@@ -369,7 +292,7 @@ func (p *Parser) parseUnitId() (UnitId_t, error) {
 		return UnitId_t{}, fmt.Errorf("expected single space between unit type and ID")
 	}
 	p.advance() // consume the space
-	
+
 	// Check for multiple spaces (not allowed)
 	if p.pos < len(p.input) && p.input[p.pos] == ' ' {
 		return UnitId_t{}, fmt.Errorf("expected single space between unit type and ID, found multiple spaces")
@@ -493,7 +416,7 @@ func (p *Parser) validateUnitId(unitId UnitId_t, suffixChar byte) error {
 // parseOptionalNickname parses an optional nickname between commas
 func (p *Parser) parseOptionalNickname() string {
 	p.skipWhitespace()
-	
+
 	if p.pos >= len(p.input) || p.current() == ',' {
 		return "" // No nickname
 	}
@@ -511,7 +434,7 @@ func (p *Parser) parseOptionalNickname() string {
 func (p *Parser) parseLocation(prefix string) (coords.WorldMapCoord, error) {
 	// Skip any leading whitespace
 	p.skipWhitespace()
-	
+
 	// Expect the prefix (e.g., "Current Hex" or "Previous Hex")
 	if err := p.expectString(prefix); err != nil {
 		return coords.WorldMapCoord{}, err
@@ -542,24 +465,24 @@ func (p *Parser) parseCoordinate() (coords.WorldMapCoord, error) {
 	if p.pos+2 > len(p.input) {
 		return coords.WorldMapCoord{}, fmt.Errorf("incomplete coordinate at position %d", p.pos)
 	}
-	
+
 	gridStr := strings.ToUpper(string(p.input[p.pos : p.pos+2]))
 	p.pos += 2
-	
+
 	// Skip optional space(s) between grid and numbers
 	// If no space is present, we'll still accept it and normalize internally
 	for p.pos < len(p.input) && p.current() == ' ' {
 		p.advance()
 	}
-	
+
 	// Parse the 4-digit coordinate
 	if p.pos+4 > len(p.input) {
 		return coords.WorldMapCoord{}, fmt.Errorf("incomplete coordinate numbers at position %d", p.pos)
 	}
-	
+
 	numbersStr := string(p.input[p.pos : p.pos+4])
 	p.pos += 4
-	
+
 	// Construct full coordinate string
 	coordStr := gridStr + " " + numbersStr
 

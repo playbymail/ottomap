@@ -186,7 +186,7 @@ func TestParseHeader(t *testing.T) {
 			expectedErr: "Tribe units must not have suffix or sequence number",
 		},
 		{
-			name:        "Tribe with element suffix", 
+			name:        "Tribe with element suffix",
 			input:       "Tribe 0987e1, , Current Hex = OO 0303, (Previous Hex = OO 0303)",
 			wantErr:     true,
 			expectedErr: "Tribe units must not have suffix or sequence number",
@@ -333,7 +333,7 @@ func TestParseHeader(t *testing.T) {
 			expectedSeq:  0,
 			expectedNick: "",
 			wantErr:      false,
-			// Note: The coords package translates "N/A" to a default coordinate, 
+			// Note: The coords package translates "N/A" to a default coordinate,
 			// so the final coordinate value will not be "N/A" in the result
 		},
 	}
@@ -341,12 +341,12 @@ func TestParseHeader(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			node, err := Header(1, []byte(tt.input))
-			
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Header() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-				
+
 			if err != nil {
 				// For error cases, check that the error message contains expected text
 				if tt.expectedErr != "" {
@@ -357,91 +357,71 @@ func TestParseHeader(t *testing.T) {
 				return
 			}
 
-			// Check unit details based on type
-			switch headerNode := node.(type) {
-			case *TribeHeaderNode_t:
-				if headerNode.Unit.Type != tt.expectedType {
-					t.Errorf("Expected type %v, got %v", tt.expectedType, headerNode.Unit.Type)
-				}
-				if headerNode.Unit.Id != tt.expectedId {
-					t.Errorf("Expected ID %v, got %v", tt.expectedId, headerNode.Unit.Id)
-				}
-				if headerNode.Unit.Number != tt.expectedNum {
-					t.Errorf("Expected number %v, got %v", tt.expectedNum, headerNode.Unit.Number)
-				}
-				if headerNode.Unit.Sequence != tt.expectedSeq {
-					t.Errorf("Expected sequence %v, got %v", tt.expectedSeq, headerNode.Unit.Sequence)
-				}
-				if headerNode.NickName != tt.expectedNick {
-					t.Errorf("Expected nickname %v, got %v", tt.expectedNick, headerNode.NickName)
-				}
-			case *CourierHeaderNode_t:
-				if headerNode.Unit.Type != tt.expectedType {
-					t.Errorf("Expected type %v, got %v", tt.expectedType, headerNode.Unit.Type)
-				}
-				if headerNode.Unit.Id != tt.expectedId {
-					t.Errorf("Expected ID %v, got %v", tt.expectedId, headerNode.Unit.Id)
-				}
-				if headerNode.Unit.Number != tt.expectedNum {
-					t.Errorf("Expected number %v, got %v", tt.expectedNum, headerNode.Unit.Number)
-				}
-				if headerNode.Unit.Sequence != tt.expectedSeq {
-					t.Errorf("Expected sequence %v, got %v", tt.expectedSeq, headerNode.Unit.Sequence)
-				}
-				if headerNode.NickName != tt.expectedNick {
-					t.Errorf("Expected nickname %v, got %v", tt.expectedNick, headerNode.NickName)
-				}
-			case *ElementHeaderNode_t:
-				if headerNode.Unit.Type != tt.expectedType {
-					t.Errorf("Expected type %v, got %v", tt.expectedType, headerNode.Unit.Type)
-				}
-				if headerNode.Unit.Id != tt.expectedId {
-					t.Errorf("Expected ID %v, got %v", tt.expectedId, headerNode.Unit.Id)
-				}
-				if headerNode.Unit.Number != tt.expectedNum {
-					t.Errorf("Expected number %v, got %v", tt.expectedNum, headerNode.Unit.Number)
-				}
-				if headerNode.Unit.Sequence != tt.expectedSeq {
-					t.Errorf("Expected sequence %v, got %v", tt.expectedSeq, headerNode.Unit.Sequence)
-				}
-				if headerNode.NickName != tt.expectedNick {
-					t.Errorf("Expected nickname %v, got %v", tt.expectedNick, headerNode.NickName)
-				}
-			case *GarrisonHeaderNode_t:
-				if headerNode.Unit.Type != tt.expectedType {
-					t.Errorf("Expected type %v, got %v", tt.expectedType, headerNode.Unit.Type)
-				}
-				if headerNode.Unit.Id != tt.expectedId {
-					t.Errorf("Expected ID %v, got %v", tt.expectedId, headerNode.Unit.Id)
-				}
-				if headerNode.Unit.Number != tt.expectedNum {
-					t.Errorf("Expected number %v, got %v", tt.expectedNum, headerNode.Unit.Number)
-				}
-				if headerNode.Unit.Sequence != tt.expectedSeq {
-					t.Errorf("Expected sequence %v, got %v", tt.expectedSeq, headerNode.Unit.Sequence)
-				}
-				if headerNode.NickName != tt.expectedNick {
-					t.Errorf("Expected nickname %v, got %v", tt.expectedNick, headerNode.NickName)
-				}
-			case *FleetHeaderNode_t:
-				if headerNode.Unit.Type != tt.expectedType {
-					t.Errorf("Expected type %v, got %v", tt.expectedType, headerNode.Unit.Type)
-				}
-				if headerNode.Unit.Id != tt.expectedId {
-					t.Errorf("Expected ID %v, got %v", tt.expectedId, headerNode.Unit.Id)
-				}
-				if headerNode.Unit.Number != tt.expectedNum {
-					t.Errorf("Expected number %v, got %v", tt.expectedNum, headerNode.Unit.Number)
-				}
-				if headerNode.Unit.Sequence != tt.expectedSeq {
-					t.Errorf("Expected sequence %v, got %v", tt.expectedSeq, headerNode.Unit.Sequence)
-				}
-				if headerNode.NickName != tt.expectedNick {
-					t.Errorf("Expected nickname %v, got %v", tt.expectedNick, headerNode.NickName)
-				}
-			default:
-				t.Errorf("Unexpected node type: %T", node)
+			// Check unit details - all header types are now HeaderNode_t
+			headerNode := node.(*HeaderNode_t)
+
+			if headerNode.Unit.Type != tt.expectedType {
+				t.Errorf("Expected type %v, got %v", tt.expectedType, headerNode.Unit.Type)
 			}
+			if headerNode.Unit.Id != tt.expectedId {
+				t.Errorf("Expected ID %v, got %v", tt.expectedId, headerNode.Unit.Id)
+			}
+			if headerNode.Unit.Number != tt.expectedNum {
+				t.Errorf("Expected number %v, got %v", tt.expectedNum, headerNode.Unit.Number)
+			}
+			if headerNode.Unit.Sequence != tt.expectedSeq {
+				t.Errorf("Expected sequence %v, got %v", tt.expectedSeq, headerNode.Unit.Sequence)
+			}
+			if headerNode.Unit.Nickname != tt.expectedNick {
+				t.Errorf("Expected nickname %v, got %v", tt.expectedNick, headerNode.Unit.Nickname)
+			}
+		})
+	}
+}
+
+func TestHeaderNodeString(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Tribe with nickname and spacing normalization",
+			input:    "Tribe 0987, Dudley, Current Hex = QQ 1208, (Previous Hex = qq1309)",
+			expected: "0987,Dudley, Current Hex = QQ 1208, (Previous Hex = QQ 1309)",
+		},
+		{
+			name:     "Tribe without nickname",
+			input:    "Tribe 0987, , Current Hex = QQ 1208, (Previous Hex = QQ 1309)",
+			expected: "0987, , Current Hex = QQ 1208, (Previous Hex = QQ 1309)",
+		},
+		{
+			name:     "Element with N/A coordinates",
+			input:    "Element 0987e1, TestName, Current Hex = N/A, (Previous Hex = n/a)",
+			expected: "0987e1,TestName, Current Hex = N/A, (Previous Hex = N/A)",
+		},
+		{
+			name:     "Courier with mixed case grid coordinates",
+			input:    "Courier 0987c1, Scout, Current Hex = oo 0101, (Previous Hex = PP 0202)",
+			expected: "0987c1,Scout, Current Hex = OO 0101, (Previous Hex = PP 0202)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			node, err := Header(1, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("Failed to parse: %v", err)
+			}
+
+			headerNode := node.(*HeaderNode_t)
+			result := headerNode.String()
+
+			if result != tt.expected {
+				t.Errorf("String() output mismatch:\nExpected: %q\nGot:      %q", tt.expected, result)
+			}
+
+			t.Logf("✅ String() formatting: %q -> %q", tt.input, result)
 		})
 	}
 }

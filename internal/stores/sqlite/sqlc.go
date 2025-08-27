@@ -32,4 +32,3 @@ func (s *Store) Delete(stmt string) (sql.Result, error) {
 func (s *Store) Update(stmt string) (sql.Result, error) {
 	return s.db.ExecContext(s.ctx, stmt)
 }
-
