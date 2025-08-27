@@ -14,11 +14,24 @@ import (
 	"github.com/playbymail/ottomap/internal/coords"
 )
 
+// Error_t captures parsing errors with precise position information
+type Error_t struct {
+	Pos   Position
+	Error error
+}
+
+func (e Error_t) String() string {
+	return fmt.Sprintf("%s: %v", e.Pos.String(), e.Error)
+}
+
 type Node_i interface {
 	// Location returns the line and column of the node in the source in the format line:col
 	Location() string
 	// String returns a the text of the node and all its children, formatted to look like the original input
 	String() string
+	// Error returns error information if this node has parsing errors.
+	// Returns empty string if the node is valid.
+	Error() string
 }
 
 // Position represents a position in the source file
@@ -69,7 +82,9 @@ func (n *HeaderNode_t) Location() string {
 	return n.Pos.String()
 }
 
-
+func (n *HeaderNode_t) Error() string {
+	return "" // HeaderNode_t doesn't support partial parsing
+}
 
 // String returns the node and any children formatted like a pretty-print.
 func (n *HeaderNode_t) String() string {
@@ -158,7 +173,7 @@ func (t Turn_t) String() string {
 }
 
 // TurnInfoNode_t is the root node for turn information lines.
-// It contains either just current turn info (short format) or 
+// It contains either just current turn info (short format) or
 // current + next turn info (full format) as child nodes.
 type TurnInfoNode_t struct {
 	Current *CurrentTurnInfoNode_t // Always present
@@ -168,6 +183,10 @@ type TurnInfoNode_t struct {
 
 func (n *TurnInfoNode_t) Location() string {
 	return n.Pos.String()
+}
+
+func (n *TurnInfoNode_t) Error() string {
+	return "" // TurnInfoNode_t doesn't support partial parsing
 }
 
 func (n *TurnInfoNode_t) String() string {
@@ -180,15 +199,19 @@ func (n *TurnInfoNode_t) String() string {
 // CurrentTurnInfoNode_t contains current turn information.
 // Always present in both full and short formats.
 type CurrentTurnInfoNode_t struct {
-	Turn        Turn_t // Current turn information  
-	TurnNo      int    // Turn number in parentheses
-	Season      string // e.g., "Winter", "Spring"
-	Weather     string // e.g., "FINE", "CLEAR"
-	Pos         Position
+	Turn    Turn_t // Current turn information
+	TurnNo  int    // Turn number in parentheses
+	Season  string // e.g., "Winter", "Spring"
+	Weather string // e.g., "FINE", "CLEAR"
+	Pos     Position
 }
 
 func (n *CurrentTurnInfoNode_t) Location() string {
 	return n.Pos.String()
+}
+
+func (n *CurrentTurnInfoNode_t) Error() string {
+	return "" // CurrentTurnInfoNode_t doesn't support partial parsing
 }
 
 func (n *CurrentTurnInfoNode_t) String() string {
@@ -197,15 +220,24 @@ func (n *CurrentTurnInfoNode_t) String() string {
 
 // NextTurnInfoNode_t contains next turn information.
 // Only present in full format lines.
+// Supports partial parsing - can capture errors while preserving valid data.
 type NextTurnInfoNode_t struct {
-	Turn       Turn_t // Next turn information
-	TurnNo     int    // Turn number in parentheses  
-	ReportDate string // Report date in DD/MM/YYYY format
+	Turn       Turn_t   // Next turn information
+	TurnNo     int      // Turn number in parentheses
+	ReportDate string   // Report date in DD/MM/YYYY format (may be invalid)
+	ParseError *Error_t // Captures parsing errors, nil if valid
 	Pos        Position
 }
 
 func (n *NextTurnInfoNode_t) Location() string {
 	return n.Pos.String()
+}
+
+func (n *NextTurnInfoNode_t) Error() string {
+	if n.ParseError != nil {
+		return n.ParseError.String()
+	}
+	return ""
 }
 
 func (n *NextTurnInfoNode_t) String() string {
@@ -443,18 +475,34 @@ func (p *Parser) TurnInfo() (Node_i, error) {
 
 		p.skipWhitespace()
 
-		// Parse report date (format: "29/10/2023")
+		// Parse report date (format: "29/10/2023") with error recovery
+		reportDatePos := Position{Line: p.line, Column: p.col}
 		reportDate, err := p.parseReportDate()
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse report date: %w", err)
-		}
 
-		// Create next turn info node
+		// Create next turn info node with partial parsing support
 		nextNode := &NextTurnInfoNode_t{
 			Turn:       nextTurn,
 			TurnNo:     nextNo,
-			ReportDate: reportDate,
+			ReportDate: reportDate, // May contain invalid data if parsing failed
+			ParseError: nil,        // Will be set if parsing failed
 			Pos:        startPos,
+		}
+
+		// If report date parsing failed, capture the error but continue
+		if err != nil {
+			// Capture the raw invalid input for ReportDate
+			// Find the remaining input from the current position to end
+			remainingInput := string(p.input[reportDatePos.Column-1:])
+			if len(remainingInput) > 50 { // Limit length for readability
+				remainingInput = remainingInput[:50] + "..."
+			}
+			nextNode.ReportDate = remainingInput
+
+			// Store the parsing error with position
+			nextNode.ParseError = &Error_t{
+				Pos:   reportDatePos,
+				Error: err,
+			}
 		}
 
 		// Return full turn info with both current and next

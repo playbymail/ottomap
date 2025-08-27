@@ -557,7 +557,7 @@ func TestTurnInfoSpecificValues(t *testing.T) {
 	}
 
 	turnInfoNode := node.(*TurnInfoNode_t)
-	
+
 	// Check current turn details
 	current := turnInfoNode.Current
 	if current.Turn.Id != "900-04" {
@@ -673,211 +673,62 @@ func TestTurnValidation(t *testing.T) {
 	}
 }
 
-func XTestTurnInfoParsing(t *testing.T) {
-	// TODO: Update this test to use the new Turn_t structure
-	/*
-		tests := []struct {
-			name      string
-			input     string
-			wantType  string // "full" or "short"
-			wantFull  *FullTurnInfoNode_t
-			wantShort *ShortTurnInfoNode_t
-		}{
-			{
-				name:     "Full turn info from test data",
-				input:    "Current Turn 899-12 (#0), Winter, FINE\tNext Turn 900-01 (#1), 29/10/2023",
-				wantType: "full",
-				wantFull: &FullTurnInfoNode_t{
-					CurrentTurn: "899-12",
-					CurrentNo:   0,
-					Season:      "Winter",
-					Weather:     "FINE",
-					NextTurn:    "900-01",
-					NextNo:      1,
-					ReportDate:  "29/10/2023",
-				},
-			},
-			// ... other test cases ...
-		}
-	*/
+func TestTurnInfoPartialParsing(t *testing.T) {
+	// Test the exact scenario described: game master accidentally puts invalid date format
+	input := "Current Turn 899-12 (#0), Winter, FINE\tNext Turn 900-01 (#1), Nov 29, 2023"
 
-	// TODO: Update test body to use new field names
-	/*
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				node, err := TurnInfo(1, []byte(tt.input))
-				if err != nil {
-					t.Fatalf("TurnInfo() failed: %v", err)
-				}
-
-				if tt.wantType == "full" {
-					fullNode, ok := node.(*FullTurnInfoNode_t)
-					if !ok {
-						t.Fatalf("Expected FullTurnInfoNode_t, got %T", node)
-					}
-
-					if fullNode.CurrentTurn != tt.wantFull.CurrentTurn {
-						t.Errorf("CurrentTurn: expected %q, got %q", tt.wantFull.CurrentTurn, fullNode.CurrentTurn)
-					}
-					if fullNode.CurrentNo != tt.wantFull.CurrentNo {
-						t.Errorf("CurrentNo: expected %d, got %d", tt.wantFull.CurrentNo, fullNode.CurrentNo)
-					}
-					if fullNode.Season != tt.wantFull.Season {
-						t.Errorf("Season: expected %q, got %q", tt.wantFull.Season, fullNode.Season)
-					}
-					if fullNode.Weather != tt.wantFull.Weather {
-						t.Errorf("Weather: expected %q, got %q", tt.wantFull.Weather, fullNode.Weather)
-					}
-					if fullNode.NextTurn != tt.wantFull.NextTurn {
-						t.Errorf("NextTurn: expected %q, got %q", tt.wantFull.NextTurn, fullNode.NextTurn)
-					}
-					if fullNode.NextNo != tt.wantFull.NextNo {
-						t.Errorf("NextNo: expected %d, got %d", tt.wantFull.NextNo, fullNode.NextNo)
-					}
-					if fullNode.ReportDate != tt.wantFull.ReportDate {
-						t.Errorf("ReportDate: expected %q, got %q", tt.wantFull.ReportDate, fullNode.ReportDate)
-					}
-
-					// Test String method
-					expectedString := fmt.Sprintf("Current Turn %s (#%d), %s, %s\tNext Turn %s (#%d), %s",
-						fullNode.CurrentTurn, fullNode.CurrentNo, fullNode.Season, fullNode.Weather,
-						fullNode.NextTurn, fullNode.NextNo, fullNode.ReportDate)
-					if fullNode.String() != expectedString {
-						t.Errorf("String() mismatch:\nExpected: %q\nGot:      %q", expectedString, fullNode.String())
-					}
-
-				} else {
-					shortNode, ok := node.(*ShortTurnInfoNode_t)
-					if !ok {
-						t.Fatalf("Expected ShortTurnInfoNode_t, got %T", node)
-					}
-
-					if shortNode.CurrentTurn != tt.wantShort.CurrentTurn {
-						t.Errorf("CurrentTurn: expected %q, got %q", tt.wantShort.CurrentTurn, shortNode.CurrentTurn)
-					}
-					if shortNode.CurrentNo != tt.wantShort.CurrentNo {
-						t.Errorf("CurrentNo: expected %d, got %d", tt.wantShort.CurrentNo, shortNode.CurrentNo)
-					}
-					if shortNode.Season != tt.wantShort.Season {
-						t.Errorf("Season: expected %q, got %q", tt.wantShort.Season, shortNode.Season)
-					}
-					if shortNode.Weather != tt.wantShort.Weather {
-						t.Errorf("Weather: expected %q, got %q", tt.wantShort.Weather, shortNode.Weather)
-					}
-
-					// Test String method
-					expectedString := fmt.Sprintf("Current Turn %s (#%d), %s, %s",
-						shortNode.CurrentTurn, shortNode.CurrentNo, shortNode.Season, shortNode.Weather)
-					if shortNode.String() != expectedString {
-						t.Errorf("String() mismatch:\nExpected: %q\nGot:      %q", expectedString, shortNode.String())
-					}
-				}
-
-				t.Logf("✅ Parsed %s turn info: %s", tt.wantType, node.String())
-			})
-		}
-	*/
-}
-
-func XTestTurnInfoParsingErrors(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-	}{
-		{
-			name:  "Negative current turn number",
-			input: "Current Turn 899-12 (#-1), Winter, FINE",
-		},
-		{
-			name:  "Negative next turn number",
-			input: "Current Turn 899-12 (#0), Winter, FINE\tNext Turn 900-01 (#-1), 29/10/2023",
-		},
-		{
-			name:  "Non-integer current turn number",
-			input: "Current Turn 899-12 (#abc), Winter, FINE",
-		},
-		{
-			name:  "Non-integer next turn number",
-			input: "Current Turn 899-12 (#0), Winter, FINE\tNext Turn 900-01 (#xyz), 29/10/2023",
-		},
-		{
-			name:  "Empty current turn number",
-			input: "Current Turn 899-12 (#), Winter, FINE",
-		},
-		{
-			name:  "Empty next turn number",
-			input: "Current Turn 899-12 (#0), Winter, FINE\tNext Turn 900-01 (#), 29/10/2023",
-		},
-		{
-			name:  "Missing opening parenthesis for current turn",
-			input: "Current Turn 899-12 #0), Winter, FINE",
-		},
-		{
-			name:  "Missing closing parenthesis for current turn",
-			input: "Current Turn 899-12 (#0, Winter, FINE",
-		},
-		{
-			name:  "Missing hash symbol for current turn",
-			input: "Current Turn 899-12 (0), Winter, FINE",
-		},
-		{
-			name:  "Invalid year-month format (too short year)",
-			input: "Current Turn 99-12 (#0), Winter, FINE",
-		},
-		{
-			name:  "Invalid year-month format (too long month)",
-			input: "Current Turn 899-123 (#0), Winter, FINE",
-		},
-		{
-			name:  "Missing dash in year-month",
-			input: "Current Turn 89912 (#0), Winter, FINE",
-		},
-		{
-			name:  "Non-uppercase season",
-			input: "Current Turn 899-12 (#0), winter, FINE",
-		},
-		{
-			name:  "Non-uppercase weather",
-			input: "Current Turn 899-12 (#0), Winter, fine",
-		},
-		{
-			name:  "Single letter season",
-			input: "Current Turn 899-12 (#0), W, FINE",
-		},
-		{
-			name:  "Single letter weather",
-			input: "Current Turn 899-12 (#0), Winter, F",
-		},
-		{
-			name:  "Missing comma after turn number",
-			input: "Current Turn 899-12 (#0) Winter, FINE",
-		},
-		{
-			name:  "Missing comma after season",
-			input: "Current Turn 899-12 (#0), Winter FINE",
-		},
-		{
-			name:  "Invalid date format (wrong separators)",
-			input: "Current Turn 899-12 (#0), Winter, FINE\tNext Turn 900-01 (#1), 29-10-2023",
-		},
-		{
-			name:  "Invalid date format (missing day)",
-			input: "Current Turn 899-12 (#0), Winter, FINE\tNext Turn 900-01 (#1), /10/2023",
-		},
-		{
-			name:  "Invalid date format (missing year digits)",
-			input: "Current Turn 899-12 (#0), Winter, FINE\tNext Turn 900-01 (#1), 29/10/23",
-		},
+	node, err := TurnInfo(1, []byte(input))
+	if err != nil {
+		t.Fatalf("TurnInfo() should not fail with partial parsing, got error: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := TurnInfo(1, []byte(tt.input))
-			if err == nil {
-				t.Errorf("Expected TurnInfo() to fail for input: %q", tt.input)
-			} else {
-				t.Logf("✅ Correctly rejected invalid input: %q -> %v", tt.input, err)
-			}
-		})
+	turnInfoNode, ok := node.(*TurnInfoNode_t)
+	if !ok {
+		t.Fatalf("Expected TurnInfoNode_t, got %T", node)
 	}
+
+	// Verify that we have current turn info (should be valid)
+	if turnInfoNode.Current == nil {
+		t.Fatalf("Expected Current turn info to be present")
+	}
+
+	// Verify current turn parsed correctly
+	current := turnInfoNode.Current
+	if current.Turn.Id != "899-12" {
+		t.Errorf("Expected Current.Turn.Id '899-12', got '%s'", current.Turn.Id)
+	}
+	if current.Season != "Winter" {
+		t.Errorf("Expected Current.Season 'Winter', got '%s'", current.Season)
+	}
+	if current.Weather != "FINE" {
+		t.Errorf("Expected Current.Weather 'FINE', got '%s'", current.Weather)
+	}
+
+	// Verify that we have next turn info (should be partially valid)
+	if turnInfoNode.Next == nil {
+		t.Fatalf("Expected Next turn info to be present")
+	}
+
+	next := turnInfoNode.Next
+
+	// Verify next turn info that should be valid
+	if next.Turn.Id != "900-01" {
+		t.Errorf("Expected Next.Turn.Id '900-01', got '%s'", next.Turn.Id)
+	}
+	if next.TurnNo != 1 {
+		t.Errorf("Expected Next.TurnNo 1, got %d", next.TurnNo)
+	}
+
+	// Verify that an error was captured
+	if next.ParseError == nil {
+		t.Errorf("Expected Next.ParseError to be set for invalid date format")
+	} else {
+		errorMsg := next.Error()
+		if errorMsg == "" {
+			t.Errorf("Expected Error() to return non-empty string")
+		}
+		t.Logf("✅ Captured parsing error: %s", errorMsg)
+	}
+
+	t.Logf("✅ Partial parsing test passed: %s", turnInfoNode.String())
 }

@@ -53,20 +53,31 @@ type HeaderNode_t struct {
 }
 ```
 
-### Turn Information Nodes
-- `FullTurnInfoNode_t` - Complete turn info with current and next turn
-- `ShortTurnInfoNode_t` - Current turn info only
+### Turn Information Nodes (Compositional AST)
+- `TurnInfoNode_t` - Root node containing current and optional next turn child nodes
+- `CurrentTurnInfoNode_t` - Current turn information (always present)
+- `NextTurnInfoNode_t` - Next turn information (optional, full format only)
 
 ```go
-type FullTurnInfoNode_t struct {
-    CurrentTurn   Turn_t   // Current turn information with validation
-    CurrentTurnNo int      // Turn number in parentheses
-    Season        string   // e.g., "Winter", "Spring"  
-    Weather       string   // e.g., "FINE", "CLEAR"
-    NextTurn      Turn_t   // Next turn information with validation
-    NextTurnNo    int      // Next turn number in parentheses
-    ReportDate    string   // Format: "29/10/2023"
-    Pos           Position // Source position for debugging
+type TurnInfoNode_t struct {
+    Current *CurrentTurnInfoNode_t // Always present
+    Next    *NextTurnInfoNode_t    // Optional, only in full format
+    Pos     Position
+}
+
+type CurrentTurnInfoNode_t struct {
+    Turn        Turn_t   // Current turn information with validation
+    TurnNo      int      // Turn number in parentheses
+    Season      string   // e.g., "Winter", "Spring"  
+    Weather     string   // e.g., "FINE", "CLEAR"
+    Pos         Position // Source position for debugging
+}
+
+type NextTurnInfoNode_t struct {
+    Turn       Turn_t   // Next turn information with validation
+    TurnNo     int      // Next turn number in parentheses
+    ReportDate string   // Format: "29/10/2023"
+    Pos        Position // Source position for debugging
 }
 
 type Turn_t struct {
@@ -152,24 +163,35 @@ fmt.Printf("Unit: %s, Current: %s, Position: %s\n",
 
 ### TurnInfo Parsing
 ```go
-// Parse full turn information
+// Parse full turn information (compositional AST)
 input := []byte("Current Turn 899-12 (#0), Winter, FINE\tNext Turn 900-01 (#1), 29/10/2023")
 node, err := parser.TurnInfo(1, input)
 if err != nil {
     log.Fatal(err)
 }
 
-full := node.(*parser.FullTurnInfoNode_t)
+turnInfo := node.(*parser.TurnInfoNode_t)
+current := turnInfo.Current
 fmt.Printf("Current: %s (Year: %d, Month: %d), Season: %s\n", 
-    full.CurrentTurn.Id, full.CurrentTurn.Year, full.CurrentTurn.Month, full.Season)
+    current.Turn.Id, current.Turn.Year, current.Turn.Month, current.Season)
 // Output: Current: 899-12 (Year: 899, Month: 12), Season: Winter
+
+// Check if next turn info is present
+if turnInfo.Next != nil {
+    next := turnInfo.Next
+    fmt.Printf("Next: %s (#%d), Report Date: %s\n",
+        next.Turn.Id, next.TurnNo, next.ReportDate)
+    // Output: Next: 900-01 (#1), Report Date: 29/10/2023
+}
 
 // Parse short turn information
 shortInput := []byte("Current Turn 900-03 (#5), Spring, CLEAR")
 shortNode, err := parser.TurnInfo(1, shortInput)
-short := shortNode.(*parser.ShortTurnInfoNode_t)
-fmt.Printf("Turn: %s, Weather: %s\n", short.CurrentTurn.String(), short.Weather)
+shortTurnInfo := shortNode.(*parser.TurnInfoNode_t)
+shortCurrent := shortTurnInfo.Current
+fmt.Printf("Turn: %s, Weather: %s\n", shortCurrent.Turn.String(), shortCurrent.Weather)
 // Output: Turn: 900-03, Weather: CLEAR
+// Note: shortTurnInfo.Next is nil for short format
 ```
 
 ### Handling Game Master Edits
@@ -212,11 +234,20 @@ turnNode, err := parser.TurnInfo()
 
 ## Design Philosophy
 
-1. **Clean AST**: Nodes are strongly typed with clear semantics
-2. **Position Tracking**: Every node knows its source location for debugging
-3. **Error Recovery**: Meaningful error messages for non-technical users (gamers)
-4. **Extensible**: Parser instances can handle multiple section types
-5. **Convenience**: Simple cases require minimal code
+1. **Compositional AST**: Parent nodes contain specialized child nodes for hierarchical data
+2. **Clean AST**: Nodes are strongly typed with clear semantics
+3. **Position Tracking**: Every node knows its source location for debugging
+4. **Error Recovery**: Meaningful error messages for non-technical users (gamers)
+5. **Extensible**: Parser instances can handle multiple section types
+6. **Convenience**: Simple cases require minimal code
+
+### Compositional Benefits
+
+The new AST design uses a parent-child structure that provides:
+- **Uniform handling**: All turn info goes through the same `TurnInfoNode_t` root
+- **Optional complexity**: Consumer code can ignore next turn info when not needed
+- **Future-ready**: Establishes patterns for complex hierarchical data (moves → steps → encounters)
+- **Easier traversal**: Consistent tree walking patterns across all node types
 
 ## Future Extensions
 
