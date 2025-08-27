@@ -69,49 +69,7 @@ func (n *HeaderNode_t) Location() string {
 	return n.Pos.String()
 }
 
-// FullTurnInfoNode_t represents a turn information line with both current and next turn details.
-//
-// A valid full turn info line looks like:
-// Current Turn 899-12 (#0), Winter, FINE	Next Turn 900-01 (#1), 29/10/2023
-type FullTurnInfoNode_t struct {
-	CurrentTurn   Turn_t // Current turn information
-	CurrentTurnNo int    // Turn number in parentheses
-	Season        string // e.g., "Winter", "Spring"
-	Weather       string // e.g., "FINE", "CLEAR"
-	NextTurn      Turn_t // Next turn information
-	NextTurnNo    int    // Turn number in parentheses
-	ReportDate    string // Format: "29/10/2023"
-	Pos           Position
-}
 
-func (n *FullTurnInfoNode_t) Location() string {
-	return n.Pos.String()
-}
-
-func (n *FullTurnInfoNode_t) String() string {
-	return fmt.Sprintf("Current Turn %s (#%d), %s, %s\tNext Turn %s (#%d), %s",
-		n.CurrentTurn.String(), n.CurrentTurnNo, n.Season, n.Weather, n.NextTurn.String(), n.NextTurnNo, n.ReportDate)
-}
-
-// ShortTurnInfoNode_t represents a turn information line with only current turn details.
-//
-// A valid short turn info line looks like:
-// Current Turn 899-12 (#0), Winter, FINE
-type ShortTurnInfoNode_t struct {
-	CurrentTurn   Turn_t // Current turn information
-	CurrentTurnNo int    // Turn number in parentheses
-	Season        string // e.g., "Winter", "Spring"
-	Weather       string // e.g., "FINE", "CLEAR"
-	Pos           Position
-}
-
-func (n *ShortTurnInfoNode_t) Location() string {
-	return n.Pos.String()
-}
-
-func (n *ShortTurnInfoNode_t) String() string {
-	return fmt.Sprintf("Current Turn %s (#%d), %s, %s", n.CurrentTurn.String(), n.CurrentTurnNo, n.Season, n.Weather)
-}
 
 // String returns the node and any children formatted like a pretty-print.
 func (n *HeaderNode_t) String() string {
@@ -197,6 +155,61 @@ type Turn_t struct {
 
 func (t Turn_t) String() string {
 	return t.Id
+}
+
+// TurnInfoNode_t is the root node for turn information lines.
+// It contains either just current turn info (short format) or 
+// current + next turn info (full format) as child nodes.
+type TurnInfoNode_t struct {
+	Current *CurrentTurnInfoNode_t // Always present
+	Next    *NextTurnInfoNode_t    // Optional, only in full format
+	Pos     Position
+}
+
+func (n *TurnInfoNode_t) Location() string {
+	return n.Pos.String()
+}
+
+func (n *TurnInfoNode_t) String() string {
+	if n.Next != nil {
+		return fmt.Sprintf("%s\t%s", n.Current.String(), n.Next.String())
+	}
+	return n.Current.String()
+}
+
+// CurrentTurnInfoNode_t contains current turn information.
+// Always present in both full and short formats.
+type CurrentTurnInfoNode_t struct {
+	Turn        Turn_t // Current turn information  
+	TurnNo      int    // Turn number in parentheses
+	Season      string // e.g., "Winter", "Spring"
+	Weather     string // e.g., "FINE", "CLEAR"
+	Pos         Position
+}
+
+func (n *CurrentTurnInfoNode_t) Location() string {
+	return n.Pos.String()
+}
+
+func (n *CurrentTurnInfoNode_t) String() string {
+	return fmt.Sprintf("Current Turn %s (#%d), %s, %s", n.Turn.String(), n.TurnNo, n.Season, n.Weather)
+}
+
+// NextTurnInfoNode_t contains next turn information.
+// Only present in full format lines.
+type NextTurnInfoNode_t struct {
+	Turn       Turn_t // Next turn information
+	TurnNo     int    // Turn number in parentheses  
+	ReportDate string // Report date in DD/MM/YYYY format
+	Pos        Position
+}
+
+func (n *NextTurnInfoNode_t) Location() string {
+	return n.Pos.String()
+}
+
+func (n *NextTurnInfoNode_t) String() string {
+	return fmt.Sprintf("Next Turn %s (#%d), %s", n.Turn.String(), n.TurnNo, n.ReportDate)
 }
 
 // StatusNode_t is a Node with information on the hex the element ended the turn in.
@@ -385,6 +398,15 @@ func (p *Parser) TurnInfo() (Node_i, error) {
 
 	p.skipWhitespace()
 
+	// Create current turn info node
+	currentNode := &CurrentTurnInfoNode_t{
+		Turn:    currentTurn,
+		TurnNo:  currentNo,
+		Season:  season,
+		Weather: weather,
+		Pos:     startPos,
+	}
+
 	// Check if there's next turn info (indicated by tab or "Next Turn")
 	if p.pos < len(p.input) && (p.input[p.pos] == '\t' || p.peek("Next Turn")) {
 		// Parse full turn info
@@ -427,25 +449,27 @@ func (p *Parser) TurnInfo() (Node_i, error) {
 			return nil, fmt.Errorf("failed to parse report date: %w", err)
 		}
 
-		return &FullTurnInfoNode_t{
-			CurrentTurn:   currentTurn,
-			CurrentTurnNo: currentNo,
-			Season:        season,
-			Weather:       weather,
-			NextTurn:      nextTurn,
-			NextTurnNo:    nextNo,
-			ReportDate:    reportDate,
-			Pos:           startPos,
+		// Create next turn info node
+		nextNode := &NextTurnInfoNode_t{
+			Turn:       nextTurn,
+			TurnNo:     nextNo,
+			ReportDate: reportDate,
+			Pos:        startPos,
+		}
+
+		// Return full turn info with both current and next
+		return &TurnInfoNode_t{
+			Current: currentNode,
+			Next:    nextNode,
+			Pos:     startPos,
 		}, nil
 	}
 
-	// Return short turn info
-	return &ShortTurnInfoNode_t{
-		CurrentTurn:   currentTurn,
-		CurrentTurnNo: currentNo,
-		Season:        season,
-		Weather:       weather,
-		Pos:           startPos,
+	// Return short turn info with just current
+	return &TurnInfoNode_t{
+		Current: currentNode,
+		Next:    nil,
+		Pos:     startPos,
 	}, nil
 }
 

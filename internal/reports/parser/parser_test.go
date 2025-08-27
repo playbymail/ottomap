@@ -427,32 +427,178 @@ func TestHeaderNodeString(t *testing.T) {
 }
 
 func TestTurnInfoParsingUpdated(t *testing.T) {
-	// Simple test to verify basic functionality with new Turn_t structure
+	// Simple test to verify basic functionality with new compositional AST structure
 	input := "Current Turn 899-12 (#0), Winter, FINE"
 	node, err := TurnInfo(1, []byte(input))
 	if err != nil {
 		t.Fatalf("TurnInfo() failed: %v", err)
 	}
 
-	shortNode, ok := node.(*ShortTurnInfoNode_t)
+	turnInfoNode, ok := node.(*TurnInfoNode_t)
 	if !ok {
-		t.Fatalf("Expected ShortTurnInfoNode_t, got %T", node)
+		t.Fatalf("Expected TurnInfoNode_t, got %T", node)
 	}
 
-	if shortNode.CurrentTurn.Id != "899-12" {
-		t.Errorf("Expected CurrentTurn.Id '899-12', got '%s'", shortNode.CurrentTurn.Id)
-	}
-	if shortNode.CurrentTurn.Year != 899 {
-		t.Errorf("Expected CurrentTurn.Year 899, got %d", shortNode.CurrentTurn.Year)
-	}
-	if shortNode.CurrentTurn.Month != 12 {
-		t.Errorf("Expected CurrentTurn.Month 12, got %d", shortNode.CurrentTurn.Month)
-	}
-	if shortNode.CurrentTurnNo != 0 {
-		t.Errorf("Expected CurrentTurnNo 0, got %d", shortNode.CurrentTurnNo)
+	// Verify current turn info is present
+	if turnInfoNode.Current == nil {
+		t.Fatalf("Expected Current turn info to be present")
 	}
 
-	t.Logf("✅ Basic Turn_t structure works: %s", shortNode.String())
+	// Verify next turn info is not present (short format)
+	if turnInfoNode.Next != nil {
+		t.Errorf("Expected Next turn info to be nil for short format")
+	}
+
+	current := turnInfoNode.Current
+	if current.Turn.Id != "899-12" {
+		t.Errorf("Expected Current.Turn.Id '899-12', got '%s'", current.Turn.Id)
+	}
+	if current.Turn.Year != 899 {
+		t.Errorf("Expected Current.Turn.Year 899, got %d", current.Turn.Year)
+	}
+	if current.Turn.Month != 12 {
+		t.Errorf("Expected Current.Turn.Month 12, got %d", current.Turn.Month)
+	}
+	if current.TurnNo != 0 {
+		t.Errorf("Expected Current.TurnNo 0, got %d", current.TurnNo)
+	}
+
+	t.Logf("✅ Basic compositional AST structure works: %s", turnInfoNode.String())
+}
+
+func TestTurnInfoCompositionalAST(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		wantFull bool // true if we expect next turn info, false for short format
+	}{
+		{
+			name:     "Short format - no next turn",
+			input:    "Current Turn 899-12 (#0), Winter, FINE",
+			wantFull: false,
+		},
+		{
+			name:     "Full format - with next turn",
+			input:    "Current Turn 899-12 (#0), Winter, FINE\tNext Turn 900-01 (#1), 29/10/2023",
+			wantFull: true,
+		},
+		{
+			name:     "Full format - with spaces instead of tab",
+			input:    "Current Turn 900-04 (#4), Summer, FINE Next Turn 900-05 (#5), 24/12/2023",
+			wantFull: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			node, err := TurnInfo(1, []byte(tt.input))
+			if err != nil {
+				t.Fatalf("TurnInfo() failed: %v", err)
+			}
+
+			turnInfoNode, ok := node.(*TurnInfoNode_t)
+			if !ok {
+				t.Fatalf("Expected TurnInfoNode_t, got %T", node)
+			}
+
+			// Verify current turn info is always present
+			if turnInfoNode.Current == nil {
+				t.Fatalf("Expected Current turn info to be present")
+			}
+
+			// Verify next turn info based on expected format
+			if tt.wantFull {
+				if turnInfoNode.Next == nil {
+					t.Errorf("Expected Next turn info to be present for full format")
+				} else {
+					// Validate next turn info structure
+					if turnInfoNode.Next.Turn.Id == "" {
+						t.Errorf("Expected Next.Turn.Id to be set")
+					}
+					if turnInfoNode.Next.TurnNo < 0 {
+						t.Errorf("Expected Next.TurnNo to be non-negative")
+					}
+					if turnInfoNode.Next.ReportDate == "" {
+						t.Errorf("Expected Next.ReportDate to be set")
+					}
+				}
+			} else {
+				if turnInfoNode.Next != nil {
+					t.Errorf("Expected Next turn info to be nil for short format")
+				}
+			}
+
+			// Validate current turn info structure
+			current := turnInfoNode.Current
+			if current.Turn.Id == "" {
+				t.Errorf("Expected Current.Turn.Id to be set")
+			}
+			if current.TurnNo < 0 {
+				t.Errorf("Expected Current.TurnNo to be non-negative")
+			}
+			if current.Season == "" {
+				t.Errorf("Expected Current.Season to be set")
+			}
+			if current.Weather == "" {
+				t.Errorf("Expected Current.Weather to be set")
+			}
+
+			t.Logf("✅ %s: %s", tt.name, turnInfoNode.String())
+		})
+	}
+}
+
+func TestTurnInfoSpecificValues(t *testing.T) {
+	// Test specific values to ensure parsing accuracy
+	input := "Current Turn 900-04 (#4), Summer, FINE\tNext Turn 900-05 (#5), 24/12/2023"
+	node, err := TurnInfo(1, []byte(input))
+	if err != nil {
+		t.Fatalf("TurnInfo() failed: %v", err)
+	}
+
+	turnInfoNode := node.(*TurnInfoNode_t)
+	
+	// Check current turn details
+	current := turnInfoNode.Current
+	if current.Turn.Id != "900-04" {
+		t.Errorf("Expected Current.Turn.Id '900-04', got '%s'", current.Turn.Id)
+	}
+	if current.Turn.Year != 900 {
+		t.Errorf("Expected Current.Turn.Year 900, got %d", current.Turn.Year)
+	}
+	if current.Turn.Month != 4 {
+		t.Errorf("Expected Current.Turn.Month 4, got %d", current.Turn.Month)
+	}
+	if current.TurnNo != 4 {
+		t.Errorf("Expected Current.TurnNo 4, got %d", current.TurnNo)
+	}
+	if current.Season != "Summer" {
+		t.Errorf("Expected Current.Season 'Summer', got '%s'", current.Season)
+	}
+	if current.Weather != "FINE" {
+		t.Errorf("Expected Current.Weather 'FINE', got '%s'", current.Weather)
+	}
+
+	// Check next turn details
+	next := turnInfoNode.Next
+	if next == nil {
+		t.Fatalf("Expected Next turn info to be present")
+	}
+	if next.Turn.Id != "900-05" {
+		t.Errorf("Expected Next.Turn.Id '900-05', got '%s'", next.Turn.Id)
+	}
+	if next.Turn.Year != 900 {
+		t.Errorf("Expected Next.Turn.Year 900, got %d", next.Turn.Year)
+	}
+	if next.Turn.Month != 5 {
+		t.Errorf("Expected Next.Turn.Month 5, got %d", next.Turn.Month)
+	}
+	if next.TurnNo != 5 {
+		t.Errorf("Expected Next.TurnNo 5, got %d", next.TurnNo)
+	}
+	if next.ReportDate != "24/12/2023" {
+		t.Errorf("Expected Next.ReportDate '24/12/2023', got '%s'", next.ReportDate)
+	}
 }
 
 func TestTurnValidation(t *testing.T) {
