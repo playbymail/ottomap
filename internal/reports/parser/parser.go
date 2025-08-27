@@ -69,6 +69,50 @@ func (n *HeaderNode_t) Location() string {
 	return n.Pos.String()
 }
 
+// FullTurnInfoNode_t represents a turn information line with both current and next turn details.
+//
+// A valid full turn info line looks like:
+// Current Turn 899-12 (#0), Winter, FINE	Next Turn 900-01 (#1), 29/10/2023
+type FullTurnInfoNode_t struct {
+	CurrentTurn   Turn_t // Current turn information
+	CurrentTurnNo int    // Turn number in parentheses
+	Season        string // e.g., "Winter", "Spring"
+	Weather       string // e.g., "FINE", "CLEAR"
+	NextTurn      Turn_t // Next turn information
+	NextTurnNo    int    // Turn number in parentheses
+	ReportDate    string // Format: "29/10/2023"
+	Pos           Position
+}
+
+func (n *FullTurnInfoNode_t) Location() string {
+	return n.Pos.String()
+}
+
+func (n *FullTurnInfoNode_t) String() string {
+	return fmt.Sprintf("Current Turn %s (#%d), %s, %s\tNext Turn %s (#%d), %s",
+		n.CurrentTurn.String(), n.CurrentTurnNo, n.Season, n.Weather, n.NextTurn.String(), n.NextTurnNo, n.ReportDate)
+}
+
+// ShortTurnInfoNode_t represents a turn information line with only current turn details.
+//
+// A valid short turn info line looks like:
+// Current Turn 899-12 (#0), Winter, FINE
+type ShortTurnInfoNode_t struct {
+	CurrentTurn   Turn_t // Current turn information
+	CurrentTurnNo int    // Turn number in parentheses
+	Season        string // e.g., "Winter", "Spring"
+	Weather       string // e.g., "FINE", "CLEAR"
+	Pos           Position
+}
+
+func (n *ShortTurnInfoNode_t) Location() string {
+	return n.Pos.String()
+}
+
+func (n *ShortTurnInfoNode_t) String() string {
+	return fmt.Sprintf("Current Turn %s (#%d), %s, %s", n.CurrentTurn.String(), n.CurrentTurnNo, n.Season, n.Weather)
+}
+
 // String returns the node and any children formatted like a pretty-print.
 func (n *HeaderNode_t) String() string {
 	var nickname, currentHex, previousHex string
@@ -146,10 +190,13 @@ type TurnNode_t struct {
 }
 
 type Turn_t struct {
-	Id     string // the id of the turn, taken from the file name.
-	Year   int    // the year of the turn
-	Month  int    // the month of the turn
-	ClanId string // the clan id of the turn
+	Id    string // the id of the turn from the input ("899-12")
+	Year  int    // the year of the turn (899)
+	Month int    // the month of the turn (12)
+}
+
+func (t Turn_t) String() string {
+	return t.Id
 }
 
 // StatusNode_t is a Node with information on the hex the element ended the turn in.
@@ -277,6 +324,135 @@ func (p *Parser) Header() (Node_i, error) {
 		Previous: previous,
 		Pos:      startPos,
 	}, nil
+}
+
+// TurnInfo parses a turn information line from a TribeNet turn report.
+//
+// There are two formats supported:
+// 1. Full: "Current Turn 899-12 (#0), Winter, FINE	Next Turn 900-01 (#1), 29/10/2023"
+// 2. Short: "Current Turn 899-12 (#0), Winter, FINE"
+//
+// Returns either *FullTurnInfoNode_t or *ShortTurnInfoNode_t depending on the format found.
+func (p *Parser) TurnInfo() (Node_i, error) {
+	startPos := Position{Line: p.line, Column: p.col}
+
+	// Expect "Current Turn"
+	if err := p.expectString("Current Turn"); err != nil {
+		return nil, fmt.Errorf("expected 'Current Turn': %w", err)
+	}
+
+	p.skipWhitespace()
+
+	// Parse current turn (format: "899-12")
+	currentTurn, err := p.parseTurn()
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse current turn: %w", err)
+	}
+
+	p.skipWhitespace()
+
+	// Parse current turn number "(#0)"
+	currentNo, err := p.parseTurnNumber()
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse current turn number: %w", err)
+	}
+
+	p.skipWhitespace()
+	if err := p.expectString(","); err != nil {
+		return nil, fmt.Errorf("expected comma after turn number: %w", err)
+	}
+
+	p.skipWhitespace()
+
+	// Parse season
+	season, err := p.parseIdentifier()
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse season: %w", err)
+	}
+
+	p.skipWhitespace()
+	if err := p.expectString(","); err != nil {
+		return nil, fmt.Errorf("expected comma after season: %w", err)
+	}
+
+	p.skipWhitespace()
+
+	// Parse weather
+	weather, err := p.parseIdentifier()
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse weather: %w", err)
+	}
+
+	p.skipWhitespace()
+
+	// Check if there's next turn info (indicated by tab or "Next Turn")
+	if p.pos < len(p.input) && (p.input[p.pos] == '\t' || p.peek("Next Turn")) {
+		// Parse full turn info
+		if p.input[p.pos] == '\t' {
+			p.advance() // consume tab
+		}
+		p.skipWhitespace()
+
+		// Expect "Next Turn"
+		if err := p.expectString("Next Turn"); err != nil {
+			return nil, fmt.Errorf("expected 'Next Turn': %w", err)
+		}
+
+		p.skipWhitespace()
+
+		// Parse next turn (format: "900-01")
+		nextTurn, err := p.parseTurn()
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse next turn: %w", err)
+		}
+
+		p.skipWhitespace()
+
+		// Parse next turn number "(#1)"
+		nextNo, err := p.parseTurnNumber()
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse next turn number: %w", err)
+		}
+
+		p.skipWhitespace()
+		if err := p.expectString(","); err != nil {
+			return nil, fmt.Errorf("expected comma after next turn number: %w", err)
+		}
+
+		p.skipWhitespace()
+
+		// Parse report date (format: "29/10/2023")
+		reportDate, err := p.parseReportDate()
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse report date: %w", err)
+		}
+
+		return &FullTurnInfoNode_t{
+			CurrentTurn:   currentTurn,
+			CurrentTurnNo: currentNo,
+			Season:        season,
+			Weather:       weather,
+			NextTurn:      nextTurn,
+			NextTurnNo:    nextNo,
+			ReportDate:    reportDate,
+			Pos:           startPos,
+		}, nil
+	}
+
+	// Return short turn info
+	return &ShortTurnInfoNode_t{
+		CurrentTurn:   currentTurn,
+		CurrentTurnNo: currentNo,
+		Season:        season,
+		Weather:       weather,
+		Pos:           startPos,
+	}, nil
+}
+
+// TurnInfo parses a turn information line at the specified line number (convenience function)
+func TurnInfo(line int, input []byte) (Node_i, error) {
+	parser := NewParserWithPosition(input, line, 1)
+	return parser.TurnInfo()
 }
 
 // parseUnitId parses a unit ID like "Tribe 0987" or "Element 0987e1"
@@ -553,4 +729,185 @@ func (p *Parser) matchStringIgnoreCase(s string) bool {
 		return true
 	}
 	return false
+}
+
+// peek checks if the given string exists at the current position without consuming it
+func (p *Parser) peek(s string) bool {
+	if p.pos+len(s) > len(p.input) {
+		return false
+	}
+	return string(p.input[p.pos:p.pos+len(s)]) == s
+}
+
+// parseTurn parses a year-month string in format "899-12" and returns a validated Turn_t
+func (p *Parser) parseTurn() (Turn_t, error) {
+	start := p.pos
+	yearStart := p.pos
+
+	// Parse year (3 digits)
+	for i := 0; i < 3; i++ {
+		if p.pos >= len(p.input) || !isDigit(p.current()) {
+			return Turn_t{}, fmt.Errorf("expected 3-digit year at position %d", p.pos)
+		}
+		p.advance()
+	}
+
+	// Parse and validate year
+	yearStr := string(p.input[yearStart:p.pos])
+	year, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return Turn_t{}, fmt.Errorf("invalid year: %w", err)
+	}
+
+	// Validate year range
+	if year < 899 || year > 9999 {
+		return Turn_t{}, fmt.Errorf("year must be between 899 and 9999, got %d", year)
+	}
+
+	// Expect dash
+	if p.pos >= len(p.input) || p.current() != '-' {
+		return Turn_t{}, fmt.Errorf("expected dash after year at position %d", p.pos)
+	}
+	p.advance()
+
+	monthStart := p.pos
+	// Parse month (2 digits)
+	for i := 0; i < 2; i++ {
+		if p.pos >= len(p.input) || !isDigit(p.current()) {
+			return Turn_t{}, fmt.Errorf("expected 2-digit month at position %d", p.pos)
+		}
+		p.advance()
+	}
+
+	// Parse and validate month
+	monthStr := string(p.input[monthStart:p.pos])
+	month, err := strconv.Atoi(monthStr)
+	if err != nil {
+		return Turn_t{}, fmt.Errorf("invalid month: %w", err)
+	}
+
+	// Validate month range
+	if year == 899 {
+		// Special case: year 899 must always be month 12
+		if month != 12 {
+			return Turn_t{}, fmt.Errorf("year 899 must have month 12, got %d", month)
+		}
+	} else {
+		// Regular case: month must be 1-12
+		if month < 1 || month > 12 {
+			return Turn_t{}, fmt.Errorf("month must be between 1 and 12, got %d", month)
+		}
+	}
+
+	return Turn_t{
+		Id:    string(p.input[start:p.pos]),
+		Year:  year,
+		Month: month,
+	}, nil
+}
+
+// parseTurnNumber parses a turn number in format "(#0)"
+func (p *Parser) parseTurnNumber() (int, error) {
+	if err := p.expectString("(#"); err != nil {
+		return 0, fmt.Errorf("expected '(#': %w", err)
+	}
+
+	start := p.pos
+	for p.pos < len(p.input) && isDigit(p.current()) {
+		p.advance()
+	}
+
+	if start == p.pos {
+		return 0, fmt.Errorf("expected digit at position %d", p.pos)
+	}
+
+	if err := p.expectString(")"); err != nil {
+		return 0, fmt.Errorf("expected closing parenthesis: %w", err)
+	}
+
+	num, err := strconv.Atoi(string(p.input[start : p.pos-1]))
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse turn number: %w", err)
+	}
+
+	return num, nil
+}
+
+// parseIdentifier parses an identifier starting with uppercase letter followed by letters
+// Matches pattern [A-Z][A-Za-z]+
+func (p *Parser) parseIdentifier() (string, error) {
+	start := p.pos
+
+	if p.pos >= len(p.input) || !isUppercase(p.current()) {
+		return "", fmt.Errorf("expected uppercase letter at position %d", p.pos)
+	}
+	p.advance()
+
+	for p.pos < len(p.input) && isLetter(p.current()) {
+		p.advance()
+	}
+
+	if start+1 == p.pos {
+		return "", fmt.Errorf("identifier must have at least 2 characters at position %d", start)
+	}
+
+	return string(p.input[start:p.pos]), nil
+}
+
+// parseReportDate parses a date in format "29/10/2023"
+func (p *Parser) parseReportDate() (string, error) {
+	start := p.pos
+
+	// Parse day (1-2 digits)
+	if p.pos >= len(p.input) || !isDigit(p.current()) {
+		return "", fmt.Errorf("expected digit for day at position %d", p.pos)
+	}
+	p.advance()
+	if p.pos < len(p.input) && isDigit(p.current()) {
+		p.advance()
+	}
+
+	// Expect slash
+	if p.pos >= len(p.input) || p.current() != '/' {
+		return "", fmt.Errorf("expected '/' after day at position %d", p.pos)
+	}
+	p.advance()
+
+	// Parse month (1-2 digits)
+	if p.pos >= len(p.input) || !isDigit(p.current()) {
+		return "", fmt.Errorf("expected digit for month at position %d", p.pos)
+	}
+	p.advance()
+	if p.pos < len(p.input) && isDigit(p.current()) {
+		p.advance()
+	}
+
+	// Expect slash
+	if p.pos >= len(p.input) || p.current() != '/' {
+		return "", fmt.Errorf("expected '/' after month at position %d", p.pos)
+	}
+	p.advance()
+
+	// Parse year (4 digits)
+	for i := 0; i < 4; i++ {
+		if p.pos >= len(p.input) || !isDigit(p.current()) {
+			return "", fmt.Errorf("expected 4-digit year at position %d", p.pos)
+		}
+		p.advance()
+	}
+
+	return string(p.input[start:p.pos]), nil
+}
+
+// Helper functions for character classification
+func isDigit(c byte) bool {
+	return c >= '0' && c <= '9'
+}
+
+func isUppercase(c byte) bool {
+	return c >= 'A' && c <= 'Z'
+}
+
+func isLetter(c byte) bool {
+	return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
 }
