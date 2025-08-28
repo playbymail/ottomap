@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/playbymail/ottomap/internal/reports/cst"
-	"github.com/playbymail/ottomap/internal/reports/cst/csttest"
+	"github.com/playbymail/ottomap/internal/parsers/cst"
+	"github.com/playbymail/ottomap/internal/parsers/cst/csttest"
 )
 
 var update = flag.Bool("update", false, "update CST golden snapshots")
@@ -72,7 +72,7 @@ func TestCST_Golden(t *testing.T) {
 			gotJSON := mustJSON(t, snap)
 
 			// load the golden
-			path := filepath.Join("internal", "reports", "cst", "testdata", sanitize(tc.name)+".cst.json")
+			path := filepath.Join("internal", "parsers", "cst", "testdata", sanitize(tc.name)+".cst.json")
 			if *update {
 				mustWrite(t, path, gotJSON)
 			}

@@ -5,7 +5,7 @@ package ast_test
 import (
 	"testing"
 
-	"github.com/playbymail/ottomap/internal/reports/ast"
+	"github.com/playbymail/ottomap/internal/parsers/ast"
 )
 
 // How to use it

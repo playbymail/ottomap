@@ -13,7 +13,7 @@ import (
 	"encoding/json"
 	"sort"
 
-	"github.com/playbymail/ottomap/internal/reports/ast"
+	"github.com/playbymail/ottomap/internal/parsers/ast"
 )
 
 type span struct {

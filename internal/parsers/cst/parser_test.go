@@ -5,7 +5,7 @@ package cst_test
 import (
 	"testing"
 
-	"github.com/playbymail/ottomap/internal/reports/cst"
+	"github.com/playbymail/ottomap/internal/parsers/cst"
 )
 
 func TestCST_HeaderHappy(t *testing.T) {

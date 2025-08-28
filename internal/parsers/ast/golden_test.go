@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/playbymail/ottomap/internal/reports/ast"
-	"github.com/playbymail/ottomap/internal/reports/ast/asttest"
+	"github.com/playbymail/ottomap/internal/parsers/ast"
+	"github.com/playbymail/ottomap/internal/parsers/ast/asttest"
 )
 
 // go test ./ast -run TestASTGolden -update

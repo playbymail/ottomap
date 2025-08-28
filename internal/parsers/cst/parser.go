@@ -6,7 +6,7 @@ package cst
 import (
 	"fmt"
 
-	"github.com/playbymail/ottomap/internal/reports/lexers"
+	"github.com/playbymail/ottomap/internal/parsers/lexers"
 )
 
 // ====== Public API ======

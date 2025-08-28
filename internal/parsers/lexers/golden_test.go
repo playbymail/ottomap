@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/playbymail/ottomap/internal/reports/lexers"
+	"github.com/playbymail/ottomap/internal/parsers/lexers"
 )
 
 var update = flag.Bool("update", false, "update lexer golden snapshots")
@@ -76,7 +76,7 @@ func TestLexer_Golden(t *testing.T) {
 				snap.Tokens = append(snap.Tokens, s)
 			}
 			got := mustJSON(t, snap)
-			path := filepath.Join("internal", "reports", "lexers", "testdata", sanitize(tc.name)+".lexer.json")
+			path := filepath.Join("internal", "parsers", "lexers", "testdata", sanitize(tc.name)+".lexer.json")
 			if *update {
 				mustWrite(t, path, got)
 			}

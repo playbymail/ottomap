@@ -22,6 +22,6 @@ package.json
 package-lock.json
 
 testdata/
-!internal/reports/ast/testdata
+!internal/parsers/ast/testdata
 !internal/reports/cst/testdata
 !internal/reports/lexers/testdata

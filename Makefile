@@ -15,9 +15,9 @@
 #   AST  : TestAST_Golden
 
 # ---- Package paths ----
-LEXERS := ./internal/reports/lexers
-CST    := ./internal/reports/cst
-AST    := ./internal/reports/ast
+LEXERS := ./internal/parsers/lexers
+CST    := ./internal/parsers/cst
+AST    := ./internal/parsers/ast
 
 # ---- Common flags ----
 GO_TEST_FLAGS := -race
