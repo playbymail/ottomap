@@ -1,0 +1,22 @@
+{
+  "ast": {
+    "headers": [
+      {
+        "month": 0,
+        "year": 2025,
+        "turn": 0,
+        "rawMonth": "Agust",
+        "rawYear": "2025",
+        "rawTurn": "12a3",
+        "unknownMonth": true,
+        "invalidYear": false,
+        "invalidTurn": true,
+        "span": { "start": 0, "end": 33, "line": 1, "col": 1 }
+      }
+    ]
+  },
+  "diagnostics": [
+    { "severity": "error", "code": "E_MONTH", "message": "unknown month \"Agust\"", "span": { "start": 15, "end": 20, "line": 1, "col": 16 } },
+    { "severity": "error", "code": "E_TURN",  "message": "invalid turn number \"12a3\"", "span": { "start": 27, "end": 31, "line": 1, "col": 28 } }
+  ]
+}

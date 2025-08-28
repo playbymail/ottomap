@@ -1,0 +1,21 @@
+{
+  "ast": {
+    "headers": [
+      {
+        "month": 7,
+        "year": 3025,
+        "turn": 5,
+        "rawMonth": "July",
+        "rawYear": "3025",
+        "rawTurn": "5",
+        "unknownMonth": false,
+        "invalidYear": true,
+        "invalidTurn": false,
+        "span": { "start": 0, "end": 30, "line": 1, "col": 1 }
+      }
+    ]
+  },
+  "diagnostics": [
+    { "severity": "error", "code": "E_YEAR_RANGE", "message": "year 3025 out of range", "span": { "start": 21, "end": 25, "line": 1, "col": 22 } }
+  ]
+}

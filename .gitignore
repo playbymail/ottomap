@@ -13,9 +13,15 @@
 *.wxx
 .DS_Store
 .idea/
-testdata/
+coverage.html
+coverage.out
 follows.*.txt
 node_modules/
 ottomap
 package.json
 package-lock.json
+
+testdata/
+!internal/reports/ast/testdata
+!internal/reports/cst/testdata
+!internal/reports/lexers/testdata
