@@ -5,7 +5,7 @@ package lexers_test
 import (
 	"testing"
 
-	"github.com/playbymail/ottomap/internal/reports/lexers"
+	"github.com/playbymail/ottomap/internal/parsers/lexers"
 )
 
 type tok struct {
@@ -15,40 +15,35 @@ type tok struct {
 	Start, End int
 }
 
-type case_ struct {
+type testcase struct {
 	name  string
 	input string
 	want  []tok // expected significant tokens in order (ignore trivia here)
 }
 
-func TestLexer_Tokens_Simple(t *testing.T) {
-	cases := []case_{
+func TestLexer_SignificantTokenStreams(t *testing.T) {
+	cases := []testcase{
 		{
-			name:  "current_turn_happy",
-			input: "Current Turn August 2025 (#123)",
+			name:  "tribe_header_happy",
+			input: "Tribe 0987, , Current Hex = OO 0202, (Previous Hex = OO 0202)",
 			want: []tok{
-				{Kind: "KeywordCurrent", Text: "Current"},
-				{Kind: "KeywordTurn", Text: "Turn"},
-				{Kind: "MonthName", Text: "August"},
-				{Kind: "Number", Text: "2025"},
+				{Kind: "Text", Text: "Tribe"},
+				{Kind: "Number", Text: "0987"},
+				{Kind: "Comma", Text: ","},
+				{Kind: "Comma", Text: ","},
+				{Kind: "Text", Text: "Current"},
+				{Kind: "Text", Text: "Hex"},
+				{Kind: "Equal", Text: "="},
+				{Kind: "Text", Text: "OO"},
+				{Kind: "Number", Text: "0202"},
+				{Kind: "Comma", Text: ","},
 				{Kind: "LParen", Text: "("},
-				{Kind: "Hash", Text: "#"},
-				{Kind: "Number", Text: "123"},
+				{Kind: "Text", Text: "Previous"},
+				{Kind: "Text", Text: "Hex"},
+				{Kind: "Equal", Text: "="},
+				{Kind: "Text", Text: "OO"},
+				{Kind: "Number", Text: "0202"},
 				{Kind: "RParen", Text: ")"},
-			},
-		},
-		{
-			name:  "bad_month_and_hash",
-			input: "Current Turn Agust 2025 (##12a3",
-			want: []tok{
-				{Kind: "KeywordCurrent", Text: "Current"},
-				{Kind: "KeywordTurn", Text: "Turn"},
-				{Kind: "Identifier", Text: "Agust"},
-				{Kind: "Number", Text: "2025"},
-				{Kind: "LParen", Text: "("},
-				{Kind: "Hash", Text: "#"},
-				{Kind: "Hash", Text: "#"},
-				{Kind: "Identifier", Text: "12a3"},
 			},
 		},
 	}
