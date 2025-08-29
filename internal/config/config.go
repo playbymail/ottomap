@@ -277,9 +277,10 @@ func Load(name string, debug bool) (*Config, error) {
 	if cfg.Parser.QuitOnObscuredGrids {
 		cfg.Parser.CheckObscuredGrids = true
 	}
-	if len(cfg.Worldographer.Solo) != 0 { // all solo players must use the reverse walker
-		cfg.Experimental.ReverseWalker = true
-	}
+	// eventually all solo players must use the reverse walker
+	//if len(cfg.Worldographer.Solo) != 0 { // all solo players must use the reverse walker
+	//	cfg.Experimental.ReverseWalker = true
+	//}
 
 	return cfg, nil
 }
