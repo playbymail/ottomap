@@ -20,7 +20,7 @@ var (
 	version = semver.Version{
 		Major: 0,
 		Minor: 62,
-		Patch: 18,
+		Patch: 19,
 		Build: semver.Commit(),
 	}
 	globalConfig *config.Config

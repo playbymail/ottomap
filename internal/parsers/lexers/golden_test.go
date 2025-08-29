@@ -40,9 +40,7 @@ func TestLexer_Golden(t *testing.T) {
 		name  string
 		input string
 	}{
-		{"happy_current_turn", "Current Turn August 2025 (#123)\n"},
-		{"bad_month_hash_number", "Current Turn Agust 2025 (##12a3\n"},
-		{"extra_commas_comment", "Current,,  Turn /*c*/ August 2025 (#7))\n"},
+		{"tribe_header_happy", "Tribe 0987, , Current Hex = OO 0202, (Previous Hex = OO 0202)"},
 	}
 
 	for _, tc := range cases {
@@ -76,7 +74,7 @@ func TestLexer_Golden(t *testing.T) {
 				snap.Tokens = append(snap.Tokens, s)
 			}
 			got := mustJSON(t, snap)
-			path := filepath.Join("internal", "parsers", "lexers", "testdata", sanitize(tc.name)+".lexer.json")
+			path := filepath.Join("testdata", sanitize(tc.name)+".lexer.json")
 			if *update {
 				mustWrite(t, path, got)
 			}

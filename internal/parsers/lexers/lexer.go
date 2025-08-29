@@ -7,12 +7,15 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 type Lexer struct {
 	line, col int // position in the source
 
-	pos int // offset of the next byte in the source
+	pos int  // offset of the next byte in the source
+	ch  rune // current character
 
 	// the source is owned by the caller and must not be altered
 	input []byte
@@ -38,14 +41,20 @@ func (l *Lexer) Next() *Token {
 
 	var t Token
 
-	// collect leading trivia. right now, this is whitespace (not including end-of-line)
-	if l.isWhitespace() {
-		trivia := Trivia{
-			Span: Span{Start: l.pos, Line: l.line, Col: l.col},
+	// collect leading trivia.
+	// right now, this is whitespace (not including end-of-line).
+	for !l.isEOF() {
+		if l.isWhitespace() {
+			trivia := Trivia{
+				Kind: Whitespace,
+				Span: Span{Start: l.pos, Line: l.line, Col: l.col},
+			}
+			l.skipWhitespace()
+			trivia.Span.End = l.pos
+			t.LeadingTrivia = append(t.LeadingTrivia, trivia)
+			continue
 		}
-		l.skipWhitespace()
-		trivia.Span.End = l.pos
-		t.LeadingTrivia = append(t.LeadingTrivia, trivia)
+		break
 	}
 
 	// collect the token
@@ -64,10 +73,10 @@ func (l *Lexer) Next() *Token {
 	} else if ch == '#' {
 		t.Kind = Hash
 		l.advance()
-	} else if l.input[l.pos] == '(' {
+	} else if ch == '(' {
 		t.Kind = LParen
 		l.advance()
-	} else if l.input[l.pos] == ')' {
+	} else if ch == ')' {
 		t.Kind = RParen
 		l.advance()
 	} else if l.isDigit() {
@@ -109,38 +118,45 @@ func (l *Lexer) TextWithTrivia(t *Token) string {
 	return t.TextWithTrivia(l.input)
 }
 
+const (
+	eofRune rune = -1
+)
+
 // advance moves the position to the next character if we're not at the end of input.
 func (l *Lexer) advance() {
-	if l.pos < len(l.input) {
-		if l.input[l.pos] == '\n' {
-			l.line++
-			l.col = 1
-		} else {
-			l.col++
-		}
-		l.pos++
+	// eof fast path
+	if l.pos >= len(l.input) {
+		return
+	}
+	// we have to decode current rune to figure out how to advance the column and line numbers
+	r, w := utf8.DecodeRune(l.input[l.pos:])
+	l.pos += w
+	if r == '\n' {
+		l.line++
+		l.col = 1
+	} else {
+		l.col++
 	}
 }
 
 // current returns the current character in the input.
-// kind of a hack, returns 0 at end of input.
-func (l *Lexer) current() byte {
+func (l *Lexer) current() rune {
 	if l.pos >= len(l.input) {
-		return 0
+		return eofRune
 	}
-	return l.input[l.pos]
+	// decode current rune. the CST that drives the lexers will handle RuneError when needed.
+	r, _ := utf8.DecodeRune(l.input[l.pos:])
+	return r
 }
 
 // isAlpha returns true if the character is a letter
 func (l *Lexer) isAlpha() bool {
-	ch := l.current()
-	return ('A' <= ch && ch <= 'Z') || ('a' <= ch && ch <= 'z')
+	return unicode.IsLetter(l.current())
 }
 
 // isDigit returns true if the character is a digit
 func (l *Lexer) isDigit() bool {
-	ch := l.current()
-	return '0' <= ch && ch <= '9'
+	return unicode.IsDigit(l.current())
 }
 
 // isEOF returns true at end of input
@@ -155,25 +171,30 @@ func (l *Lexer) isEOL() bool {
 
 // isPunctuation returns true if the character is punctuation
 func (l *Lexer) isPunctuation() bool {
-	ch := l.current()
+	// we have to check for eof because we're going to convert the
+	// current rune to a byte for the punctuation check.
+	if l.isEOF() {
+		return false
+	}
+	ch := byte(l.current())
 	return bytes.IndexByte([]byte{',', '=', '#', '(', ')'}, ch) != -1
 }
 
 // isText returns true if the char is text
 func (l *Lexer) isText() bool {
 	ch := l.current()
-	return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || '0' <= ch && ch <= '9'
+	return unicode.IsLetter(ch) || unicode.IsDigit(ch)
 }
 
 // isWhitespace returns true if the character is space or tab
 func (l *Lexer) isWhitespace() bool {
 	ch := l.current()
-	return ch == ' ' || ch == '\t'
+	return ch != '\n' && unicode.IsSpace(ch)
 }
 
 // skipUnknown skips characters that aren't known to be valid in a report
 func (l *Lexer) skipUnknown() {
-	for l.pos < len(l.input) && !(l.isDigit() || l.isPunctuation() || l.isText()) {
+	for !(l.isEOF() || l.isDigit() || l.isPunctuation() || l.isText()) {
 		l.advance()
 	}
 }
