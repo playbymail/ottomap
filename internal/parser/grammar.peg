@@ -261,8 +261,6 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
         Direction: d.(direction.Direction_e),
         Terrain:   terrain.Swamp,
     }, nil
-} / "Group did not return" EOF {
-    return DidNotReturn_t{}, nil
 } / "failed due to Insufficient capacity to carry" EOF {
     return InsufficientCapacity_t{}, nil
 } / "Find" SP r:RESOURCE EOF {
@@ -272,6 +270,8 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
         Quantity: n.(int),
         Item :    i.(items.Item_e),
     }, nil
+} / "Group did not return" EOF {
+    return DidNotReturn_t{}, nil
 } / "Horses not allowed into MANGROVE SWAMP to"i SP d:DIRECTION SP "of HEX" EOF {
     return &ProhibitedFrom_t{
         Direction: d.(direction.Direction_e),

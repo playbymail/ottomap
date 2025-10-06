@@ -1280,105 +1280,105 @@ var g = &grammar{
 							exprs: []any{
 								&litMatcher{
 									pos:        position{line: 264, col: 5, offset: 6812},
-									val:        "Group did not return",
-									ignoreCase: false,
-									want:       "\"Group did not return\"",
-								},
-								&ruleRefExpr{
-									pos:  position{line: 264, col: 28, offset: 6835},
-									name: "EOF",
-								},
-							},
-						},
-					},
-					&actionExpr{
-						pos: position{line: 266, col: 5, offset: 6878},
-						run: (*parser).callonStep82,
-						expr: &seqExpr{
-							pos: position{line: 266, col: 5, offset: 6878},
-							exprs: []any{
-								&litMatcher{
-									pos:        position{line: 266, col: 5, offset: 6878},
 									val:        "failed due to Insufficient capacity to carry",
 									ignoreCase: false,
 									want:       "\"failed due to Insufficient capacity to carry\"",
 								},
 								&ruleRefExpr{
-									pos:  position{line: 266, col: 52, offset: 6925},
+									pos:  position{line: 264, col: 52, offset: 6859},
 									name: "EOF",
 								},
 							},
 						},
 					},
 					&actionExpr{
-						pos: position{line: 268, col: 5, offset: 6976},
-						run: (*parser).callonStep86,
+						pos: position{line: 266, col: 5, offset: 6910},
+						run: (*parser).callonStep82,
 						expr: &seqExpr{
-							pos: position{line: 268, col: 5, offset: 6976},
+							pos: position{line: 266, col: 5, offset: 6910},
 							exprs: []any{
 								&litMatcher{
-									pos:        position{line: 268, col: 5, offset: 6976},
+									pos:        position{line: 266, col: 5, offset: 6910},
 									val:        "Find",
 									ignoreCase: false,
 									want:       "\"Find\"",
 								},
 								&ruleRefExpr{
-									pos:  position{line: 268, col: 12, offset: 6983},
+									pos:  position{line: 266, col: 12, offset: 6917},
 									name: "SP",
 								},
 								&labeledExpr{
-									pos:   position{line: 268, col: 15, offset: 6986},
+									pos:   position{line: 266, col: 15, offset: 6920},
 									label: "r",
 									expr: &ruleRefExpr{
-										pos:  position{line: 268, col: 17, offset: 6988},
+										pos:  position{line: 266, col: 17, offset: 6922},
 										name: "RESOURCE",
 									},
 								},
 								&ruleRefExpr{
-									pos:  position{line: 268, col: 26, offset: 6997},
+									pos:  position{line: 266, col: 26, offset: 6931},
 									name: "EOF",
 								},
 							},
 						},
 					},
 					&actionExpr{
-						pos: position{line: 270, col: 5, offset: 7025},
-						run: (*parser).callonStep93,
+						pos: position{line: 268, col: 5, offset: 6959},
+						run: (*parser).callonStep89,
 						expr: &seqExpr{
-							pos: position{line: 270, col: 5, offset: 7025},
+							pos: position{line: 268, col: 5, offset: 6959},
 							exprs: []any{
 								&litMatcher{
-									pos:        position{line: 270, col: 5, offset: 7025},
+									pos:        position{line: 268, col: 5, offset: 6959},
 									val:        "Find",
 									ignoreCase: false,
 									want:       "\"Find\"",
 								},
 								&ruleRefExpr{
-									pos:  position{line: 270, col: 12, offset: 7032},
+									pos:  position{line: 268, col: 12, offset: 6966},
 									name: "SP",
 								},
 								&labeledExpr{
-									pos:   position{line: 270, col: 15, offset: 7035},
+									pos:   position{line: 268, col: 15, offset: 6969},
 									label: "n",
 									expr: &ruleRefExpr{
-										pos:  position{line: 270, col: 17, offset: 7037},
+										pos:  position{line: 268, col: 17, offset: 6971},
 										name: "NUMBER",
 									},
 								},
 								&ruleRefExpr{
-									pos:  position{line: 270, col: 24, offset: 7044},
+									pos:  position{line: 268, col: 24, offset: 6978},
 									name: "SP",
 								},
 								&labeledExpr{
-									pos:   position{line: 270, col: 27, offset: 7047},
+									pos:   position{line: 268, col: 27, offset: 6981},
 									label: "i",
 									expr: &ruleRefExpr{
-										pos:  position{line: 270, col: 29, offset: 7049},
+										pos:  position{line: 268, col: 29, offset: 6983},
 										name: "ITEM",
 									},
 								},
 								&ruleRefExpr{
-									pos:  position{line: 270, col: 34, offset: 7054},
+									pos:  position{line: 268, col: 34, offset: 6988},
+									name: "EOF",
+								},
+							},
+						},
+					},
+					&actionExpr{
+						pos: position{line: 273, col: 5, offset: 7096},
+						run: (*parser).callonStep99,
+						expr: &seqExpr{
+							pos: position{line: 273, col: 5, offset: 7096},
+							exprs: []any{
+								&litMatcher{
+									pos:        position{line: 273, col: 5, offset: 7096},
+									val:        "Group did not return",
+									ignoreCase: false,
+									want:       "\"Group did not return\"",
+								},
+								&ruleRefExpr{
+									pos:  position{line: 273, col: 28, offset: 7119},
 									name: "EOF",
 								},
 							},
@@ -5770,7 +5770,7 @@ func (p *parser) callonStep67() (any, error) {
 }
 
 func (c *current) onStep78() (any, error) {
-	return DidNotReturn_t{}, nil
+	return InsufficientCapacity_t{}, nil
 }
 
 func (p *parser) callonStep78() (any, error) {
@@ -5779,37 +5779,37 @@ func (p *parser) callonStep78() (any, error) {
 	return p.cur.onStep78()
 }
 
-func (c *current) onStep82() (any, error) {
-	return InsufficientCapacity_t{}, nil
+func (c *current) onStep82(r any) (any, error) {
+	return r, nil
 }
 
 func (p *parser) callonStep82() (any, error) {
 	stack := p.vstack[len(p.vstack)-1]
 	_ = stack
-	return p.cur.onStep82()
+	return p.cur.onStep82(stack["r"])
 }
 
-func (c *current) onStep86(r any) (any, error) {
-	return r, nil
-}
-
-func (p *parser) callonStep86() (any, error) {
-	stack := p.vstack[len(p.vstack)-1]
-	_ = stack
-	return p.cur.onStep86(stack["r"])
-}
-
-func (c *current) onStep93(n, i any) (any, error) {
+func (c *current) onStep89(n, i any) (any, error) {
 	return FoundItem_t{
 		Quantity: n.(int),
 		Item:     i.(items.Item_e),
 	}, nil
 }
 
-func (p *parser) callonStep93() (any, error) {
+func (p *parser) callonStep89() (any, error) {
 	stack := p.vstack[len(p.vstack)-1]
 	_ = stack
-	return p.cur.onStep93(stack["n"], stack["i"])
+	return p.cur.onStep89(stack["n"], stack["i"])
+}
+
+func (c *current) onStep99() (any, error) {
+	return DidNotReturn_t{}, nil
+}
+
+func (p *parser) callonStep99() (any, error) {
+	stack := p.vstack[len(p.vstack)-1]
+	_ = stack
+	return p.cur.onStep99()
 }
 
 func (c *current) onStep103(d any) (any, error) {
