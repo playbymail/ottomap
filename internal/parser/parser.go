@@ -956,6 +956,8 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 				Direction: v.Direction,
 				Edge:      v.Edge,
 			})
+		case CarryCapacity_t: // ignore
+			// log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
 		case DirectionTerrain_t:
 			if m.Result != results.Unknown { // only allowed at the beginning of the step
 				log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
@@ -1134,6 +1136,12 @@ func (b *BlockedByEdge_t) String() string {
 		return ""
 	}
 	return fmt.Sprintf("b(%s-%s)", b.Direction, b.Edge)
+}
+
+type CarryCapacity_t struct {
+	People   int
+	Quantity int
+	Item     string
 }
 
 type DidNotReturn_t struct{}

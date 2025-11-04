@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"os"
 	"sort"
@@ -261,7 +262,13 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
         Direction: d.(direction.Direction_e),
         Terrain:   terrain.Swamp,
     }, nil
-} / "failed due to Insufficient capacity to carry" EOF {
+} / people:NUMBER _ "people can carry" _ amount:NUMBER item:DOTSPLAT EOF {
+    return CarryCapacity_t{
+        People:   people.(int),
+        Quantity: amount.(int),
+        Item:     item.(string),
+    }, nil
+} / "failed due to Insufficient capacity to carry" .* EOF {
     return InsufficientCapacity_t{}, nil
 } / "Find" SP r:RESOURCE EOF {
     return r, nil
@@ -632,6 +639,10 @@ ITEM <- "adze"i         { return items.Adze, nil
 } /		"urn"i          { return items.Urn, nil
 } /		"wagons"i       { return items.Wagons, nil
 } /		"wax"i          { return items.Wax, nil}
+
+DOTSPLAT <- .* {
+    return string(c.text), nil
+}
 
 MONTH <- DIGIT DIGIT? {
     n, _ := strconv.Atoi(string(c.text))

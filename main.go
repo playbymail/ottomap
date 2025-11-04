@@ -20,7 +20,7 @@ var (
 	version = semver.Version{
 		Major: 0,
 		Minor: 62,
-		Patch: 20,
+		Patch: 21,
 		Build: semver.Commit(),
 	}
 	globalConfig *config.Config
@@ -100,15 +100,15 @@ func Execute(cfg *config.Config) error {
 	cmdList.AddCommand(cmdListTurns)
 
 	cmdRoot.AddCommand(cmdParse)
-	cmdParse.AddCommand(cmdParseFile)
-	//cmdParseFile.Flags().StringVar(&argsParseFiles.clanId, "clan-id", "", "clan id")
-	//if err := cmdParseFile.MarkFlagRequired("clan-id"); err != nil {
-	//	log.Fatalf("error: clan-id: %v\n", err)
-	//}
-	//cmdParseFile.Flags().StringVar(&argsParseFiles.turnId, "turn-id", "", "turn id")
-	//if err := cmdParseFile.MarkFlagRequired("turn-id"); err != nil {
-	//	log.Fatalf("error: turn-id: %v\n", err)
-	//}
+	cmdParse.AddCommand(cmdParseReports)
+	cmdParseReports.Flags().StringVar(&argsParseReports.clanId, "clan-id", "", "clan id")
+	if err := cmdParseReports.MarkFlagRequired("clan-id"); err != nil {
+		log.Fatalf("error: clan-id: %v\n", err)
+	}
+	cmdParseReports.Flags().StringVar(&argsParseReports.turnId, "turn-id", "", "turn id")
+	if err := cmdParseReports.MarkFlagRequired("turn-id"); err != nil {
+		log.Fatalf("error: turn-id: %v\n", err)
+	}
 
 	cmdRoot.AddCommand(cmdRender)
 	cmdRender.Flags().BoolVar(&argsRender.autoEOL, "auto-eol", true, "automatically convert line endings")
