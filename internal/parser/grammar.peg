@@ -157,27 +157,27 @@ Longhouse <- szi:(DIGIT+) SP+ "Longhouse" SP+ idi:(LETTER DIGIT+) {
 }
 
 ObviousNeighboringTerrainCode <- "ALPS"i {
-    return terrain.Alps, nil
+    return terrain.HighMountainAlps, nil
 } / "HSM"i {
-    return terrain.HighSnowyMountains, nil
+    return terrain.HighMountainsSnowy, nil
 } / "LCM"i {
-    return terrain.LowConiferMountains, nil
+    return terrain.LowMountainsConifer, nil
 } / "LJM"i {
-    return terrain.LowJungleMountains, nil
+    return terrain.LowMountainsJungle, nil
 } / "LSM"i {
-    return terrain.LowSnowyMountains, nil
+    return terrain.LowMountainsSnowy, nil
 } / "LVM"i {
-    return terrain.LowVolcanicMountains, nil
+    return terrain.LowMountainsVolcanic, nil
 } / "L" {
-    return terrain.Lake, nil
+    return terrain.WaterLake, nil
 } / "O" {
-    return terrain.Ocean, nil
+    return terrain.WaterOcean, nil
 }
 
 ProhibitedBy <- "Lake" {
-    return terrain.Lake, nil
+    return terrain.WaterLake, nil
 } / "Ocean" {
-    return terrain.Ocean, nil
+    return terrain.WaterOcean, nil
 }
 
 ScoutMovement <- "Scout" SP no:[1-8] ":" _ results:ToEOL EOF {
@@ -240,7 +240,7 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
 } / "Cannot Move Wagons into Jungle Hill" SP "to" SP d:DIRECTION SP "of HEX" EOF {
     return &ProhibitedFrom_t{
         Direction: d.(direction.Direction_e),
-        Terrain:   terrain.JungleHills,
+        Terrain:   terrain.HillsJungle,
     }, nil
 } / "Cannot Move Wagons into Mountains" SP "to" SP d:DIRECTION SP "of HEX" EOF {
     return &ProhibitedFrom_t{
@@ -250,7 +250,7 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
 } / "Cannot Move Wagons into Snowy hills" SP "to" SP d:DIRECTION SP "of HEX" EOF {
     return &ProhibitedFrom_t{
         Direction: d.(direction.Direction_e),
-        Terrain:   terrain.SnowyHills,
+        Terrain:   terrain.HillsSnowy,
     }, nil
 } / "Cannot Move Wagons into Swamp/Jungle Hill to" SP d:DIRECTION SP "of HEX" EOF {
     return &ProhibitedFrom_t{
@@ -260,7 +260,7 @@ Step <- d:DIRECTION "-" t:TERRAIN_CODE EOF {
 } / "Cannot Move Wagons into Swamp" SP "to" SP d:DIRECTION SP "of HEX" EOF {
     return &ProhibitedFrom_t{
         Direction: d.(direction.Direction_e),
-        Terrain:   terrain.Swamp,
+        Terrain:   terrain.FlatSwamp,
     }, nil
 } / people:NUMBER _ "people can carry" _ amount:NUMBER item:DOTSPLAT EOF {
     return CarryCapacity_t{
@@ -697,104 +697,104 @@ RESOURCE <- "Coal"i {
 }
 
 TERRAIN <- "ALPS" {
-    return terrain.Alps, nil
+    return terrain.HighMountainAlps, nil
 } / "ARID HILLS" {
-    return terrain.AridHills, nil
+    return terrain.HillsArid, nil
 } / "ARID TUNDRA" {
-    return terrain.AridTundra, nil
+    return terrain.FlatArid, nil
 } / "ARID" {
-    return terrain.AridTundra, nil
+    return terrain.FlatArid, nil
 } / "BRUSH FLAT" {
-    return terrain.BrushFlat, nil
+    return terrain.FlatBrush, nil
 } / "BRUSH HILLS" {
-    return terrain.BrushHills, nil
+    return terrain.HillsBrush, nil
 } / "BRUSH" {
-    return terrain.BrushFlat, nil
+    return terrain.FlatBrush, nil
 } / "CONIFER HILLS" {
-    return terrain.ConiferHills, nil
+    return terrain.HillsConifer, nil
 } / "DECIDUOUS FOREST" {
-    return terrain.Deciduous, nil
+    return terrain.FlatDeciduous, nil
 } / "DECIDUOUS HILLS" {
-    return terrain.DeciduousHills, nil
+    return terrain.HillsDeciduous, nil
 } / "DECIDUOUS" {
-    return terrain.Deciduous, nil
+    return terrain.FlatDeciduous, nil
 } / "DESERT" {
-    return terrain.Desert, nil
+    return terrain.FlatDesert, nil
 } / "GRASSY HILLS PLATEAU" {
-    return terrain.GrassyHillsPlateau, nil
+    return terrain.HillsGrassyPlateau, nil
 } / "GRASSY HILLS" {
-    return terrain.GrassyHills, nil
+    return terrain.HillsGrassy, nil
 } / "HIGH SNOWY MOUNTAINS" {
-    return terrain.HighSnowyMountains, nil
+    return terrain.HighMountainsSnowy, nil
 } / "JUNGLE HILLS" {
-    return terrain.JungleHills, nil
+    return terrain.HillsJungle, nil
 } / "JUNGLE" {
-    return terrain.Jungle, nil
+    return terrain.FlatJungle, nil
 } / "LAKE" {
-    return terrain.Lake, nil
+    return terrain.WaterLake, nil
 } / "LOW ARID MOUNTAINS" {
-    return terrain.LowAridMountains, nil
+    return terrain.LowMountainsArid, nil
 } / "LOW CONIFER MOUNTAINS" {
-    return terrain.LowConiferMountains, nil
+    return terrain.LowMountainsConifer, nil
 } / "LOW JUNGLE MOUNTAINS" {
-    return terrain.LowJungleMountains, nil
+    return terrain.LowMountainsJungle, nil
 } / "LOW SNOWY MOUNTAINS" {
-    return terrain.LowSnowyMountains, nil
+    return terrain.LowMountainsSnowy, nil
 } / "LOW VOLCANIC MOUNTAINS" {
-    return terrain.LowVolcanicMountains, nil
+    return terrain.LowMountainsVolcanic, nil
 } / "LOW VOLCANO MOUNTAINS" {
-    return terrain.LowVolcanicMountains, nil
+    return terrain.LowMountainsVolcanic, nil
 } / "OCEAN" {
-    return terrain.Ocean, nil
+    return terrain.WaterOcean, nil
 } / "PLATEAU GRASSY HILLS" {
-    return terrain.GrassyHillsPlateau, nil
+    return terrain.HillsGrassyPlateau, nil
 } / "PLATEAU PRAIRIE" {
-    return terrain.PrairiePlateau, nil
+    return terrain.FlatPrairiePlateau, nil
 } / "POLAR ICE" {
-    return terrain.PolarIce, nil
+    return terrain.FlatPolarIce, nil
 } / "PRAIRIE" {
-    return terrain.Prairie, nil
+    return terrain.FlatPrairie, nil
 } / "ROCKY HILLS" {
-    return terrain.RockyHills, nil
+    return terrain.HillsRocky, nil
 } / "SNOWY HILLS" {
-    return terrain.SnowyHills, nil
+    return terrain.HillsSnowy, nil
 } / "SWAMP" {
-    return terrain.Swamp, nil
+    return terrain.FlatSwamp, nil
 } / "TUNDRA" {
-    return terrain.Tundra, nil
+    return terrain.FlatTundra, nil
 } / "UNKNOWN" {
     return terrain.Blank, nil
 }
 
-TERRAIN_CODE <- "ALPS" { return terrain.Alps, nil
-} / "GHP" { return terrain.GrassyHillsPlateau, nil
-} / "HSM" { return terrain.HighSnowyMountains, nil
-} / "LAM" { return terrain.LowAridMountains, nil
-} / "LCM" { return terrain.LowConiferMountains, nil
-} / "LJM" { return terrain.LowJungleMountains, nil
-} / "LSM" { return terrain.LowSnowyMountains, nil
-} / "LVM" { return terrain.LowVolcanicMountains, nil
-} / "PGH" { return terrain.GrassyHillsPlateau, nil
-} / "PPR" { return terrain.PrairiePlateau, nil
-} / "AH" { return terrain.AridHills, nil
-} / "AR" { return terrain.AridTundra, nil
-} / "BF" { return terrain.BrushFlat, nil
-} / "BH" { return terrain.BrushHills, nil
-} / "CH" { return terrain.ConiferHills, nil
-} / "DE" { return terrain.Desert, nil
-} / "DH" { return terrain.DeciduousHills, nil
-} / "GH" { return terrain.GrassyHills, nil
-} / "JG" { return terrain.Jungle, nil
-} / "JH" { return terrain.JungleHills, nil
-} / "PI" { return terrain.PolarIce, nil
-} / "PR" { return terrain.Prairie, nil
-} / "RH" { return terrain.RockyHills, nil
-} / "SH" { return terrain.SnowyHills, nil
-} / "SW" { return terrain.Swamp, nil
-} / "TU" { return terrain.Tundra, nil
-} / "D" { return terrain.Deciduous, nil
-} / "L" { return terrain.Lake, nil
-} / "O" { return terrain.Ocean, nil
+TERRAIN_CODE <- "ALPS" { return terrain.HighMountainAlps, nil
+} / "GHP" { return terrain.HillsGrassyPlateau, nil
+} / "HSM" { return terrain.HighMountainsSnowy, nil
+} / "LAM" { return terrain.LowMountainsArid, nil
+} / "LCM" { return terrain.LowMountainsConifer, nil
+} / "LJM" { return terrain.LowMountainsJungle, nil
+} / "LSM" { return terrain.LowMountainsSnowy, nil
+} / "LVM" { return terrain.LowMountainsVolcanic, nil
+} / "PGH" { return terrain.HillsGrassyPlateau, nil
+} / "PPR" { return terrain.FlatPrairiePlateau, nil
+} / "AH" { return terrain.HillsArid, nil
+} / "AR" { return terrain.FlatArid, nil
+} / "BF" { return terrain.FlatBrush, nil
+} / "BH" { return terrain.HillsBrush, nil
+} / "CH" { return terrain.HillsConifer, nil
+} / "DE" { return terrain.FlatDesert, nil
+} / "DH" { return terrain.HillsDeciduous, nil
+} / "GH" { return terrain.HillsGrassy, nil
+} / "JG" { return terrain.FlatJungle, nil
+} / "JH" { return terrain.HillsJungle, nil
+} / "PI" { return terrain.FlatPolarIce, nil
+} / "PR" { return terrain.FlatPrairie, nil
+} / "RH" { return terrain.HillsRocky, nil
+} / "SH" { return terrain.HillsSnowy, nil
+} / "SW" { return terrain.FlatSwamp, nil
+} / "TU" { return terrain.FlatTundra, nil
+} / "D" { return terrain.FlatDeciduous, nil
+} / "L" { return terrain.WaterLake, nil
+} / "O" { return terrain.WaterOcean, nil
 }
 
 UNIT_ID <- DIGIT DIGIT DIGIT DIGIT ([cefg] [1-9])? {

@@ -276,7 +276,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 				w.Printf("</feature>\n")
 			}
 
-			if t.Terrain == terrain.PrairiePlateau {
+			if t.Terrain == terrain.FlatPrairiePlateau {
 				origin := points[0]
 				w.Printf(`<feature type="Semi-Real Hill Jagged" rotate="0.0" uuid="%s" mapLayer="Features" isFlipHorizontal="false" isFlipVertical="false" scale="90.0" scaleHt="-1.0" tags="" color="0.800000011920929,0.800000011920929,0.800000011920929,1.0" ringcolor="null" isGMOnly="false" isPlaceFreely="false" labelPosition="6:00" labelDistance="0" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isFillHexBottom="false" isHideTerrainIcon="false">`, uuid.NewString())
 				w.Printf(`<location viewLevel="WORLD" x="%f" y="%f" />`, origin.X, origin.Y)
@@ -462,7 +462,7 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 			}
 
 			if t.Terrain != terrain.Blank {
-				//if t.Terrain == terrain.Alps {
+				//if t.Terrain == terrain.HighMountainAlps {
 				//	log.Printf("alps %s", t.Location.GridString())
 				//}
 				if !(t.WasVisited || t.WasScouted) {

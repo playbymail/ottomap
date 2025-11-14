@@ -54,11 +54,11 @@ func (w *WXX) newGrid(id string) *Grid {
 //		grid.tiles[col][row].Terrain = hex.Terrain
 //		// todo: add the missing terrain types here.
 //		switch grid.tiles[col][row].Terrain {
-//		case terrain.Lake:
+//		case terrain.WaterLake:
 //			grid.tiles[col][row].Elevation = -1
-//		case terrain.Ocean:
+//		case terrain.WaterOcean:
 //			grid.tiles[col][row].Elevation = -3
-//		case terrain.Prairie:
+//		case terrain.FlatPrairie:
 //			grid.tiles[col][row].Elevation = 1_000
 //		}
 //		grid.tiles[col][row].Features = hex.Features
@@ -116,38 +116,38 @@ func (g *Grid) addTile(turnId string, hex *Hex) error {
 		switch tile.Terrain {
 		case terrain.Blank, terrain.UnknownLand, terrain.UnknownWater:
 			tile.Elevation = 0
-		case terrain.Alps,
-			terrain.AridHills,
-			terrain.AridTundra,
-			terrain.BrushFlat,
-			terrain.BrushHills,
-			terrain.ConiferHills,
-			terrain.Deciduous,
-			terrain.DeciduousHills,
-			terrain.Desert,
-			terrain.GrassyHills,
-			terrain.GrassyHillsPlateau,
-			terrain.HighSnowyMountains,
-			terrain.Jungle,
-			terrain.JungleHills,
-			terrain.LowAridMountains,
-			terrain.LowConiferMountains,
-			terrain.LowJungleMountains,
-			terrain.LowSnowyMountains,
-			terrain.LowVolcanicMountains,
-			terrain.Prairie,
-			terrain.PrairiePlateau,
-			terrain.RockyHills,
-			terrain.SnowyHills,
-			terrain.Tundra:
+		case terrain.HighMountainAlps,
+			terrain.HillsArid,
+			terrain.FlatArid,
+			terrain.FlatBrush,
+			terrain.HillsBrush,
+			terrain.HillsConifer,
+			terrain.FlatDeciduous,
+			terrain.HillsDeciduous,
+			terrain.FlatDesert,
+			terrain.HillsGrassy,
+			terrain.HillsGrassyPlateau,
+			terrain.HighMountainsSnowy,
+			terrain.FlatJungle,
+			terrain.HillsJungle,
+			terrain.LowMountainsArid,
+			terrain.LowMountainsConifer,
+			terrain.LowMountainsJungle,
+			terrain.LowMountainsSnowy,
+			terrain.LowMountainsVolcanic,
+			terrain.FlatPrairie,
+			terrain.FlatPrairiePlateau,
+			terrain.HillsRocky,
+			terrain.HillsSnowy,
+			terrain.FlatTundra:
 			tile.Elevation = 1_250
-		case terrain.Lake:
+		case terrain.WaterLake:
 			tile.Elevation = -1
-		case terrain.Ocean:
+		case terrain.WaterOcean:
 			tile.Elevation = -3
-		case terrain.PolarIce:
+		case terrain.FlatPolarIce:
 			tile.Elevation = 10
-		case terrain.Swamp:
+		case terrain.FlatSwamp:
 			tile.Elevation = 1
 		default:
 			log.Printf("grid: addTile: unknown terrain type %d %q", hex.Terrain, hex.Terrain.String())

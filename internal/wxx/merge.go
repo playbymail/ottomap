@@ -23,38 +23,38 @@ func (w *WXX) MergeHex(hex *Hex) error {
 		switch t.Terrain {
 		case terrain.Blank, terrain.UnknownJungleSwamp, terrain.UnknownLand, terrain.UnknownMountain, terrain.UnknownWater:
 			t.Elevation = 0
-		case terrain.Alps,
-			terrain.AridHills,
-			terrain.AridTundra,
-			terrain.BrushFlat,
-			terrain.BrushHills,
-			terrain.ConiferHills,
-			terrain.Deciduous,
-			terrain.DeciduousHills,
-			terrain.Desert,
-			terrain.GrassyHills,
-			terrain.GrassyHillsPlateau,
-			terrain.HighSnowyMountains,
-			terrain.Jungle,
-			terrain.JungleHills,
-			terrain.LowAridMountains,
-			terrain.LowConiferMountains,
-			terrain.LowJungleMountains,
-			terrain.LowSnowyMountains,
-			terrain.LowVolcanicMountains,
-			terrain.Prairie,
-			terrain.PrairiePlateau,
-			terrain.RockyHills,
-			terrain.SnowyHills,
-			terrain.Tundra:
+		case terrain.HighMountainAlps,
+			terrain.HillsArid,
+			terrain.FlatArid,
+			terrain.FlatBrush,
+			terrain.HillsBrush,
+			terrain.HillsConifer,
+			terrain.FlatDeciduous,
+			terrain.HillsDeciduous,
+			terrain.FlatDesert,
+			terrain.HillsGrassy,
+			terrain.HillsGrassyPlateau,
+			terrain.HighMountainsSnowy,
+			terrain.FlatJungle,
+			terrain.HillsJungle,
+			terrain.LowMountainsArid,
+			terrain.LowMountainsConifer,
+			terrain.LowMountainsJungle,
+			terrain.LowMountainsSnowy,
+			terrain.LowMountainsVolcanic,
+			terrain.FlatPrairie,
+			terrain.FlatPrairiePlateau,
+			terrain.HillsRocky,
+			terrain.HillsSnowy,
+			terrain.FlatTundra:
 			t.Elevation = 1_250
-		case terrain.Lake:
+		case terrain.WaterLake:
 			t.Elevation = -1
-		case terrain.Ocean:
+		case terrain.WaterOcean:
 			t.Elevation = -3
-		case terrain.PolarIce:
+		case terrain.FlatPolarIce:
 			t.Elevation = 10
-		case terrain.Swamp:
+		case terrain.FlatSwamp:
 			t.Elevation = 1
 		default:
 			log.Printf("grid: addTile: unknown terrain type %d %q", hex.Terrain, hex.Terrain.String())
