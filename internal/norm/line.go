@@ -2,7 +2,10 @@
 
 package norm
 
-import "regexp"
+import (
+	"html"
+	"regexp"
+)
 
 var (
 	// pre-computed lookup table for valid input characters
@@ -39,6 +42,9 @@ func NormalizeLine(input []byte) []byte {
 	if len(input) == 0 {
 		return []byte{}
 	}
+
+	// replace some HTML entities (for example, `&#39;` -> `'`)
+	input = []byte(html.UnescapeString(string(input)))
 
 	// replace smart quotes and dashes with ASCII equivalents
 	runes := []rune(string(input))

@@ -782,6 +782,7 @@ TERRAIN_CODE <- "ALPS" { return terrain.HighMountainAlps, nil
 } / "BH" { return terrain.HillsBrush, nil
 } / "CH" { return terrain.HillsConifer, nil
 } / "DE" { return terrain.FlatDesert, nil
+} / "DF" { return terrain.FlatDeciduous, nil
 } / "DH" { return terrain.HillsDeciduous, nil
 } / "GH" { return terrain.HillsGrassy, nil
 } / "JG" { return terrain.FlatJungle, nil

@@ -5050,126 +5050,136 @@ var g = &grammar{
 						run: (*parser).callonTERRAIN_CODE34,
 						expr: &litMatcher{
 							pos:        position{line: 785, col: 5, offset: 24150},
+							val:        "DF",
+							ignoreCase: false,
+							want:       "\"DF\"",
+						},
+					},
+					&actionExpr{
+						pos: position{line: 786, col: 5, offset: 24195},
+						run: (*parser).callonTERRAIN_CODE36,
+						expr: &litMatcher{
+							pos:        position{line: 786, col: 5, offset: 24195},
 							val:        "DH",
 							ignoreCase: false,
 							want:       "\"DH\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 786, col: 5, offset: 24196},
-						run: (*parser).callonTERRAIN_CODE36,
+						pos: position{line: 787, col: 5, offset: 24241},
+						run: (*parser).callonTERRAIN_CODE38,
 						expr: &litMatcher{
-							pos:        position{line: 786, col: 5, offset: 24196},
+							pos:        position{line: 787, col: 5, offset: 24241},
 							val:        "GH",
 							ignoreCase: false,
 							want:       "\"GH\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 787, col: 5, offset: 24239},
-						run: (*parser).callonTERRAIN_CODE38,
+						pos: position{line: 788, col: 5, offset: 24284},
+						run: (*parser).callonTERRAIN_CODE40,
 						expr: &litMatcher{
-							pos:        position{line: 787, col: 5, offset: 24239},
+							pos:        position{line: 788, col: 5, offset: 24284},
 							val:        "JG",
 							ignoreCase: false,
 							want:       "\"JG\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 788, col: 5, offset: 24281},
-						run: (*parser).callonTERRAIN_CODE40,
+						pos: position{line: 789, col: 5, offset: 24326},
+						run: (*parser).callonTERRAIN_CODE42,
 						expr: &litMatcher{
-							pos:        position{line: 788, col: 5, offset: 24281},
+							pos:        position{line: 789, col: 5, offset: 24326},
 							val:        "JH",
 							ignoreCase: false,
 							want:       "\"JH\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 789, col: 5, offset: 24324},
-						run: (*parser).callonTERRAIN_CODE42,
+						pos: position{line: 790, col: 5, offset: 24369},
+						run: (*parser).callonTERRAIN_CODE44,
 						expr: &litMatcher{
-							pos:        position{line: 789, col: 5, offset: 24324},
+							pos:        position{line: 790, col: 5, offset: 24369},
 							val:        "PI",
 							ignoreCase: false,
 							want:       "\"PI\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 790, col: 5, offset: 24368},
-						run: (*parser).callonTERRAIN_CODE44,
+						pos: position{line: 791, col: 5, offset: 24413},
+						run: (*parser).callonTERRAIN_CODE46,
 						expr: &litMatcher{
-							pos:        position{line: 790, col: 5, offset: 24368},
+							pos:        position{line: 791, col: 5, offset: 24413},
 							val:        "PR",
 							ignoreCase: false,
 							want:       "\"PR\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 791, col: 5, offset: 24411},
-						run: (*parser).callonTERRAIN_CODE46,
+						pos: position{line: 792, col: 5, offset: 24456},
+						run: (*parser).callonTERRAIN_CODE48,
 						expr: &litMatcher{
-							pos:        position{line: 791, col: 5, offset: 24411},
+							pos:        position{line: 792, col: 5, offset: 24456},
 							val:        "RH",
 							ignoreCase: false,
 							want:       "\"RH\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 792, col: 5, offset: 24453},
-						run: (*parser).callonTERRAIN_CODE48,
+						pos: position{line: 793, col: 5, offset: 24498},
+						run: (*parser).callonTERRAIN_CODE50,
 						expr: &litMatcher{
-							pos:        position{line: 792, col: 5, offset: 24453},
+							pos:        position{line: 793, col: 5, offset: 24498},
 							val:        "SH",
 							ignoreCase: false,
 							want:       "\"SH\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 793, col: 5, offset: 24495},
-						run: (*parser).callonTERRAIN_CODE50,
+						pos: position{line: 794, col: 5, offset: 24540},
+						run: (*parser).callonTERRAIN_CODE52,
 						expr: &litMatcher{
-							pos:        position{line: 793, col: 5, offset: 24495},
+							pos:        position{line: 794, col: 5, offset: 24540},
 							val:        "SW",
 							ignoreCase: false,
 							want:       "\"SW\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 794, col: 5, offset: 24536},
-						run: (*parser).callonTERRAIN_CODE52,
+						pos: position{line: 795, col: 5, offset: 24581},
+						run: (*parser).callonTERRAIN_CODE54,
 						expr: &litMatcher{
-							pos:        position{line: 794, col: 5, offset: 24536},
+							pos:        position{line: 795, col: 5, offset: 24581},
 							val:        "TU",
 							ignoreCase: false,
 							want:       "\"TU\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 795, col: 5, offset: 24578},
-						run: (*parser).callonTERRAIN_CODE54,
+						pos: position{line: 796, col: 5, offset: 24623},
+						run: (*parser).callonTERRAIN_CODE56,
 						expr: &litMatcher{
-							pos:        position{line: 795, col: 5, offset: 24578},
+							pos:        position{line: 796, col: 5, offset: 24623},
 							val:        "D",
 							ignoreCase: false,
 							want:       "\"D\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 796, col: 5, offset: 24622},
-						run: (*parser).callonTERRAIN_CODE56,
+						pos: position{line: 797, col: 5, offset: 24667},
+						run: (*parser).callonTERRAIN_CODE58,
 						expr: &litMatcher{
-							pos:        position{line: 796, col: 5, offset: 24622},
+							pos:        position{line: 797, col: 5, offset: 24667},
 							val:        "L",
 							ignoreCase: false,
 							want:       "\"L\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 797, col: 5, offset: 24662},
-						run: (*parser).callonTERRAIN_CODE58,
+						pos: position{line: 798, col: 5, offset: 24707},
+						run: (*parser).callonTERRAIN_CODE60,
 						expr: &litMatcher{
-							pos:        position{line: 797, col: 5, offset: 24662},
+							pos:        position{line: 798, col: 5, offset: 24707},
 							val:        "O",
 							ignoreCase: false,
 							want:       "\"O\"",
@@ -5180,43 +5190,43 @@ var g = &grammar{
 		},
 		{
 			name: "UNIT_ID",
-			pos:  position{line: 800, col: 1, offset: 24702},
+			pos:  position{line: 801, col: 1, offset: 24747},
 			expr: &actionExpr{
-				pos: position{line: 800, col: 12, offset: 24713},
+				pos: position{line: 801, col: 12, offset: 24758},
 				run: (*parser).callonUNIT_ID1,
 				expr: &seqExpr{
-					pos: position{line: 800, col: 12, offset: 24713},
+					pos: position{line: 801, col: 12, offset: 24758},
 					exprs: []any{
 						&ruleRefExpr{
-							pos:  position{line: 800, col: 12, offset: 24713},
+							pos:  position{line: 801, col: 12, offset: 24758},
 							name: "DIGIT",
 						},
 						&ruleRefExpr{
-							pos:  position{line: 800, col: 18, offset: 24719},
+							pos:  position{line: 801, col: 18, offset: 24764},
 							name: "DIGIT",
 						},
 						&ruleRefExpr{
-							pos:  position{line: 800, col: 24, offset: 24725},
+							pos:  position{line: 801, col: 24, offset: 24770},
 							name: "DIGIT",
 						},
 						&ruleRefExpr{
-							pos:  position{line: 800, col: 30, offset: 24731},
+							pos:  position{line: 801, col: 30, offset: 24776},
 							name: "DIGIT",
 						},
 						&zeroOrOneExpr{
-							pos: position{line: 800, col: 36, offset: 24737},
+							pos: position{line: 801, col: 36, offset: 24782},
 							expr: &seqExpr{
-								pos: position{line: 800, col: 37, offset: 24738},
+								pos: position{line: 801, col: 37, offset: 24783},
 								exprs: []any{
 									&charClassMatcher{
-										pos:        position{line: 800, col: 37, offset: 24738},
+										pos:        position{line: 801, col: 37, offset: 24783},
 										val:        "[cefg]",
 										chars:      []rune{'c', 'e', 'f', 'g'},
 										ignoreCase: false,
 										inverted:   false,
 									},
 									&charClassMatcher{
-										pos:        position{line: 800, col: 44, offset: 24745},
+										pos:        position{line: 801, col: 44, offset: 24790},
 										val:        "[1-9]",
 										ranges:     []rune{'1', '9'},
 										ignoreCase: false,
@@ -5231,45 +5241,45 @@ var g = &grammar{
 		},
 		{
 			name: "WINDSTRENGTH",
-			pos:  position{line: 804, col: 1, offset: 24791},
+			pos:  position{line: 805, col: 1, offset: 24836},
 			expr: &choiceExpr{
-				pos: position{line: 804, col: 17, offset: 24807},
+				pos: position{line: 805, col: 17, offset: 24852},
 				alternatives: []any{
 					&actionExpr{
-						pos: position{line: 804, col: 17, offset: 24807},
+						pos: position{line: 805, col: 17, offset: 24852},
 						run: (*parser).callonWINDSTRENGTH2,
 						expr: &litMatcher{
-							pos:        position{line: 804, col: 17, offset: 24807},
+							pos:        position{line: 805, col: 17, offset: 24852},
 							val:        "CALM",
 							ignoreCase: false,
 							want:       "\"CALM\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 806, col: 5, offset: 24847},
+						pos: position{line: 807, col: 5, offset: 24892},
 						run: (*parser).callonWINDSTRENGTH4,
 						expr: &litMatcher{
-							pos:        position{line: 806, col: 5, offset: 24847},
+							pos:        position{line: 807, col: 5, offset: 24892},
 							val:        "MILD",
 							ignoreCase: false,
 							want:       "\"MILD\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 808, col: 5, offset: 24887},
+						pos: position{line: 809, col: 5, offset: 24932},
 						run: (*parser).callonWINDSTRENGTH6,
 						expr: &litMatcher{
-							pos:        position{line: 808, col: 5, offset: 24887},
+							pos:        position{line: 809, col: 5, offset: 24932},
 							val:        "STRONG",
 							ignoreCase: false,
 							want:       "\"STRONG\"",
 						},
 					},
 					&actionExpr{
-						pos: position{line: 810, col: 5, offset: 24931},
+						pos: position{line: 811, col: 5, offset: 24976},
 						run: (*parser).callonWINDSTRENGTH8,
 						expr: &litMatcher{
-							pos:        position{line: 810, col: 5, offset: 24931},
+							pos:        position{line: 811, col: 5, offset: 24976},
 							val:        "GALE",
 							ignoreCase: false,
 							want:       "\"GALE\"",
@@ -5280,29 +5290,29 @@ var g = &grammar{
 		},
 		{
 			name: "YEAR",
-			pos:  position{line: 814, col: 1, offset: 24970},
+			pos:  position{line: 815, col: 1, offset: 25015},
 			expr: &actionExpr{
-				pos: position{line: 814, col: 9, offset: 24978},
+				pos: position{line: 815, col: 9, offset: 25023},
 				run: (*parser).callonYEAR1,
 				expr: &seqExpr{
-					pos: position{line: 814, col: 9, offset: 24978},
+					pos: position{line: 815, col: 9, offset: 25023},
 					exprs: []any{
 						&ruleRefExpr{
-							pos:  position{line: 814, col: 9, offset: 24978},
+							pos:  position{line: 815, col: 9, offset: 25023},
 							name: "DIGIT",
 						},
 						&ruleRefExpr{
-							pos:  position{line: 814, col: 15, offset: 24984},
+							pos:  position{line: 815, col: 15, offset: 25029},
 							name: "DIGIT",
 						},
 						&ruleRefExpr{
-							pos:  position{line: 814, col: 21, offset: 24990},
+							pos:  position{line: 815, col: 21, offset: 25035},
 							name: "DIGIT",
 						},
 						&zeroOrOneExpr{
-							pos: position{line: 814, col: 27, offset: 24996},
+							pos: position{line: 815, col: 27, offset: 25041},
 							expr: &ruleRefExpr{
-								pos:  position{line: 814, col: 27, offset: 24996},
+								pos:  position{line: 815, col: 27, offset: 25041},
 								name: "DIGIT",
 							},
 						},
@@ -5312,19 +5322,19 @@ var g = &grammar{
 		},
 		{
 			name: "EOF",
-			pos:  position{line: 820, col: 1, offset: 25073},
+			pos:  position{line: 821, col: 1, offset: 25118},
 			expr: &notExpr{
-				pos: position{line: 820, col: 10, offset: 25082},
+				pos: position{line: 821, col: 10, offset: 25127},
 				expr: &anyMatcher{
-					line: 820, col: 11, offset: 25083,
+					line: 821, col: 11, offset: 25128,
 				},
 			},
 		},
 		{
 			name: "DIGIT",
-			pos:  position{line: 821, col: 1, offset: 25085},
+			pos:  position{line: 822, col: 1, offset: 25130},
 			expr: &charClassMatcher{
-				pos:        position{line: 821, col: 10, offset: 25094},
+				pos:        position{line: 822, col: 10, offset: 25139},
 				val:        "[0-9]",
 				ranges:     []rune{'0', '9'},
 				ignoreCase: false,
@@ -5333,9 +5343,9 @@ var g = &grammar{
 		},
 		{
 			name: "LETTER",
-			pos:  position{line: 822, col: 1, offset: 25100},
+			pos:  position{line: 823, col: 1, offset: 25145},
 			expr: &charClassMatcher{
-				pos:        position{line: 822, col: 10, offset: 25109},
+				pos:        position{line: 823, col: 10, offset: 25154},
 				val:        "[A-Z]",
 				ranges:     []rune{'A', 'Z'},
 				ignoreCase: false,
@@ -5344,11 +5354,11 @@ var g = &grammar{
 		},
 		{
 			name: "SP",
-			pos:  position{line: 823, col: 1, offset: 25115},
+			pos:  position{line: 824, col: 1, offset: 25160},
 			expr: &oneOrMoreExpr{
-				pos: position{line: 823, col: 10, offset: 25124},
+				pos: position{line: 824, col: 10, offset: 25169},
 				expr: &charClassMatcher{
-					pos:        position{line: 823, col: 10, offset: 25124},
+					pos:        position{line: 824, col: 10, offset: 25169},
 					val:        "[ \\t]",
 					chars:      []rune{' ', '\t'},
 					ignoreCase: false,
@@ -5358,11 +5368,11 @@ var g = &grammar{
 		},
 		{
 			name: "_",
-			pos:  position{line: 824, col: 1, offset: 25131},
+			pos:  position{line: 825, col: 1, offset: 25176},
 			expr: &zeroOrMoreExpr{
-				pos: position{line: 824, col: 10, offset: 25140},
+				pos: position{line: 825, col: 10, offset: 25185},
 				expr: &charClassMatcher{
-					pos:        position{line: 824, col: 10, offset: 25140},
+					pos:        position{line: 825, col: 10, offset: 25185},
 					val:        "[ \\t]",
 					chars:      []rune{' ', '\t'},
 					ignoreCase: false,
@@ -8623,7 +8633,7 @@ func (p *parser) callonTERRAIN_CODE32() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE34() (any, error) {
-	return terrain.HillsDeciduous, nil
+	return terrain.FlatDeciduous, nil
 }
 
 func (p *parser) callonTERRAIN_CODE34() (any, error) {
@@ -8633,7 +8643,7 @@ func (p *parser) callonTERRAIN_CODE34() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE36() (any, error) {
-	return terrain.HillsGrassy, nil
+	return terrain.HillsDeciduous, nil
 }
 
 func (p *parser) callonTERRAIN_CODE36() (any, error) {
@@ -8643,7 +8653,7 @@ func (p *parser) callonTERRAIN_CODE36() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE38() (any, error) {
-	return terrain.FlatJungle, nil
+	return terrain.HillsGrassy, nil
 }
 
 func (p *parser) callonTERRAIN_CODE38() (any, error) {
@@ -8653,7 +8663,7 @@ func (p *parser) callonTERRAIN_CODE38() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE40() (any, error) {
-	return terrain.HillsJungle, nil
+	return terrain.FlatJungle, nil
 }
 
 func (p *parser) callonTERRAIN_CODE40() (any, error) {
@@ -8663,7 +8673,7 @@ func (p *parser) callonTERRAIN_CODE40() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE42() (any, error) {
-	return terrain.FlatPolarIce, nil
+	return terrain.HillsJungle, nil
 }
 
 func (p *parser) callonTERRAIN_CODE42() (any, error) {
@@ -8673,7 +8683,7 @@ func (p *parser) callonTERRAIN_CODE42() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE44() (any, error) {
-	return terrain.FlatPrairie, nil
+	return terrain.FlatPolarIce, nil
 }
 
 func (p *parser) callonTERRAIN_CODE44() (any, error) {
@@ -8683,7 +8693,7 @@ func (p *parser) callonTERRAIN_CODE44() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE46() (any, error) {
-	return terrain.HillsRocky, nil
+	return terrain.FlatPrairie, nil
 }
 
 func (p *parser) callonTERRAIN_CODE46() (any, error) {
@@ -8693,7 +8703,7 @@ func (p *parser) callonTERRAIN_CODE46() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE48() (any, error) {
-	return terrain.HillsSnowy, nil
+	return terrain.HillsRocky, nil
 }
 
 func (p *parser) callonTERRAIN_CODE48() (any, error) {
@@ -8703,7 +8713,7 @@ func (p *parser) callonTERRAIN_CODE48() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE50() (any, error) {
-	return terrain.FlatSwamp, nil
+	return terrain.HillsSnowy, nil
 }
 
 func (p *parser) callonTERRAIN_CODE50() (any, error) {
@@ -8713,7 +8723,7 @@ func (p *parser) callonTERRAIN_CODE50() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE52() (any, error) {
-	return terrain.FlatTundra, nil
+	return terrain.FlatSwamp, nil
 }
 
 func (p *parser) callonTERRAIN_CODE52() (any, error) {
@@ -8723,7 +8733,7 @@ func (p *parser) callonTERRAIN_CODE52() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE54() (any, error) {
-	return terrain.FlatDeciduous, nil
+	return terrain.FlatTundra, nil
 }
 
 func (p *parser) callonTERRAIN_CODE54() (any, error) {
@@ -8733,7 +8743,7 @@ func (p *parser) callonTERRAIN_CODE54() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE56() (any, error) {
-	return terrain.WaterLake, nil
+	return terrain.FlatDeciduous, nil
 }
 
 func (p *parser) callonTERRAIN_CODE56() (any, error) {
@@ -8743,13 +8753,23 @@ func (p *parser) callonTERRAIN_CODE56() (any, error) {
 }
 
 func (c *current) onTERRAIN_CODE58() (any, error) {
-	return terrain.WaterOcean, nil
+	return terrain.WaterLake, nil
 }
 
 func (p *parser) callonTERRAIN_CODE58() (any, error) {
 	stack := p.vstack[len(p.vstack)-1]
 	_ = stack
 	return p.cur.onTERRAIN_CODE58()
+}
+
+func (c *current) onTERRAIN_CODE60() (any, error) {
+	return terrain.WaterOcean, nil
+}
+
+func (p *parser) callonTERRAIN_CODE60() (any, error) {
+	stack := p.vstack[len(p.vstack)-1]
+	_ = stack
+	return p.cur.onTERRAIN_CODE60()
 }
 
 func (c *current) onUNIT_ID1() (any, error) {

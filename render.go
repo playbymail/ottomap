@@ -53,6 +53,7 @@ var argsRender struct {
 	experimental struct {
 		blankMapSmall bool
 		blankMapFull  bool
+		jsonMapSmall  bool
 	}
 	saveWithTurnId bool
 	show           struct {
@@ -584,6 +585,8 @@ var cmdRender = &cobra.Command{
 			mapName = filepath.Join(argsRender.paths.output, "blank-map.wxx")
 		} else if argsRender.experimental.blankMapFull {
 			mapName = filepath.Join(argsRender.paths.output, "blank-map-full.wxx")
+		} else if argsRender.experimental.jsonMapSmall {
+			mapName = filepath.Join(argsRender.paths.output, "json-map-small.json")
 		} else if argsRender.saveWithTurnId {
 			mapName = filepath.Join(argsRender.paths.output, fmt.Sprintf("%s.%s.wxx", maxTurnId, argsRender.clanId))
 		} else {
@@ -598,6 +601,12 @@ var cmdRender = &cobra.Command{
 		} else if argsRender.experimental.blankMapFull {
 			log.Printf("creating blank map %s\n", mapName)
 			if err := wxxMap.CreateBlankMap(mapName, true); err != nil {
+				log.Printf("creating %s\n", mapName)
+				log.Fatalf("error: %v\n", err)
+			}
+		} else if argsRender.experimental.jsonMapSmall {
+			log.Printf("creating json map %s\n", mapName)
+			if err := wxxMap.CreateJsonMap(mapName, true); err != nil {
 				log.Printf("creating %s\n", mapName)
 				log.Fatalf("error: %v\n", err)
 			}
