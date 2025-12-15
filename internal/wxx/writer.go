@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+	"github.com/maloquacious/semver"
 	"github.com/playbymail/ottomap/internal/config"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
@@ -22,6 +24,11 @@ import (
 )
 
 type RenderConfig struct {
+	Version semver.Version
+	Meta    struct {
+		IncludeMeta   bool
+		IncludeOrigin bool
+	}
 	Show struct {
 		Grid struct {
 			Centers bool
@@ -29,7 +36,14 @@ type RenderConfig struct {
 			Numbers bool
 		}
 	}
+	Parser struct {
+		Version semver.Version
+	}
 }
+
+const (
+	metaUuid = `cd8018d3-42f2-4b38-aaa6-ottomap14c9d`
+)
 
 type FeatureNotes struct {
 	Notes map[string]*FeatureNote
@@ -145,7 +159,8 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 
 	// calculate the size of the consolidated map
 	tilesWide, tilesHigh := lowerRight.Column-upperLeft.Column+1, lowerRight.Row-upperLeft.Row+1
-	log.Printf("map: tile columns %4d rows %4d", tilesWide, tilesHigh)
+	log.Printf("map: bounds (%d, %d) - (%d, %d)\n", upperLeft.Row, upperLeft.Column, lowerRight.Row, lowerRight.Column)
+	log.Printf("map: tile   columns %4d rows %4d", tilesWide, tilesHigh)
 	for _, t := range w.tiles {
 		if tilesWide < t.RenderAt.Column {
 			tilesWide = t.RenderAt.Column
@@ -154,9 +169,10 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 			tilesHigh = t.RenderAt.Row
 		}
 	}
-	log.Printf("map: tile columns %4d rows %4d", tilesWide, tilesHigh)
 	// bump the tiles wide and high by 4 so that we can render the borders
-	tilesWide, tilesHigh = tilesWide+4, tilesHigh+4
+	const borderWidth, borderHeight = 2, 2
+	tilesWide, tilesHigh = tilesWide+borderWidth*2, tilesHigh+borderHeight*2
+	log.Printf("map: offset columns %4d rows %4d", tilesWide, tilesHigh)
 
 	// create a two-dimensional slice of tiles so that we can render them in the order we want.
 	// the slice will be indexed by the render location row and column.
@@ -170,6 +186,9 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 		}
 		allTiles[t.RenderAt.Row][t.RenderAt.Column] = t
 	}
+	if cfg.Meta.IncludeMeta {
+		// todo: force a tile into the upper right corner with coordinates
+	}
 
 	// start writing the XML
 	w.buffer = &bytes.Buffer{}
@@ -180,7 +199,6 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 	const hexWidth, hexHeight = 46.18, 40.0
 
 	w.Println(`<map type="WORLD" version="1.74" lastViewLevel="WORLD" continentFactor="0" kingdomFactor="0" provinceFactor="0" worldToContinentHOffset="0.0" continentToKingdomHOffset="0.0" kingdomToProvinceHOffset="0.0" worldToContinentVOffset="0.0" continentToKingdomVOffset="0.0" kingdomToProvinceVOffset="0.0" `)
-
 	hexZoomWidth, hexZoomHeight := hexWidth*gcfg.Worldographer.Map.Zoom, hexHeight*gcfg.Worldographer.Map.Zoom
 	w.Println(`hexWidth="%g" hexHeight="%g" hexOrientation="COLUMNS" mapProjection="FLAT" showNotes="true" showGMOnly="true" showGMOnlyGlow="false" showFeatureLabels="true" showGrid="true" showGridNumbers="false" showShadows="true"  triangleSize="12">`, hexZoomWidth, hexZoomHeight)
 
@@ -777,6 +795,28 @@ func (w *WXX) Create(path string, turnId string, upperLeft, lowerRight coords.Ma
 	}
 	w.Println(`</notes>`)
 	w.Println(`<informations>`)
+	if cfg.Meta.IncludeMeta {
+		var meta struct {
+			Version      string `json:"version,omitempty"`
+			BorderWidth  int    `json:"border-width,omitempty"`
+			BorderHeight int    `json:"border-height,omitempty"`
+			UpperLeft    string `json:"upper-left,omitempty"`
+			LowerRight   string `json:"lower-right,omitempty""`
+		}
+		meta.Version = cfg.Version.Core()
+		meta.BorderWidth = borderWidth
+		meta.BorderHeight = borderHeight
+		meta.UpperLeft = upperLeft.GridString()
+		meta.LowerRight = lowerRight.GridString()
+		data, err := json.Marshal(meta)
+		if err == nil {
+			w.Printf(`<information uuid="cd8018d3-42f2-4b38-aaa6-d67f28f14c9d" type="Information" title="OttoMap">`)
+			w.Printf(`<![CDATA[`)
+			w.Printf(`%s`, string(data))
+			w.Println(`]]>`)
+			w.Println(`</information>`)
+		}
+	}
 	w.Println(`</informations>`)
 	w.Println(`<configuration>`)
 	w.Println(`  <terrain-config>`)

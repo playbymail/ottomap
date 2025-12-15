@@ -13,6 +13,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/maloquacious/semver"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/edges"
@@ -41,7 +42,8 @@ const (
 )
 
 type ParseConfig struct {
-	Ignore struct {
+	Version semver.Version
+	Ignore  struct {
 		Scouts bool
 		Logged struct {
 			Scouts bool

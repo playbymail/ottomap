@@ -4,6 +4,9 @@ package actions
 
 import (
 	"fmt"
+	"log"
+	"strings"
+
 	"github.com/playbymail/ottomap/internal/config"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
@@ -11,8 +14,11 @@ import (
 	"github.com/playbymail/ottomap/internal/parser"
 	"github.com/playbymail/ottomap/internal/tiles"
 	"github.com/playbymail/ottomap/internal/wxx"
-	"log"
-	"strings"
+)
+
+const (
+	borderWidth  = 4
+	borderHeight = 4
 )
 
 type MapConfig struct {
@@ -49,21 +55,21 @@ func MapWorld(allTiles *tiles.Map_t, allSpecialNames map[string]*parser.Special_
 		log.Fatalf("error: wxx: %v\n", err)
 	}
 
-	// create an offset that will shift the map to about 4 hexes from the upper left.
+	// create an offset that will shift the map to about the border width and height hexes from the upper left.
 	var renderOffset coords.Map
 	upperLeft, lowerRight := allTiles.Bounds()
 	log.Printf("map: upper left  grid %s\n", upperLeft.GridString())
 	log.Printf("map: lower right grid %s\n", lowerRight.GridString())
 	if cfg.Render.ShiftMap {
-		if upperLeft.Column > 4 {
-			renderOffset.Column = upperLeft.Column - 4
+		if upperLeft.Column > borderWidth {
+			renderOffset.Column = upperLeft.Column - borderWidth
 			// we will have issues drawing the map if the column offset is not even
 			if renderOffset.Column%2 != 0 {
 				renderOffset.Column--
 			}
 		}
-		if upperLeft.Row > 4 {
-			renderOffset.Row = upperLeft.Row - 4
+		if upperLeft.Row > borderHeight {
+			renderOffset.Row = upperLeft.Row - borderHeight
 		}
 		log.Printf("map: shift up    %5d rows\n", renderOffset.Row)
 		log.Printf("map: shift left  %5d columns\n", renderOffset.Column)

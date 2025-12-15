@@ -68,6 +68,7 @@ var cmdRender = &cobra.Command{
 	Long:  `Load and parse turn report and create a map.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		gcfg := globalConfig
+
 		logFlags := 0
 		if gcfg.DebugFlags.LogFile {
 			logFlags |= log.Lshortfile
@@ -159,6 +160,10 @@ var cmdRender = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		gcfg := globalConfig
+		argsRender.parser.Version = version
+		argsRender.render.Version = version
+		argsRender.render.Meta.IncludeMeta = true
+		argsRender.render.Meta.IncludeOrigin = true
 
 		if argsRoot.showVersion {
 			log.Printf("ottomap version %s\n", version)
