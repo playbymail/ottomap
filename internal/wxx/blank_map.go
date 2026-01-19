@@ -16,7 +16,7 @@ import (
 	"github.com/playbymail/ottomap/internal/terrain"
 )
 
-func (w *WXX) CreateBlankMap(path string, topLeft, bottomRight coords.Map) error {
+func (w *WXX) CreateBlankMap(path string, topLeft, bottomRight coords.Map, cfg RenderConfig) error {
 	// normalize the bounding box per-axis
 	if topLeft.Column > bottomRight.Column {
 		topLeft.Column, bottomRight.Column = bottomRight.Column, topLeft.Column
@@ -98,24 +98,30 @@ func (w *WXX) CreateBlankMap(path string, topLeft, bottomRight coords.Map) error
 	w.Println(`</features>`)
 
 	w.Printf("<labels>\n")
-	for row := 0; row < tilesHigh; row++ {
-		for col := 0; col < tilesWide; col++ {
-			// absolute map coordinate for label text
-			mc := coords.Map{
-				Column: topLeft.Column + col,
-				Row:    topLeft.Row + row,
+	if cfg.Show.Grid.Coords || cfg.Show.Grid.Numbers {
+		for row := 0; row < tilesHigh; row++ {
+			for col := 0; col < tilesWide; col++ {
+				// absolute map coordinate for label text
+				mc := coords.Map{
+					Column: topLeft.Column + col,
+					Row:    topLeft.Row + row,
+				}
+
+				// render location uses local tile indices (XML schema is rotated)
+				points := coordsToPoints(col, row)
+				labelXY := bottomLeftCenter(points).Translate(Point{-9, -2.5})
+
+				w.Printf(`<label  mapLayer="Tribenet Coords" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
+				w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="6.25" />`, labelXY.X, labelXY.Y)
+				if cfg.Show.Grid.Coords {
+					w.Printf("%s", mc.ToHex())
+				} else {
+					w.Printf("%s", mc.ToHex()[3:])
+				}
+				w.Printf("</label>\n")
+
+				labelsCreated++
 			}
-
-			// render location uses local tile indices (XML schema is rotated)
-			points := coordsToPoints(col, row)
-			labelXY := bottomLeftCenter(points).Translate(Point{-9, -2.5})
-
-			w.Printf(`<label  mapLayer="Tribenet Coords" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
-			w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="6.25" />`, labelXY.X, labelXY.Y)
-			w.Printf("%s", mc.ToHex())
-			w.Printf("</label>\n")
-
-			labelsCreated++
 		}
 	}
 	w.Printf("</labels>\n")

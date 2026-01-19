@@ -224,7 +224,7 @@ var cmdRender = &cobra.Command{
 
 			// now we can create the Worldographer map!
 			mapName := filepath.Join(argsRender.paths.output, fmt.Sprintf("blank-map.%s.%s.wxx", strings.ReplaceAll(argsRender.experimental.topLeft, " ", "-"), strings.ReplaceAll(argsRender.experimental.bottomRight, " ", "-")))
-			if err := wxxMap.CreateBlankMap(mapName, topLeft, bottomRight); err != nil {
+			if err := wxxMap.CreateBlankMap(mapName, topLeft, bottomRight, argsRender.render); err != nil {
 				log.Printf("creating %s\n", mapName)
 				log.Fatalf("error: %v\n", err)
 			}

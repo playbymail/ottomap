@@ -20,7 +20,7 @@ var (
 	version = semver.Version{
 		Major: 0,
 		Minor: 62,
-		Patch: 29,
+		Patch: 30,
 		Build: semver.Commit(),
 	}
 	globalConfig *config.Config
@@ -143,6 +143,7 @@ func Execute(cfg *config.Config) error {
 	cmdRender.Flags().BoolVar(&argsRender.warnOnTerrainChange, "warn-on-terrain-change", true, "warn when terrain changes")
 	cmdRender.Flags().BoolVar(&argsRender.render.Show.Grid.Coords, "show-grid-coords", false, "show grid coordinates (XX CCRR)")
 	cmdRender.Flags().BoolVar(&argsRender.render.Show.Grid.Numbers, "show-grid-numbers", false, "show grid numbers (CCRR)")
+	cmdRender.MarkFlagsMutuallyExclusive("show-grid-coords", "show-grid-numbers")
 	cmdRender.Flags().BoolVar(&argsRender.saveWithTurnId, "save-with-turn-id", false, "add turn id to file name")
 	cmdRender.Flags().BoolVar(&argsRoot.soloClan, "solo", false, "limit parsing to a single clan")
 	cmdRender.Flags().BoolVar(&argsRender.show.origin, "show-origin", false, "show origin hex")
