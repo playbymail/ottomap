@@ -202,7 +202,7 @@ func Default() *Config {
 		},
 	}
 }
-func Load(name string, debug bool) (*Config, error) {
+func Load(name string, quiet, verbose, debug bool) (*Config, error) {
 	if debug {
 		log.Printf("[config] %q: loading configuration...\n", name)
 	}

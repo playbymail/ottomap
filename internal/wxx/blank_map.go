@@ -7,14 +7,37 @@ import (
 	"compress/gzip"
 	"encoding/binary"
 	"fmt"
-	"github.com/playbymail/ottomap/internal/terrain"
 	"log"
 	"os"
 	"unicode/utf16"
 	"unicode/utf8"
+
+	"github.com/playbymail/ottomap/internal/coords"
+	"github.com/playbymail/ottomap/internal/terrain"
 )
 
-func (w *WXX) CreateBlankMap(path string, fullMap bool) error {
+func (w *WXX) CreateBlankMap(path string, topLeft, bottomRight coords.Map) error {
+	// normalize the bounding box per-axis
+	if topLeft.Column > bottomRight.Column {
+		topLeft.Column, bottomRight.Column = bottomRight.Column, topLeft.Column
+	}
+	if topLeft.Row > bottomRight.Row {
+		topLeft.Row, bottomRight.Row = bottomRight.Row, topLeft.Row
+	}
+
+	// validate corner parity (0-indexed but tribenet weird: odd = %2==0, even = %2==1)
+	if topLeft.Column%2 != 0 || topLeft.Row%2 != 0 {
+		return fmt.Errorf("%s: topLeft must be odd column and odd row", topLeft.GridString())
+	}
+
+	// calculate dimensions (inclusive)
+	tilesWide := bottomRight.Column - topLeft.Column + 1
+	tilesHigh := bottomRight.Row - topLeft.Row + 1
+
+	// validate minimum size
+	if tilesWide < 2 || tilesHigh < 2 {
+		return fmt.Errorf("bounding box must be at least 2x2: got %dx%d", tilesWide, tilesHigh)
+	}
 	// start writing the XML
 	w.buffer = &bytes.Buffer{}
 
@@ -62,10 +85,7 @@ func (w *WXX) CreateBlankMap(path string, fullMap bool) error {
 	w.Println(`<maplayer name="Terrain Water" isVisible="true"/>`)
 	w.Println(`<maplayer name="Below All" isVisible="true"/>`)
 
-	tilesWide, tilesHigh, labelsCreated := 30*16, 21*26, 0 // AA .. ZP
-	if fullMap {
-		tilesWide, tilesHigh = 30*26, 21*26 // AA .. ZZ
-	}
+	labelsCreated := 0
 
 	// width is the number of columns, height is the number of rows.
 	w.Println(`<tiles viewLevel="WORLD" tilesWide="%d" tilesHigh="%d">`, tilesWide, tilesHigh)
@@ -78,18 +98,21 @@ func (w *WXX) CreateBlankMap(path string, fullMap bool) error {
 	w.Println(`</features>`)
 
 	w.Printf("<labels>\n")
-	for row := 0; row < tilesWide; row++ {
-		gridRowID, gridRowNum := byte(row/30)+'A', row%30+1
-		for col := 0; col < tilesHigh; col++ {
-			gridColID, gridColNum := byte(col/21)+'A', col%21+1
+	for row := 0; row < tilesHigh; row++ {
+		for col := 0; col < tilesWide; col++ {
+			// absolute map coordinate for label text
+			mc := coords.Map{
+				Column: topLeft.Column + col,
+				Row:    topLeft.Row + row,
+			}
 
-			renderAtColumn, renderAtRow := row, col
-			points := coordsToPoints(renderAtColumn, renderAtRow)
-
+			// render location uses local tile indices (XML schema is rotated)
+			points := coordsToPoints(col, row)
 			labelXY := bottomLeftCenter(points).Translate(Point{-9, -2.5})
+
 			w.Printf(`<label  mapLayer="Tribenet Coords" style="null" fontFace="null" color="0.0,0.0,0.0,1.0" outlineColor="1.0,1.0,1.0,1.0" outlineSize="0.0" rotate="0.0" isBold="false" isItalic="false" isWorld="true" isContinent="true" isKingdom="true" isProvince="true" isGMOnly="false" tags="">`)
 			w.Printf(`<location viewLevel="WORLD" x="%g" y="%g" scale="6.25" />`, labelXY.X, labelXY.Y)
-			w.Printf("%c%c %02d%02d", gridColID, gridRowID, gridRowNum, gridColNum)
+			w.Printf("%s", mc.ToHex())
 			w.Printf("</label>\n")
 
 			labelsCreated++

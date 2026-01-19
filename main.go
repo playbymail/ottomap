@@ -20,13 +20,14 @@ var (
 	version = semver.Version{
 		Major: 0,
 		Minor: 62,
-		Patch: 25,
+		Patch: 28,
 		Build: semver.Commit(),
 	}
 	globalConfig *config.Config
 )
 
 func main() {
+	logWithDefaultFlags, logWithShortFileName, logWithTimestamp := false, true, false
 	// if version is on the command line, show it and exit
 	for _, arg := range os.Args {
 		if arg == "-version" || arg == "--version" {
@@ -35,19 +36,37 @@ func main() {
 		} else if arg == "-build-info" || arg == "--build-info" {
 			fmt.Printf("%s\n", version.String())
 			return
+		} else if arg == "--log-with-default-flags" {
+			logWithDefaultFlags = true
+		} else if arg == "--log-with-short-file" {
+			logWithShortFileName = true
+		} else if arg == "--log-with-short-file=false" {
+			logWithShortFileName = false
+		} else if arg == "--log-with-timestamp" {
+			logWithTimestamp = true
+		} else if arg == "--log-with-timestamp=false" {
+			logWithTimestamp = false
 		}
 	}
-	log.SetFlags(log.Lshortfile | log.Ltime)
+
+	logFlags := 0
+	if logWithShortFileName {
+		logFlags |= log.Lshortfile
+	}
+	if logWithTimestamp {
+		logFlags |= log.Ltime
+	}
+	if logWithDefaultFlags || logFlags == 0 {
+		logFlags = log.LstdFlags
+	}
+	log.SetFlags(logFlags)
+
+	const quiet, verbose, debug = true, false, false
 
 	const configFileName = "data/input/ottomap.json"
-	// set the debug flag only if there is a configuration file to debug
-	debugConfigFile := false
-	if sb, err := os.Stat(configFileName); err == nil && sb.Mode().IsRegular() {
-		debugConfigFile = true
-	}
-	cfg, err := config.Load(configFileName, debugConfigFile)
-	if err != nil && debugConfigFile {
-		log.Printf("[config] %q: %v\n", configFileName, err)
+	cfg, err := config.Load(configFileName, quiet, verbose, debug)
+	if err != nil {
+		log.Fatalf("[config] %q: %v\n", configFileName, err)
 	}
 
 	if err := Execute(cfg); err != nil {
@@ -58,6 +77,13 @@ func main() {
 func Execute(cfg *config.Config) error {
 	cmdRoot.PersistentFlags().BoolVar(&argsRoot.showVersion, "show-version", false, "show version")
 	cmdRoot.PersistentFlags().StringVar(&argsRoot.logFile.name, "log-file", "", "set log file")
+	cmdRoot.PersistentFlags().Bool("log-with-default-flags", false, "log with default flags")
+	cmdRoot.PersistentFlags().Bool("log-with-shortfile", true, "log with short file name")
+	cmdRoot.PersistentFlags().Bool("log-with-timestamp", false, "log with timestamp")
+
+	cmdRoot.PersistentFlags().Bool("debug", false, "log debugging information")
+	cmdRoot.PersistentFlags().Bool("quiet", false, "log less information")
+	cmdRoot.PersistentFlags().Bool("verbose", false, "log more information")
 
 	cmdRoot.AddCommand(cmdDb)
 	cmdDb.PersistentFlags().StringVar(&argsDb.paths.store, "store", argsDb.paths.store, "path to the database file")
@@ -130,8 +156,9 @@ func Execute(cfg *config.Config) error {
 	cmdRender.Flags().StringVar(&argsRender.originGrid, "origin-grid", "", "grid id to substitute for ##")
 	// todo: remove support for the solo-element flag. can't do it now because it breaks one player's map.
 	cmdRender.Flags().StringVar(&argsRender.soloElement, "solo-element", "", "limit parsing to a single element of a clan")
-	cmdRender.Flags().BoolVar(&argsRender.experimental.blankMapSmall, "blank-map", false, "experimental: create a blank map, AA..ZP")
-	cmdRender.Flags().BoolVar(&argsRender.experimental.blankMapFull, "blank-map-full", false, "experimental: create a blank map, AA..ZZ")
+	cmdRender.Flags().StringVar(&argsRender.experimental.topLeft, "top-left", "", "experimental: top left corner of rendered map")
+	cmdRender.Flags().StringVar(&argsRender.experimental.bottomRight, "bottom-right", "", "experimental: bottom right corner of rendered map")
+	cmdRender.MarkFlagsRequiredTogether("top-left", "bottom-right")
 
 	cmdRoot.AddCommand(cmdScrub)
 	cmdScrub.AddCommand(cmdScrubFile)
@@ -175,7 +202,7 @@ var cmdRoot = &cobra.Command{
 			argsRoot.showVersion = true
 		}
 		if argsRoot.showVersion {
-			log.Printf("version: %s\n", version)
+			log.Printf("ottomap: version %s\n", version)
 		}
 		return nil
 	},

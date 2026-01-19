@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/playbymail/ottomap/actions"
+	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/edges"
 	"github.com/playbymail/ottomap/internal/parser"
 	"github.com/playbymail/ottomap/internal/results"
@@ -51,9 +52,10 @@ var argsRender struct {
 		merge bool
 	}
 	experimental struct {
-		blankMapSmall bool
-		blankMapFull  bool
-		jsonMapSmall  bool
+		blankMap     bool
+		topLeft      string
+		bottomRight  string
+		jsonMapSmall bool
 	}
 	saveWithTurnId bool
 	show           struct {
@@ -67,17 +69,6 @@ var cmdRender = &cobra.Command{
 	Short: "Create a map from a report",
 	Long:  `Load and parse turn report and create a map.`,
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		gcfg := globalConfig
-
-		logFlags := 0
-		if gcfg.DebugFlags.LogFile {
-			logFlags |= log.Lshortfile
-		}
-		if gcfg.DebugFlags.LogTime {
-			logFlags |= log.Ltime
-		}
-		log.SetFlags(logFlags)
-
 		if len(argsRender.clanId) != 4 || argsRender.clanId[0] != '0' {
 			return fmt.Errorf("clan-id must be a 4 digit number starting with 0")
 		} else if n, err := strconv.Atoi(argsRender.clanId[1:]); err != nil || n < 0 || n > 9999 {
@@ -156,9 +147,40 @@ var cmdRender = &cobra.Command{
 		}
 		argsRender.maxTurn.id = fmt.Sprintf("%04d-%02d", argsRender.maxTurn.year, argsRender.maxTurn.month)
 
+		if argsRender.experimental.topLeft != "" || argsRender.experimental.bottomRight != "" {
+			topLeft, err := coords.HexToMap(argsRender.experimental.topLeft)
+			if err != nil {
+				return fmt.Errorf("invalid coordinates %q: %w", argsRender.experimental.topLeft, err)
+			}
+			bottomRight, err := coords.HexToMap(argsRender.experimental.bottomRight)
+			if err != nil {
+				return fmt.Errorf("invalid coordinates %q: %w", argsRender.experimental.bottomRight, err)
+			}
+
+			// normalize the bounding box per-axis
+			if topLeft.Column > bottomRight.Column {
+				topLeft.Column, bottomRight.Column = bottomRight.Column, topLeft.Column
+			}
+			if topLeft.Row > bottomRight.Row {
+				topLeft.Row, bottomRight.Row = bottomRight.Row, topLeft.Row
+			}
+
+			argsRender.experimental.topLeft = topLeft.GridString()
+			argsRender.experimental.bottomRight = bottomRight.GridString()
+
+			argsRender.experimental.blankMap = true
+		}
+
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		quiet, _ := cmd.Flags().GetBool("quiet")
+		verbose, _ := cmd.Flags().GetBool("verbose")
+		debug, _ := cmd.Flags().GetBool("debug")
+		if quiet {
+			verbose = false
+		}
+
 		gcfg := globalConfig
 		argsRender.parser.Version = version
 		argsRender.render.Version = version
@@ -166,7 +188,7 @@ var cmdRender = &cobra.Command{
 		argsRender.render.Meta.IncludeOrigin = true
 
 		if argsRoot.showVersion {
-			log.Printf("ottomap version %s\n", version)
+			log.Printf("ottomap version: %s\n", version)
 		}
 		if argsRoot.soloClan {
 			log.Printf("clan %q: running solo\n", argsRender.clanId)
@@ -179,6 +201,37 @@ var cmdRender = &cobra.Command{
 		log.Printf("input:  %s\n", argsRender.paths.input)
 		log.Printf("output: %s\n", argsRender.paths.output)
 
+		if argsRender.experimental.blankMap {
+			topLeft, err := coords.HexToMap(argsRender.experimental.topLeft)
+			if err != nil {
+				log.Fatalf("top-left %q: %v\n", argsRender.experimental.topLeft, err)
+			}
+			argsRender.experimental.topLeft = topLeft.GridString()
+			bottomRight, err := coords.HexToMap(argsRender.experimental.bottomRight)
+			if err != nil {
+				log.Fatalf("bottom-right %q: %v\n", argsRender.experimental.bottomRight, err)
+			}
+			log.Printf("map: top-left %q: bottom-right %q\n", topLeft, bottomRight)
+			worldMap := tiles.NewMapBounded(topLeft, bottomRight)
+			upperLeft, lowerRight := worldMap.Bounds()
+			log.Printf("map: upper left %q: lower  right %q\n", upperLeft, lowerRight)
+
+			wxxMap, err := actions.MapWorld(worldMap, map[string]*parser.Special_t{}, parser.UnitId_t(argsRender.clanId), argsRender.mapper, globalConfig)
+			if err != nil {
+				log.Fatalf("error: %v\n", err)
+			}
+			log.Printf("map: %8d nodes: elapsed %v\n", worldMap.Length(), time.Since(started))
+
+			// now we can create the Worldographer map!
+			mapName := filepath.Join(argsRender.paths.output, fmt.Sprintf("blank-map.%s.%s.wxx", strings.ReplaceAll(argsRender.experimental.topLeft, " ", "-"), strings.ReplaceAll(argsRender.experimental.bottomRight, " ", "-")))
+			if err := wxxMap.CreateBlankMap(mapName, topLeft, bottomRight); err != nil {
+				log.Printf("creating %s\n", mapName)
+				log.Fatalf("error: %v\n", err)
+			}
+			log.Printf("created %s\n", mapName)
+			return
+		}
+
 		if gcfg.Experimental.ReverseWalker {
 			log.Printf("walk: reverse walk enabled\n")
 			err := runners.Run(argsRender.paths.input)
@@ -188,7 +241,8 @@ var cmdRender = &cobra.Command{
 			return
 		}
 
-		inputs, err := turns.CollectInputs(argsRender.paths.input, argsRender.maxTurn.year, argsRender.maxTurn.month, argsRoot.soloClan, argsRender.clanId)
+		// log.Printf("joy: maxYear %04d: maxTurn %02d\n", argsRender.maxTurn.year, argsRender.maxTurn.month)
+		inputs, err := turns.CollectInputs(argsRender.paths.input, argsRender.maxTurn.year, argsRender.maxTurn.month, argsRoot.soloClan, argsRender.clanId, quiet, verbose, debug)
 		if err != nil {
 			log.Fatalf("error: inputs: %v\n", err)
 		}
@@ -231,7 +285,10 @@ var cmdRender = &cobra.Command{
 				}
 			}
 			if pastCutoff {
-				log.Printf("warn: %q: past cutoff %04d-%02d\n", i.Id, argsRender.maxTurn.year, argsRender.maxTurn.month)
+				if verbose {
+					log.Printf("warn: %q: past cutoff %04d-%02d\n", i.Id, argsRender.maxTurn.year, argsRender.maxTurn.month)
+				}
+				continue
 			}
 			turnId = fmt.Sprintf("%04d-%02d", i.Turn.Year, i.Turn.Month)
 			if turnId > maxTurnId {
@@ -586,30 +643,14 @@ var cmdRender = &cobra.Command{
 
 		// now we can create the Worldographer map!
 		var mapName string
-		if argsRender.experimental.blankMapSmall {
-			mapName = filepath.Join(argsRender.paths.output, "blank-map.wxx")
-		} else if argsRender.experimental.blankMapFull {
-			mapName = filepath.Join(argsRender.paths.output, "blank-map-full.wxx")
-		} else if argsRender.experimental.jsonMapSmall {
+		if argsRender.experimental.jsonMapSmall {
 			mapName = filepath.Join(argsRender.paths.output, "json-map-small.json")
 		} else if argsRender.saveWithTurnId {
 			mapName = filepath.Join(argsRender.paths.output, fmt.Sprintf("%s.%s.wxx", maxTurnId, argsRender.clanId))
 		} else {
 			mapName = filepath.Join(argsRender.paths.output, fmt.Sprintf("%s.wxx", argsRender.clanId))
 		}
-		if argsRender.experimental.blankMapSmall {
-			log.Printf("creating blank map %s\n", mapName)
-			if err := wxxMap.CreateBlankMap(mapName, false); err != nil {
-				log.Printf("creating %s\n", mapName)
-				log.Fatalf("error: %v\n", err)
-			}
-		} else if argsRender.experimental.blankMapFull {
-			log.Printf("creating blank map %s\n", mapName)
-			if err := wxxMap.CreateBlankMap(mapName, true); err != nil {
-				log.Printf("creating %s\n", mapName)
-				log.Fatalf("error: %v\n", err)
-			}
-		} else if argsRender.experimental.jsonMapSmall {
+		if argsRender.experimental.jsonMapSmall {
 			log.Printf("creating json map %s\n", mapName)
 			if err := wxxMap.CreateJsonMap(mapName, true); err != nil {
 				log.Printf("creating %s\n", mapName)

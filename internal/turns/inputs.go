@@ -18,7 +18,7 @@ var (
 
 // CollectInputs returns a slice containing all the turn reports in the path
 // if solo is true, then only the turn reports for the soloClan are returned.
-func CollectInputs(path string, maxYear, maxMonth int, solo bool, soloClan string) (inputs []*TurnReportFile_t, err error) {
+func CollectInputs(path string, maxYear, maxMonth int, solo bool, soloClan string, quiet, verbose, debug bool) (inputs []*TurnReportFile_t, err error) {
 	//log.Printf("collect: input path: %s\n", path)
 	if solo {
 		clan, err := strconv.Atoi(soloClan)
@@ -63,7 +63,7 @@ func CollectInputs(path string, maxYear, maxMonth int, solo bool, soloClan strin
 					pastCutoff = true
 				}
 			}
-			if pastCutoff {
+			if pastCutoff && !quiet {
 				log.Printf("warn: %q: past cutoff %04d-%02d\n", fileName, maxYear, maxMonth)
 				continue
 			}

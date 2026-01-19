@@ -12,7 +12,10 @@
 *.xml
 *.wxx
 .DS_Store
+.claude/
+.code/
 .idea/
+.vscode/
 coverage.html
 coverage.out
 follows.*.txt

@@ -24,6 +24,16 @@ func NewMap() *Map_t {
 	}
 }
 
+// NewMap creates a new map.
+func NewMapBounded(topLeft, bottomRight coords.Map) *Map_t {
+	m := &Map_t{
+		Tiles: map[coords.Map]*Tile_t{},
+	}
+	m.Tiles[topLeft] = &Tile_t{}
+	m.Tiles[bottomRight] = &Tile_t{}
+	return m
+}
+
 func (m *Map_t) Bounds() (upperLeft, lowerRight coords.Map) {
 	if m.Length() == 0 {
 		return coords.Map{}, coords.Map{}
