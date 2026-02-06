@@ -19,7 +19,7 @@ import (
 var (
 	version = semver.Version{
 		Major: 0,
-		Minor: 64,
+		Minor: 65,
 		Patch: 0,
 		Build: semver.Commit(),
 	}
@@ -84,40 +84,6 @@ func Execute(cfg *config.Config) error {
 	cmdRoot.PersistentFlags().Bool("debug", false, "log debugging information")
 	cmdRoot.PersistentFlags().Bool("quiet", false, "log less information")
 	cmdRoot.PersistentFlags().Bool("verbose", false, "log more information")
-
-	cmdRoot.AddCommand(cmdDb)
-	cmdDb.PersistentFlags().StringVar(&argsDb.paths.store, "store", argsDb.paths.store, "path to the database file")
-
-	cmdDb.AddCommand(cmdDbCreate)
-	cmdDbCreate.AddCommand(cmdDbCreateDatabase)
-	cmdDbCreateDatabase.Flags().BoolVar(&argsDb.create.force, "force", false, "force the creation if the database exists")
-	cmdDbCreateDatabase.Flags().StringVar(&argsDb.paths.store, "store", argsDb.paths.store, "path to the database file")
-	if err := cmdDbCreateDatabase.MarkFlagRequired("store"); err != nil {
-		log.Fatalf("store: %v\n", err)
-	}
-
-	cmdDb.AddCommand(cmdDbLoad)
-	cmdDbLoad.AddCommand(cmdDbLoadFiles)
-	cmdDbLoadFiles.Flags().StringVar(&argsDb.load.clan, "clan", argsDb.load.clan, "clan that owns reports")
-	if err := cmdDbLoadFiles.MarkFlagRequired("clan"); err != nil {
-		log.Fatalf("clan: %v\n", err)
-	}
-	cmdDbLoadFiles.Flags().StringVar(&argsDb.paths.store, "store", argsDb.paths.store, "path to the database file")
-	if err := cmdDbLoadFiles.MarkFlagRequired("store"); err != nil {
-		log.Fatalf("store: %v\n", err)
-	}
-	cmdDbLoadFiles.Flags().StringVar(&argsDb.load.path, "report-path", argsDb.load.path, "path to report files")
-
-	cmdDbLoad.AddCommand(cmdDbLoadPath)
-	cmdDbLoadPath.Flags().StringVar(&argsDb.load.clan, "clan", argsDb.load.clan, "clan that owns reports")
-	if err := cmdDbLoadPath.MarkFlagRequired("clan"); err != nil {
-		log.Fatalf("clan: %v\n", err)
-	}
-	cmdDbLoadPath.Flags().StringVar(&argsDb.paths.store, "store", argsDb.paths.store, "path to the database file")
-	if err := cmdDbLoadPath.MarkFlagRequired("store"); err != nil {
-		log.Fatalf("store: %v\n", err)
-	}
-	cmdDbLoadPath.Flags().StringVar(&argsDb.load.path, "report-path", argsDb.load.path, "path to report files")
 
 	cmdRoot.AddCommand(cmdDump)
 
