@@ -19,7 +19,7 @@ import (
 var (
 	version = semver.Version{
 		Major: 0,
-		Minor: 66,
+		Minor: 67,
 		Patch: 0,
 		Build: semver.Commit(),
 	}
@@ -126,9 +126,6 @@ func Execute(cfg *config.Config) error {
 		globalConfig = config.Default()
 	} else {
 		globalConfig = cfg
-		//if data, err := json.MarshalIndent(globalConfig, "", "  "); err == nil {
-		//	log.Printf("[global] %s\n", data)
-		//}
 	}
 
 	return cmdRoot.Execute()

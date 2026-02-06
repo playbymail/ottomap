@@ -241,7 +241,6 @@ var cmdRender = &cobra.Command{
 			return
 		}
 
-		// log.Printf("joy: maxYear %04d: maxTurn %02d\n", argsRender.maxTurn.year, argsRender.maxTurn.month)
 		inputs, err := turns.CollectInputs(argsRender.paths.input, argsRender.maxTurn.year, argsRender.maxTurn.month, argsRoot.soloClan, argsRender.clanId, quiet, verbose, debug)
 		if err != nil {
 			log.Fatalf("error: inputs: %v\n", err)
@@ -305,8 +304,6 @@ var cmdRender = &cobra.Command{
 				}
 				log.Fatalf("error: expected turn %q: got turn %q\n", turnId, fmt.Sprintf("%04d-%02d", turn.Year, turn.Month))
 			}
-			//log.Printf("len(turn.SpecialNames) = %d\n", len(turn.SpecialNames))
-
 			allTurns[turnId] = append(allTurns[turnId], turn)
 			totalUnitMoves += len(turn.UnitMoves)
 			log.Printf("%q: parsed %6d units in %v\n", i.Id, len(turn.UnitMoves), time.Since(started))
@@ -474,16 +471,6 @@ var cmdRender = &cobra.Command{
 				if turn.Next != nil {
 					nextTurnMoves = turn.Next.UnitMoves[unitMoves.UnitId]
 				}
-				//if unitMoves.UnitId == "0988" {
-				//	log.Printf("this: %s: %-6s: this prior %q current %q\n", unitMoves.TurnId, unitMoves.UnitId, unitMoves.FromHex, unitMoves.ToHex)
-				//	if prevTurnMoves != nil {
-				//		log.Printf("      %s: %-6s: prev prior %q current %q\n", prevTurnMoves.TurnId, prevTurnMoves.UnitId, prevTurnMoves.FromHex, prevTurnMoves.ToHex)
-				//	}
-				//	if nextTurnMoves != nil {
-				//		log.Printf("      %s: %-6s: next prior %q current %q\n", nextTurnMoves.TurnId, nextTurnMoves.UnitId, nextTurnMoves.FromHex, nextTurnMoves.ToHex)
-				//	}
-				//}
-
 				// link prior.ToHex and this.FromHex if this.FromHex is not obscured
 				if !strings.HasPrefix(unitMoves.FromHex, "##") && prevTurnMoves != nil {
 					if prevTurnMoves.ToHex != unitMoves.FromHex {
