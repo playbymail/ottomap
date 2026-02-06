@@ -19,7 +19,7 @@ import (
 var (
 	version = semver.Version{
 		Major: 0,
-		Minor: 65,
+		Minor: 66,
 		Patch: 0,
 		Build: semver.Commit(),
 	}
@@ -90,17 +90,6 @@ func Execute(cfg *config.Config) error {
 	cmdRoot.AddCommand(cmdList)
 	cmdList.AddCommand(cmdListClans)
 	cmdList.AddCommand(cmdListTurns)
-
-	cmdRoot.AddCommand(cmdParse)
-	cmdParse.AddCommand(cmdParseReports)
-	cmdParseReports.Flags().StringVar(&argsParseReports.clanId, "clan-id", "", "clan id")
-	if err := cmdParseReports.MarkFlagRequired("clan-id"); err != nil {
-		log.Fatalf("error: clan-id: %v\n", err)
-	}
-	cmdParseReports.Flags().StringVar(&argsParseReports.turnId, "turn-id", "", "turn id")
-	if err := cmdParseReports.MarkFlagRequired("turn-id"); err != nil {
-		log.Fatalf("error: turn-id: %v\n", err)
-	}
 
 	cmdRoot.AddCommand(cmdRender)
 	cmdRender.Flags().BoolVar(&argsRender.autoEOL, "auto-eol", true, "automatically convert line endings")
