@@ -19,7 +19,7 @@ import (
 var (
 	version = semver.Version{
 		Major: 0,
-		Minor: 69,
+		Minor: 70,
 		Patch: 0,
 		Build: semver.Commit(),
 	}
@@ -115,10 +115,6 @@ func Execute(cfg *config.Config) error {
 	cmdRender.Flags().StringVar(&argsRender.experimental.topLeft, "top-left", "", "experimental: top left corner of rendered map")
 	cmdRender.Flags().StringVar(&argsRender.experimental.bottomRight, "bottom-right", "", "experimental: bottom right corner of rendered map")
 	cmdRender.MarkFlagsRequiredTogether("top-left", "bottom-right")
-
-	cmdRoot.AddCommand(cmdScrub)
-	cmdScrub.AddCommand(cmdScrubFile)
-	cmdScrub.AddCommand(cmdScrubFiles)
 
 	cmdRoot.AddCommand(cmdVersion)
 
