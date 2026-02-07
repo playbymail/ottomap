@@ -1,5 +1,11 @@
 // Copyright (c) 2024 Michael D Henderson. All rights reserved.
 
+// Package winds defines wind strength enums for TribeNet turn reports.
+//
+// These types are used by external packages (e.g. github.com/playbymail/tndocx)
+// and by the legacy PEG parser's grammar rules. Although the parsed wind data
+// is not currently propagated to the render pipeline, the types and grammar
+// rules must be retained for external compatibility.
 package winds
 
 import (

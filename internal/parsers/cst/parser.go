@@ -22,6 +22,11 @@ func ParseFile(input []byte) (*File, []Diagnostic) {
 
 	f := &File{}
 	for p.la != nil {
+		// Skip bare end-of-line tokens between top-level constructs.
+		if p.at(lexers.EOL) {
+			p.bump()
+			continue
+		}
 		if p.at(lexers.KeywordCurrent) {
 			h := p.parseHeader()
 			f.Decls = append(f.Decls, h)
@@ -291,15 +296,9 @@ func (p *Parser) parseHeader() *Header {
 	h.Year = p.want(lexers.Number)
 	h.LParen = p.want(lexers.LParen)
 	h.Hash = p.want(lexers.Hash)
-	// Turn number is strictly digits in CST; see spec.
-	turn := p.want(lexers.Number)
-	// OPTIONAL one-token recovery: if a non-number slipped here, consume it and note.
-	if turn.Tok.Kind != lexers.Number && p.la != nil && p.la.Kind == lexers.Number {
-		// We synthesized a number; consume the bad token to avoid follow-on errors.
-		p.addError(turn.Span(), "invalid turn number token; digits only")
-		_ = p.bump()
-	}
-	h.TurnNo = turn
+	// Accept Number or Identifier for the turn number. Malformed turn
+	// numbers like "12a3" are lexed as Identifier; the AST layer validates.
+	h.TurnNo = p.wantOneOf(lexers.Number, lexers.Identifier)
 	h.RParen = p.want(lexers.RParen)
 	h.span = coverNodesAndTokens(h.KwCurrent, h.RParen)
 	return h

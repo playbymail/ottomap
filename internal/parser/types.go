@@ -317,6 +317,9 @@ type FarHorizon_t struct {
 }
 
 // FoundItem_t represents items discovered by Scouts as they pass through a hex.
+// Note: parsed item data is not propagated to the render pipeline (items are
+// ignored during move processing). The items and winds packages are retained
+// because external packages depend on these types.
 type FoundItem_t struct {
 	Quantity int
 	Item     items.Item_e
