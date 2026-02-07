@@ -80,17 +80,27 @@ func (l *Lexer) Next() *Token {
 		t.Kind = RParen
 		l.advance()
 	} else if l.isDigit() {
-		t.Kind = Number
 		// advance past the digits
 		for l.isDigit() {
 			l.advance()
 		}
+		// If letters follow digits (e.g. "12a3"), consume the entire
+		// alphanumeric run as a single Identifier token per LEXING.md.
+		if l.isAlpha() {
+			for l.isText() {
+				l.advance()
+			}
+			t.Kind = Identifier
+		} else {
+			t.Kind = Number
+		}
 	} else if l.isAlpha() {
-		t.Kind = Text
 		// advance past the text
 		for l.isText() {
 			l.advance()
 		}
+		// classify the word as keyword, month name, or identifier
+		t.Kind = classifyWord(l.input[t.Span.Start:l.pos])
 	} else {
 		// unrecognized input is collected until we find something that we recognize
 		t.Kind = Unknown
@@ -286,9 +296,18 @@ const (
 	EOF TokenKind = iota
 	EOL
 
-	// for now, let's only have text, numeric, and punctuation for our tokens.
-	// we will update this when we have a better feel for how the lexer is implemented.
+	// Keywords recognized by the lexer for header parsing.
+	KeywordCurrent // "Current"
+	KeywordTurn    // "Turn"
 
+	// MonthName matches calendar month names (January..December).
+	MonthName
+
+	// Identifier is any alphabetic word that is not a keyword or month name.
+	Identifier
+
+	// Text is a generic alphabetic+digit run (kept for backward compatibility;
+	// new code should prefer Identifier for pure-alpha words).
 	Text
 
 	Number
@@ -308,6 +327,14 @@ func (tk TokenKind) String() string {
 		return "EOF"
 	case EOL:
 		return "EOL"
+	case KeywordCurrent:
+		return "KeywordCurrent"
+	case KeywordTurn:
+		return "KeywordTurn"
+	case MonthName:
+		return "MonthName"
+	case Identifier:
+		return "Identifier"
 	case Text:
 		return "Text"
 	case Number:
@@ -326,5 +353,21 @@ func (tk TokenKind) String() string {
 		return "Unknown"
 	default:
 		return fmt.Sprintf("TokenKind(%d)", tk)
+	}
+}
+
+// classifyWord returns the appropriate TokenKind for an alphabetic word.
+func classifyWord(word []byte) TokenKind {
+	s := string(word)
+	switch s {
+	case "Current":
+		return KeywordCurrent
+	case "Turn":
+		return KeywordTurn
+	case "January", "February", "March", "April", "May", "June",
+		"July", "August", "September", "October", "November", "December":
+		return MonthName
+	default:
+		return Identifier
 	}
 }

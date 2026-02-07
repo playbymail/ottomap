@@ -6,7 +6,7 @@ completed in one coding session. Sprints are ordered to minimize dependency
 conflicts: we remove dead code first (easiest, no risk), then orphaned
 infrastructure, then clean up active code, and finally add documentation.
 
-Current version: **0.62.30**
+Current version: **0.69.0**
 
 Each sprint bumps the minor version. Sprint numbering starts at 63.
 
@@ -170,6 +170,18 @@ compiles without the removed types.
   future sprint
 - Run `go build` and `make test`
 - Version: **0.69.0**
+
+**Outcome:** Audit confirmed that parsed wind/item values are discarded
+within the parser (items are explicitly ignored during move processing;
+wind data is never read after being stored in `Movement_t`). However,
+these types are used by external packages (e.g. `github.com/playbymail/tndocx`)
+and must not be removed from the grammar. Both packages were documented
+with package-level comments explaining the external dependency constraint.
+Additionally, pre-existing build failures in the new parser pipeline
+(`internal/parsers/`) were fixed: the lexer was updated to produce
+keyword-specific token kinds (`KeywordCurrent`, `KeywordTurn`, `MonthName`,
+`Identifier`) per the LEXING.md specification, and the CST parser was
+updated to handle EOL tokens and mixed alphanumeric turn numbers.
 
 ---
 

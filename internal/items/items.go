@@ -1,5 +1,12 @@
 // Copyright (c) 2024 Michael D Henderson. All rights reserved.
 
+// Package items defines item type enums for TribeNet turn reports.
+//
+// These types are used by external packages (e.g. github.com/playbymail/tndocx)
+// and by the legacy PEG parser's grammar rules. Although parsed item data
+// is not currently propagated to the render pipeline (items are explicitly
+// ignored during move processing), the types and grammar rules must be
+// retained for external compatibility.
 package items
 
 import (
