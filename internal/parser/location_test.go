@@ -334,7 +334,7 @@ func TestFleetMovementParse(t *testing.T) {
 			},
 		},
 	} {
-		fm, err := parser.ParseFleetMovementLine(tc.id, tc.unitId, 1, []byte(tc.line), tc.debug, tc.debug)
+		fm, err := parser.ParseFleetMovementLine(tc.id, "", tc.unitId, 1, []byte(tc.line), false, tc.debug, tc.debug, tc.debug, false)
 		if err != nil {
 			t.Errorf("id %q: parse failed: %v\n", tc.id, err)
 			continue
@@ -342,7 +342,7 @@ func TestFleetMovementParse(t *testing.T) {
 		i1, i2 := 0, 0
 		for i1 < len(tc.moves) && i2 < len(fm) {
 			m1, m2 := tc.moves[i1], fm[i2]
-			//t.Errorf("id: %q: step %3d: %q %q\n", tc.id, m1.StepNo, m1.Line, m2.Line)
+			normalizeMove(m2)
 			if diff := deep.Equal(m1, m2); diff != nil {
 				for _, d := range diff {
 					t.Errorf("id: %q: step %3d: %s\n", tc.id, m1.StepNo, d)
@@ -446,7 +446,7 @@ func TestScoutMovementParse(t *testing.T) {
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
 						Resources:  []resources.Resource_e{resources.IronOre},
-						Encounters: []parser.UnitId_t{"0138c2", "0138c3", "1590"},
+						Encounters: []*parser.Encounter_t{{UnitId: "1590"}, {UnitId: "0138c2"}, {UnitId: "0138c3"}},
 					},
 				},
 				{LineNo: 1, StepNo: 4, Line: []byte("Can't Move on Ocean to N of HEX,  Patrolled and found 1590,  0138c2,  0138c3"),
@@ -454,7 +454,7 @@ func TestScoutMovementParse(t *testing.T) {
 						Borders: []*parser.Border_t{
 							{Direction: direction.North, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []parser.UnitId_t{"0138c2", "0138c3", "1590"},
+						Encounters: []*parser.Encounter_t{{UnitId: "1590"}, {UnitId: "0138c2"}, {UnitId: "0138c3"}},
 					},
 				},
 			},
@@ -468,7 +468,7 @@ func TestScoutMovementParse(t *testing.T) {
 						Borders: []*parser.Border_t{
 							{Direction: direction.South, Edge: edges.River},
 						},
-						Encounters: []parser.UnitId_t{"0590"},
+						Encounters: []*parser.Encounter_t{{UnitId: "0590"}},
 					},
 				},
 				{LineNo: 1, StepNo: 2, Line: []byte("Not enough M.P's to move to SE into ROCKY HILLS,  Patrolled and found 0590"),
@@ -476,7 +476,7 @@ func TestScoutMovementParse(t *testing.T) {
 						Borders: []*parser.Border_t{
 							{Direction: direction.SouthEast, Terrain: terrain.HillsRocky},
 						},
-						Encounters: []parser.UnitId_t{"0590"},
+						Encounters: []*parser.Encounter_t{{UnitId: "0590"}},
 					},
 				},
 			},
@@ -492,7 +492,7 @@ func TestScoutMovementParse(t *testing.T) {
 							{Direction: direction.South, Edge: edges.River},
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []parser.UnitId_t{"3138"},
+						Encounters: []*parser.Encounter_t{{UnitId: "3138"}},
 					},
 				},
 				{LineNo: 1, StepNo: 2, Line: []byte("Can't Move on Ocean to N of HEX,  Patrolled and found 3138"),
@@ -500,7 +500,7 @@ func TestScoutMovementParse(t *testing.T) {
 						Borders: []*parser.Border_t{
 							{Direction: direction.North, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []parser.UnitId_t{"3138"},
+						Encounters: []*parser.Encounter_t{{UnitId: "3138"}},
 					},
 				},
 			},
@@ -538,7 +538,7 @@ func TestScoutMovementParse(t *testing.T) {
 			},
 		},
 	} {
-		sm, err := parser.ParseScoutMovementLine(tc.id, tc.unitId, 1, []byte(tc.line), tc.debug, tc.debug)
+		sm, err := parser.ParseScoutMovementLine(tc.id, "", tc.unitId, 1, []byte(tc.line), false, tc.debug, tc.debug, false, false)
 		if err != nil {
 			t.Errorf("id %q: parse failed: %v\n", tc.id, err)
 			continue
@@ -549,7 +549,7 @@ func TestScoutMovementParse(t *testing.T) {
 		i1, i2 := 0, 0
 		for i1 < len(tc.moves) && i2 < len(sm.Moves) {
 			m1, m2 := tc.moves[i1], sm.Moves[i2]
-			//t.Errorf("id: %q: step %3d: %q %q\n", tc.id, m1.StepNo, m1.Line, m2.Line)
+			normalizeMove(m2)
 			if diff := deep.Equal(m1, m2); diff != nil {
 				for _, d := range diff {
 					t.Errorf("id: %q: step %3d: %s\n", tc.id, m1.StepNo, d)
@@ -583,9 +583,9 @@ func TestStatusLine(t *testing.T) {
 			unitId: "0138",
 			moves: []*parser.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("PRAIRIE, 0138"),
-					Result: results.Succeeded, Still: true, Report: &parser.Report_t{
+					Result: results.StatusLine, Still: true, Report: &parser.Report_t{
 						Terrain:    terrain.FlatPrairie,
-						Encounters: []parser.UnitId_t{"0138"},
+						Encounters: []*parser.Encounter_t{{UnitId: "0138"}},
 					},
 				},
 			},
@@ -595,12 +595,12 @@ func TestStatusLine(t *testing.T) {
 			unitId: "0138e1",
 			moves: []*parser.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("PRAIRIE,River S, 0138e1"),
-					Result: results.Succeeded, Still: true, Report: &parser.Report_t{
+					Result: results.StatusLine, Still: true, Report: &parser.Report_t{
 						Terrain: terrain.FlatPrairie,
 						Borders: []*parser.Border_t{
 							{Direction: direction.South, Edge: edges.River},
 						},
-						Encounters: []parser.UnitId_t{"0138e1"},
+						Encounters: []*parser.Encounter_t{{UnitId: "0138e1"}},
 					},
 				},
 			},
@@ -610,13 +610,13 @@ func TestStatusLine(t *testing.T) {
 			unitId: "0138",
 			moves: []*parser.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("PRAIRIE, O S,Ford SE, 2138, 0138"),
-					Result: results.Succeeded, Still: true, Report: &parser.Report_t{
+					Result: results.StatusLine, Still: true, Report: &parser.Report_t{
 						Terrain: terrain.FlatPrairie,
 						Borders: []*parser.Border_t{
 							{Direction: direction.SouthEast, Edge: edges.Ford},
 							{Direction: direction.South, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []parser.UnitId_t{"0138", "2138"},
+						Encounters: []*parser.Encounter_t{{UnitId: "2138"}, {UnitId: "0138"}},
 					},
 				},
 			},
@@ -626,12 +626,12 @@ func TestStatusLine(t *testing.T) {
 			unitId: "0138e1",
 			moves: []*parser.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("PRAIRIE, O NW, 0138e1"),
-					Result: results.Succeeded, Still: true, Report: &parser.Report_t{
+					Result: results.StatusLine, Still: true, Report: &parser.Report_t{
 						Terrain: terrain.FlatPrairie,
 						Borders: []*parser.Border_t{
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []parser.UnitId_t{"0138e1"},
+						Encounters: []*parser.Encounter_t{{UnitId: "0138e1"}},
 					},
 				},
 			},
@@ -641,20 +641,20 @@ func TestStatusLine(t *testing.T) {
 			unitId: "0138",
 			moves: []*parser.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("CONIFER HILLS, O SW, NW, S, 2138, 0138c1, 0138, 1138"),
-					Result: results.Succeeded, Still: true, Report: &parser.Report_t{
+					Result: results.StatusLine, Still: true, Report: &parser.Report_t{
 						Terrain: terrain.HillsConifer,
 						Borders: []*parser.Border_t{
 							{Direction: direction.South, Terrain: terrain.WaterOcean},
 							{Direction: direction.SouthWest, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []parser.UnitId_t{"0138", "0138c1", "1138", "2138"},
+						Encounters: []*parser.Encounter_t{{UnitId: "2138"}, {UnitId: "0138c1"}, {UnitId: "0138"}, {UnitId: "1138"}},
 					},
 				},
 			},
 		},
 	} {
-		sl, err := parser.ParseStatusLine(tc.id, tc.unitId, 1, []byte(tc.line), tc.debug, tc.debug)
+		sl, err := parser.ParseStatusLine(tc.id, "", tc.unitId, 1, []byte(tc.line), false, tc.debug, tc.debug, false)
 		if err != nil {
 			t.Errorf("id %q: parse failed: %v\n", tc.id, err)
 			continue
@@ -662,7 +662,7 @@ func TestStatusLine(t *testing.T) {
 		i1, i2 := 0, 0
 		for i1 < len(tc.moves) && i2 < len(sl) {
 			m1, m2 := tc.moves[i1], sl[i2]
-			//t.Errorf("id: %q: step %3d: %d %q %d %q\n", tc.id, m1.StepNo, i1, m1.Line, i2, m2.Line)
+			normalizeMove(m2)
 			if diff := deep.Equal(m1, m2); diff != nil {
 				for _, d := range diff {
 					t.Errorf("id: %q: step %3d: %s\n", tc.id, m1.StepNo, d)
@@ -694,7 +694,7 @@ func TestTribeFollowsParse(t *testing.T) {
 		{id: "1812", line: "Tribe Follows 1812", follows: "1812"},
 		{id: "1812f3", line: "Tribe Follows 1812f3", follows: "1812f3"},
 	} {
-		tf, err := parser.ParseTribeFollowsLine(tc.id, tc.unitId, 1, []byte(tc.line), tc.debug)
+		tf, err := parser.ParseTribeFollowsLine(tc.id, "", tc.unitId, 1, []byte(tc.line), tc.debug)
 		if err != nil {
 			t.Errorf("id %q: parse failed: %v\n", tc.id, err)
 			continue
@@ -717,7 +717,7 @@ func TestTribeGoesParse(t *testing.T) {
 		{id: "2", line: "Tribe Goes to ## 1812", goesTo: "## 1812"},
 		{id: "3", line: "Tribe Goes to N/A", goesTo: "N/A"},
 	} {
-		gt, err := parser.ParseTribeGoesToLine(tc.id, tc.unitId, 1, []byte(tc.line), tc.debug)
+		gt, err := parser.ParseTribeGoesToLine(tc.id, "", tc.unitId, 1, []byte(tc.line), tc.debug)
 		if err != nil {
 			t.Errorf("id %q: parse failed: %v\n", tc.id, err)
 			continue
@@ -776,15 +776,15 @@ func TestTribeMovementParse(t *testing.T) {
 			},
 		},
 	} {
-		tm, err := parser.ParseTribeMovementLine(tc.id, tc.unitId, 1, []byte(tc.line), tc.debug, tc.debug)
+		tm, err := parser.ParseTribeMovementLine(tc.id, "", tc.unitId, 1, []byte(tc.line), false, tc.debug, tc.debug, false)
 		if err != nil {
 			t.Errorf("id %q: parse failed: %v\n", tc.id, err)
 			continue
 		}
 		i1, i2 := 0, 0
-		for i1 < len(tc.moves) || i2 < len(tm) {
+		for i1 < len(tc.moves) && i2 < len(tm) {
 			m1, m2 := tc.moves[i1], tm[i2]
-			//t.Errorf("id: %q: step %3d: %d %q %d %q\n", tc.id, m1.StepNo, i1, m1.Line, i2, m2.Line)
+			normalizeMove(m2)
 			if diff := deep.Equal(m1, m2); diff != nil {
 				for _, d := range diff {
 					t.Errorf("id: %q: step %3d: %s\n", tc.id, m1.StepNo, d)
@@ -844,6 +844,17 @@ func TestTurnInfoParse(t *testing.T) {
 				t.Errorf("id %q: nextMonth: want %d, got %d\n", tc.id, tc.nextMonth, turnInfo.NextTurn.Month)
 			}
 		}
+	}
+}
+
+// normalizeMove clears fields that the parser populates but that test
+// expectations deliberately omit (linked-list pointers, auto-set unit IDs).
+func normalizeMove(m *parser.Move_t) {
+	m.UnitId = ""
+	m.Debug.PriorMove = nil
+	m.Debug.NextMove = nil
+	if m.Report != nil {
+		m.Report.UnitId = ""
 	}
 }
 

@@ -15,7 +15,7 @@ import (
 	"github.com/playbymail/ottomap/internal/parsers/ast/asttest"
 )
 
-// go test ./ast -run TestASTGolden -update
+// go test ./ast -run TestAST_Golden -update
 var update = flag.Bool("update", false, "update golden files")
 
 // --- Public test entry -------------------------------------------------------

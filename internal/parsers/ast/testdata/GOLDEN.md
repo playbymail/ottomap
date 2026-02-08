@@ -10,7 +10,7 @@ Run once to generate:
 
 ```bash
 cd ast
-go test -run TestASTGolden -update
+go test -run TestAST_Golden -update
 ```
 
 This will create:
