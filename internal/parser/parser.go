@@ -37,10 +37,6 @@ var (
 	rxTribeSection    = regexp.MustCompile(`^Tribe \d{4}, `)
 )
 
-const (
-	LastTurnCurrentLocationObscured = "0902-01"
-)
-
 type ParseConfig struct {
 	Version semver.Version
 	Ignore  struct {
@@ -316,17 +312,6 @@ func slug(b []byte, n int) string {
 		return string(b)
 	}
 	return string(b[:n])
-}
-
-type Scry_t struct {
-	UnitId      UnitId_t // the unit scrying
-	Type        unit_movement.Type_e
-	Origin      string // the hex the scry originates in
-	Coordinates coords.WorldMapCoord
-	Location    coords.Map
-	Text        []byte // the results of scrying in that hex
-	Moves       []*Move_t
-	Scouts      *Scout_t
 }
 
 type Movement_t struct {

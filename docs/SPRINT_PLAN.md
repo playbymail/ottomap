@@ -5,7 +5,7 @@ cleanup sprints (dead code removal, dependency cleanup, documentation).
 Sprints 75-83 are refactoring sprints to separate the parser and render
 pipelines into independent packages with shared domain types.
 
-Current version: **0.77.0**
+Current version: **0.78.0**
 
 Each sprint bumps the minor version. Sprint numbering starts at 63.
 
@@ -560,6 +560,24 @@ linked-list pointers (`Prev`, `Next`) that are used by `render.go`.
 references). The type alias approach should make this transparent, but
 careful testing is needed.
 
+**Outcome:** Moved five types (`Move_t`, `Scout_t`, `Scry_t`, `Moves_t`,
+`Turn_t` with `TopoSortMoves`, `SortMovesByElement`, `FromMayBeObscured`,
+`ToMayBeObscured` methods) and the `LastTurnCurrentLocationObscured`
+constant into `internal/domain/`. `Scry_t` was previously defined in
+`parser.go` rather than `types.go` and was relocated to `domain/types.go`
+alongside the other movement types. `ParseConfig` was left in
+`internal/parser/` as it is parser configuration, not a shared domain
+type. Added type aliases in `internal/parser/types.go` (`type Turn_t =
+domain.Turn_t`, `type Moves_t = domain.Moves_t`, `type Move_t =
+domain.Move_t`, `type Scout_t = domain.Scout_t`, `type Scry_t =
+domain.Scry_t`) and a constant alias (`const
+LastTurnCurrentLocationObscured = domain.LastTurnCurrentLocationObscured`)
+so all downstream packages compile with no import changes. The
+`internal/domain/` package gained two new imports: `results` (for
+`Move_t.Result`) and `unit_movement` (for `Scry_t.Type`). Build and all
+tests pass (pre-existing golden test failures in the new parser pipeline
+are unrelated).
+
 ---
 
 ## Sprint 79 — Migrate `internal/tiles/` to Import `internal/domain/`
@@ -744,7 +762,7 @@ imports — they communicate only through `internal/domain/` types.
 | 75 | 0.75.0 | Dependency analysis and migration plan | COMPLETED |
 | 76 | 0.76.0 | Create `internal/domain/` with leaf types | COMPLETED |
 | 77 | 0.77.0 | Move report and border types to domain | COMPLETED |
-| 78 | 0.78.0 | Move movement types to domain | PLANNED |
+| 78 | 0.78.0 | Move movement types to domain | COMPLETED |
 | 79 | 0.79.0 | Migrate `internal/tiles/` imports | PLANNED |
 | 80 | 0.80.0 | Migrate `internal/turns/` imports | PLANNED |
 | 81 | 0.81.0 | Migrate `internal/wxx/` and `actions/` imports | PLANNED |
