@@ -813,7 +813,7 @@ func parseMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte
 					log.Printf("please report this error")
 					panic(fmt.Errorf("unexpected type %T", va))
 				} else {
-					move.Report.mergeFarHorizons(fh)
+					move.Report.MergeFarHorizons(fh)
 				}
 			}
 		}
