@@ -13,7 +13,7 @@ import (
 func TestLoad(t *testing.T) {
 	// Test non-existent file
 	t.Run("non-existent file", func(t *testing.T) {
-		cfg, err := config.Load("non-existent-file.json", false)
+		cfg, err := config.Load("non-existent-file.json", false, false, false)
 		if err != nil {
 			t.Errorf("expected no error for non-existent file, got %v", err)
 		}
@@ -29,7 +29,7 @@ func TestLoad(t *testing.T) {
 	// Test directory instead of file
 	t.Run("directory error", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		_, err := config.Load(tmpDir, false)
+		_, err := config.Load(tmpDir, false, false, false)
 		if err == nil {
 			t.Errorf("expected error for directory, got nil")
 		}
@@ -45,7 +45,7 @@ func TestLoad(t *testing.T) {
 			t.Fatalf("failed to create test file: %v", err)
 		}
 
-		cfg, err := config.Load(configFile, false)
+		cfg, err := config.Load(configFile, false, false, false)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -60,10 +60,8 @@ func TestLoad(t *testing.T) {
 		configFile := filepath.Join(tmpDir, "config.json")
 
 		testConfig := config.Config{
-			Clan: "TestClan",
-			Experimental: config.Experimental_t{
-				AllowConfig: true,
-			},
+			Clan:        "TestClan",
+			AllowConfig: true,
 		}
 
 		data, err := json.Marshal(testConfig)
@@ -76,7 +74,7 @@ func TestLoad(t *testing.T) {
 			t.Fatalf("failed to create test file: %v", err)
 		}
 
-		cfg, err := config.Load(configFile, false)
+		cfg, err := config.Load(configFile, false, false, false)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -84,7 +82,7 @@ func TestLoad(t *testing.T) {
 		if cfg.Clan != "TestClan" {
 			t.Errorf("expected clan 'TestClan', got %q", cfg.Clan)
 		}
-		if !cfg.Experimental.AllowConfig {
+		if !cfg.AllowConfig {
 			t.Errorf("expected AllowConfig to be true")
 		}
 		// Nested field should remain default
@@ -120,7 +118,7 @@ func TestLoad(t *testing.T) {
 			t.Fatalf("failed to create test file: %v", err)
 		}
 
-		cfg, err := config.Load(configFile, false)
+		cfg, err := config.Load(configFile, false, false, false)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -146,7 +144,7 @@ func TestLoad(t *testing.T) {
 			t.Fatalf("failed to create test file: %v", err)
 		}
 
-		cfg, err := config.Load(configFile, true)
+		cfg, err := config.Load(configFile, true, false, false)
 		if err != nil {
 			t.Errorf("expected no error for invalid JSON, got %v", err)
 		}
@@ -168,7 +166,7 @@ func TestCopyNonZeroFields(t *testing.T) {
 		// Create a config with only some fields set
 		testConfig := config.Config{
 			Clan: "TestClan",
-			// Don't set Experimental.AllowConfig (should remain false)
+			// Don't set AllowConfig (should remain false)
 			Worldographer: config.Worldographer_t{
 				Map: config.Map_t{
 					Layers: config.Layers_t{
@@ -188,7 +186,7 @@ func TestCopyNonZeroFields(t *testing.T) {
 			t.Fatalf("failed to create test file: %v", err)
 		}
 
-		cfg, err := config.Load(configFile, true)
+		cfg, err := config.Load(configFile, true, false, false)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -202,7 +200,7 @@ func TestCopyNonZeroFields(t *testing.T) {
 		}
 
 		// Verify that zero fields remained at their defaults
-		if cfg.Experimental.AllowConfig != false {
+		if cfg.AllowConfig != false {
 			t.Errorf("expected AllowConfig to remain false (default)")
 		}
 	})

@@ -54,7 +54,7 @@ func TestAST_Golden(t *testing.T) {
 			}
 			gotJSON := mustJSON(t, snap)
 
-			goldenPath := filepath.Join("internal", "reports", "ast", "testdata", sanitize(tc.name)+".golden.json")
+			goldenPath := filepath.Join("testdata", sanitize(tc.name)+".golden.json")
 			if *update {
 				mustWriteFile(t, goldenPath, gotJSON)
 			}

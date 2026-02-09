@@ -52,7 +52,7 @@ func CollectInputs(path string, maxYear, maxMonth int, solo bool, soloClan strin
 				continue
 			}
 			if year < 899 || year > 9999 || month < 1 || month > 12 {
-				log.Printf("warn: %q: invalid turn year or month\n")
+				log.Printf("warn: %q: invalid turn year or month\n", fileName)
 				continue
 			}
 			pastCutoff := false
