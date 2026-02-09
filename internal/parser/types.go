@@ -10,12 +10,21 @@ import (
 	"github.com/playbymail/ottomap/internal/compass"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
+	"github.com/playbymail/ottomap/internal/domain"
 	"github.com/playbymail/ottomap/internal/edges"
 	"github.com/playbymail/ottomap/internal/items"
 	"github.com/playbymail/ottomap/internal/resources"
 	"github.com/playbymail/ottomap/internal/results"
 	"github.com/playbymail/ottomap/internal/terrain"
 )
+
+// Type aliases for backward compatibility during migration.
+// These allow downstream packages to continue using parser.UnitId_t, etc.
+// without changes until they are migrated to import domain directly.
+type UnitId_t = domain.UnitId_t
+type Encounter_t = domain.Encounter_t
+type Settlement_t = domain.Settlement_t
+type Special_t = domain.Special_t
 
 // These are the types returned from the parser and parsing functions.
 
@@ -292,12 +301,6 @@ func (d DirectionTerrain_t) String() string {
 	return fmt.Sprintf("%s-%s", d.Direction, d.Terrain)
 }
 
-type Encounter_t struct {
-	TurnId   string // turn the encounter happened
-	UnitId   UnitId_t
-	Friendly bool // true if the encounter was friendly
-}
-
 // Exhausted_t is returned when a step fails because the unit was exhausted.
 type Exhausted_t struct {
 	Direction direction.Direction_e
@@ -389,47 +392,4 @@ type Scout_t struct {
 
 	LineNo int
 	Line   []byte
-}
-
-// Settlement_t is a settlement that the unit sees in the current hex.
-type Settlement_t struct {
-	TurnId string // turn the settlement was observed
-	Name   string
-}
-
-func (s *Settlement_t) String() string {
-	if s == nil {
-		return ""
-	}
-	return s.Name
-}
-
-type Special_t struct {
-	TurnId string // turn the special hex was observed
-	Id     string // id of the special hex, full name converted to lower case
-	Name   string // short name of the special hex (id if name is empty)
-}
-
-type UnitId_t string
-
-func (u UnitId_t) InClan(clan UnitId_t) bool {
-	if len(u) != 4 {
-		return u.Parent().Parent() == clan
-	}
-	return u.Parent() == clan
-}
-
-func (u UnitId_t) IsFleet() bool {
-	return len(u) == 6 && u[4] == 'f'
-}
-
-func (u UnitId_t) Parent() UnitId_t {
-	if len(u) == 4 {
-		return "0" + u[1:]
-	}
-	return u[:4]
-}
-
-func (u UnitId_t) String() string {
-	return string(u)
 }
