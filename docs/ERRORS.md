@@ -82,7 +82,7 @@ Otto uses the starting location (the clan's origin) to plot out all the moves th
 that's why it needs an un-obscured location to begin mapping.
 
 ## No movement results found
-If you run `ottomap map` and it ends with a line like `map: no movement results found`,
+If you run `ottomap render` and it ends with a line like `map: no movement results found`,
 the likely cause is a copy+paste error with the report file.
 
 Check that the first line of the report file starts with `Tribe 0nnn` where `0nnn` is your clan number.
