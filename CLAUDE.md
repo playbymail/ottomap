@@ -6,11 +6,11 @@ Guide for AI assistants working on the OttoMap codebase.
 
 OttoMap is a Go CLI tool that converts TribeNet play-by-mail game turn reports into Worldographer `.wxx` map files. It reads `.txt` files extracted from turn report `.docx` files, parses unit movements across a hexagonal grid, and generates visual maps.
 
-**Status:** Maintenance mode (bug fixes only, no new features). The codebase contains abandoned experiments from early development that are being cleaned up.
+**Status:** Maintenance mode (bug fixes only, no new features).
 
 **License:** AGPLv3
 
-**Version:** Stored in `main.go` as a `semver.Version` struct (currently v0.62.30).
+**Version:** Stored in `main.go` as a `semver.Version` struct (currently v0.72.0).
 
 ## Quick Reference
 
@@ -89,8 +89,9 @@ This is the intended replacement for the legacy pipeline in `internal/turns/`.
 | `internal/wxx/` | Worldographer .wxx file generation |
 | `internal/terrain/` | Terrain type definitions and mappings |
 | `internal/direction/` | Compass directions (N, NE, SE, S, SW, NW) |
-| `internal/stores/sqlite/` | SQLite persistence (not yet integrated) |
 | `internal/config/` | JSON configuration loading |
+| `internal/winds/` | Wind strength enums (used by legacy parser grammar) |
+| `internal/items/` | Item type enums (used by legacy parser grammar) |
 | `cerrs/` | Constant error type definitions |
 | `actions/` | High-level action implementations |
 
@@ -98,12 +99,10 @@ This is the intended replacement for the legacy pipeline in `internal/turns/`.
 
 These areas are vestiges of experiments and should not be extended:
 
-- **Web server code** in legacy files: Moved to separate OttoWeb project.
-- **`internal/stores/office/`**: DOCX parsing stub, not implemented.
-- **`internal/stores/sqlite/`**: Database infrastructure exists (schema, queries, SQLC config) but is not connected to the render pipeline.
-- **`compass/`, `winds/`, `items/`, `resources/`, `norm/`**: Minimal/placeholder packages.
+- **Web server code**: Moved to separate OttoWeb project.
+- **`compass/`, `resources/`, `norm/`**: Minimal/placeholder packages.
+- **`winds/`, `items/`**: Enum packages used only by the legacy PEG parser grammar. Retained because they are referenced by external packages (e.g., `github.com/playbymail/tndocx`). Values are parsed but discarded before reaching the render pipeline.
 - **Fleet movement**: Not implemented; waiting on real turn report examples.
-- **Commented-out code in `render.go`**: Debug/experimental code left from development.
 
 ## Conventions
 
@@ -142,7 +141,7 @@ Uses Go's standard `log` package with a `package: context:` prefix pattern:
 
 ```go
 log.Printf("walk: input: %8d turns\n", len(input))
-log.Printf("db: create: path %s\n", path)
+log.Printf("render: path %s\n", path)
 ```
 
 ## Testing
@@ -181,12 +180,9 @@ Or use the Makefile, which sets `-race` by default.
 
 ## Code Generation
 
-Two code generation tools are used:
+**Pigeon** (PEG parser generator): `//go:generate pigeon -o grammar.go grammar.peg` in `internal/parser/`.
 
-1. **Pigeon** (PEG parser generator): `//go:generate pigeon -o grammar.go grammar.peg` in `internal/parser/`.
-2. **SQLC** (SQL to Go): `//go:generate sqlc generate` in `internal/stores/sqlite/`. Config in `sqlc.yaml`.
-
-Do not manually edit generated files (`grammar.go`, `models.go`, `queries.sql.go`).
+Do not manually edit the generated `grammar.go` file.
 
 ## Configuration
 
@@ -235,5 +231,5 @@ No CI/CD pipeline. No Docker. Manual deployment process.
 - Do not modify original `.docx` turn report files; only edit the `.txt` copies.
 - The `testdata/` directory must never be committed to git.
 - The legacy parser (`internal/parser/`) and new parser (`internal/parsers/`) are separate systems; changes to one do not affect the other.
-- Many packages under `internal/` are placeholders or experiments; check if a package is actually imported before assuming it is active.
+- Some packages under `internal/` (e.g., `compass`, `resources`, `norm`) are placeholders; check if a package is actually imported before assuming it is active.
 - The `render` command in `render.go` is the primary user-facing functionality; be careful with changes there.
