@@ -5,7 +5,7 @@ cleanup sprints (dead code removal, dependency cleanup, documentation).
 Sprints 75-83 are refactoring sprints to separate the parser and render
 pipelines into independent packages with shared domain types.
 
-Current version: **0.75.0**
+Current version: **0.76.0**
 
 Each sprint bumps the minor version. Sprint numbering starts at 63.
 
@@ -467,6 +467,14 @@ data carrier between the parser and render pipelines.
 - Run `go build` and `make test`
 - Version: **0.76.0**
 
+**Outcome:** Created `internal/domain/` package with `doc.go` and
+`types.go`. Moved four leaf types (`UnitId_t` with `InClan`, `IsFleet`,
+`Parent`, `String` methods; `Encounter_t`; `Settlement_t` with `String`
+method; `Special_t`) into `internal/domain/`. Added type aliases in
+`internal/parser/types.go` (`type UnitId_t = domain.UnitId_t`, etc.) so
+all downstream packages compile with no import changes. Build and all
+tests pass.
+
 ---
 
 ## Sprint 77 — Move Report and Border Types to `internal/domain/`
@@ -721,7 +729,7 @@ imports — they communicate only through `internal/domain/` types.
 | Sprint | Version | Goal | Status |
 |--------|---------|------|--------|
 | 75 | 0.75.0 | Dependency analysis and migration plan | COMPLETED |
-| 76 | 0.76.0 | Create `internal/domain/` with leaf types | PLANNED |
+| 76 | 0.76.0 | Create `internal/domain/` with leaf types | COMPLETED |
 | 77 | 0.77.0 | Move report and border types to domain | PLANNED |
 | 78 | 0.78.0 | Move movement types to domain | PLANNED |
 | 79 | 0.79.0 | Migrate `internal/tiles/` imports | PLANNED |
