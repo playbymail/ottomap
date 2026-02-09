@@ -46,14 +46,14 @@ test-ast:
 golden:
 	go test $(LEXERS) $(GO_TEST_FLAGS) -run TestLexer_Golden
 	go test $(CST)    $(GO_TEST_FLAGS) -run TestCST_Golden
-	go test $(AST)    $(GO_TEST_FLAGS) -run TestASTGolden
+	go test $(AST)    $(GO_TEST_FLAGS) -run TestAST_Golden
 
 # ---- Golden snapshots (update) ----
 # Regenerates snapshots (use after intentional output changes).
 golden-update:
 	go test $(LEXERS) $(GO_TEST_FLAGS) -run TestLexer_Golden -update
 	go test $(CST)    $(GO_TEST_FLAGS) -run TestCST_Golden   -update
-	go test $(AST)    $(GO_TEST_FLAGS) -run TestASTGolden    -update
+	go test $(AST)    $(GO_TEST_FLAGS) -run TestAST_Golden    -update
 
 # ---- Coverage across repo ----
 coverage:

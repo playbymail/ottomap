@@ -72,7 +72,7 @@ func TestCST_Golden(t *testing.T) {
 			gotJSON := mustJSON(t, snap)
 
 			// load the golden
-			path := filepath.Join("internal", "parsers", "cst", "testdata", sanitize(tc.name)+".cst.json")
+			path := filepath.Join("testdata", sanitize(tc.name)+".cst.json")
 			if *update {
 				mustWrite(t, path, gotJSON)
 			}
