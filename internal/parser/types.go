@@ -5,15 +5,10 @@ package parser
 import (
 	"fmt"
 	"sort"
-	"strings"
 
-	"github.com/playbymail/ottomap/internal/compass"
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/domain"
-	"github.com/playbymail/ottomap/internal/edges"
-	"github.com/playbymail/ottomap/internal/items"
-	"github.com/playbymail/ottomap/internal/resources"
 	"github.com/playbymail/ottomap/internal/results"
 	"github.com/playbymail/ottomap/internal/terrain"
 )
@@ -25,6 +20,10 @@ type UnitId_t = domain.UnitId_t
 type Encounter_t = domain.Encounter_t
 type Settlement_t = domain.Settlement_t
 type Special_t = domain.Special_t
+type Border_t = domain.Border_t
+type FarHorizon_t = domain.FarHorizon_t
+type FoundItem_t = domain.FoundItem_t
+type Report_t = domain.Report_t
 
 // These are the types returned from the parser and parsing functions.
 
@@ -174,122 +173,6 @@ type Move_t struct {
 	}
 }
 
-// Report_t represents the observations made by a unit.
-// All reports are relative to the hex that the unit is reporting from.
-type Report_t struct {
-	UnitId UnitId_t // id of the unit that made the report
-
-	Location      coords.Map
-	TurnId        string // turn the report was received
-	ScoutedTurnId string // turn the report was received from a scouting party
-
-	// permanent items in this hex
-	Terrain terrain.Terrain_e
-	Borders []*Border_t
-
-	// transient items in this hex
-	Encounters  []*Encounter_t // other units in the hex
-	Items       []*FoundItem_t
-	Resources   []resources.Resource_e
-	Settlements []*Settlement_t
-	FarHorizons []*FarHorizon_t
-
-	WasVisited bool // set to true if the location was visited by any unit
-	WasScouted bool // set to true if the location was visited by a scouting party or a unit ended the turn here
-}
-
-// MergeBorders adds a new border to the list if it's not already in the list
-func (r *Report_t) MergeBorders(b *Border_t) bool {
-	for _, l := range r.Borders {
-		if l.Direction == b.Direction && l.Edge == b.Edge && l.Terrain == b.Terrain {
-			return false
-		}
-	}
-	r.Borders = append(r.Borders, b)
-	return true
-}
-
-// MergeEncounters adds a new encounter to the list if it's not already in the list
-func (r *Report_t) MergeEncounters(e *Encounter_t) bool {
-	for _, l := range r.Encounters {
-		if l.TurnId == e.TurnId && l.UnitId == e.UnitId {
-			return false
-		}
-	}
-	r.Encounters = append(r.Encounters, e)
-	return true
-}
-
-// mergeFarHorizons adds a new far horizon observation to the list if it's not already in the list
-func (r *Report_t) mergeFarHorizons(fh FarHorizon_t) bool {
-	for _, l := range r.FarHorizons {
-		if l.Point == fh.Point && l.Terrain == fh.Terrain {
-			return false
-		}
-	}
-	r.FarHorizons = append(r.FarHorizons, &FarHorizon_t{Point: fh.Point, Terrain: fh.Terrain})
-	return true
-}
-
-// mergeItems adds an item to the list. If it is already in the list, the quantity is updated.
-func (r *Report_t) mergeItems(list []*FoundItem_t, f *FoundItem_t) []*FoundItem_t {
-	if f == nil {
-		return list
-	} else if list == nil {
-		return []*FoundItem_t{f}
-	}
-	for _, l := range list {
-		if l.Item != f.Item {
-			l.Quantity += f.Quantity
-			return list
-		}
-	}
-	return append(list, f)
-}
-
-// MergeResources adds a new resource to the list if it's not already in the list
-func (r *Report_t) MergeResources(rs resources.Resource_e) bool {
-	if rs == resources.None {
-		return false
-	}
-	for _, l := range r.Resources {
-		if l == rs {
-			return false
-		}
-	}
-	r.Resources = append(r.Resources, rs)
-	return true
-}
-
-// MergeSettlements adds a new settlement to the list if it's not already in the list
-func (r *Report_t) MergeSettlements(s *Settlement_t) bool {
-	if s == nil {
-		return false
-	}
-	for _, l := range r.Settlements {
-		if strings.ToLower(l.Name) == strings.ToLower(s.Name) {
-			return false
-		}
-	}
-	r.Settlements = append(r.Settlements, s)
-	return true
-}
-
-// Border_t represents details about the hex border.
-type Border_t struct {
-	Direction direction.Direction_e
-	// Edge is set if there is an edge feature like a river or pass
-	Edge edges.Edge_e
-	// Terrain is set if the neighbor is observable from this hex
-	Terrain terrain.Terrain_e
-}
-
-func (b *Border_t) String() string {
-	if b == nil {
-		return "nil"
-	}
-	return fmt.Sprintf("(%s %s %s)", b.Direction, b.Edge, b.Terrain)
-}
 
 // DirectionTerrain_t is the first component returned from a successful step.
 type DirectionTerrain_t struct {
@@ -314,26 +197,6 @@ func (e *Exhausted_t) String() string {
 	return fmt.Sprintf("x(%s-%s)", e.Direction, e.Terrain)
 }
 
-type FarHorizon_t struct {
-	Point   compass.Point_e
-	Terrain terrain.Terrain_e
-}
-
-// FoundItem_t represents items discovered by Scouts as they pass through a hex.
-// Note: parsed item data is not propagated to the render pipeline (items are
-// ignored during move processing). The items and winds packages are retained
-// because external packages depend on these types.
-type FoundItem_t struct {
-	Quantity int
-	Item     items.Item_e
-}
-
-func (f *FoundItem_t) String() string {
-	if f == nil {
-		return ""
-	}
-	return fmt.Sprintf("found(%d-%s)", f.Quantity, f.Item)
-}
 
 type FoundUnit_t struct {
 	Id UnitId_t

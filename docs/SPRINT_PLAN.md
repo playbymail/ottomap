@@ -5,7 +5,7 @@ cleanup sprints (dead code removal, dependency cleanup, documentation).
 Sprints 75-83 are refactoring sprints to separate the parser and render
 pipelines into independent packages with shared domain types.
 
-Current version: **0.76.0**
+Current version: **0.77.0**
 
 Each sprint bumps the minor version. Sprint numbering starts at 63.
 
@@ -507,6 +507,19 @@ and consumed by `tiles.Tile_t.MergeReports()`. `Border_t` and
 - Run `go build` and `make test`
 - Version: **0.77.0**
 
+**Outcome:** Moved four types (`Border_t` with `String` method;
+`FarHorizon_t`; `FoundItem_t` with `String` method; `Report_t` with
+`MergeBorders`, `MergeEncounters`, `MergeFarHorizons`, `MergeItems`,
+`MergeResources`, `MergeSettlements` methods) into `internal/domain/`.
+The previously unexported methods `mergeFarHorizons` and `mergeItems`
+were exported (`MergeFarHorizons`, `MergeItems`) since they now reside
+in a separate package from their sole caller in `internal/parser/`.
+Added type aliases in `internal/parser/types.go` (`type Border_t =
+domain.Border_t`, etc.) so all downstream packages compile with no
+import changes. Updated the call site in `parser.go` to use the new
+exported name. Build and all tests pass (pre-existing golden test
+failures in the new parser pipeline are unrelated).
+
 ---
 
 ## Sprint 78 — Move Movement Types to `internal/domain/`
@@ -730,7 +743,7 @@ imports — they communicate only through `internal/domain/` types.
 |--------|---------|------|--------|
 | 75 | 0.75.0 | Dependency analysis and migration plan | COMPLETED |
 | 76 | 0.76.0 | Create `internal/domain/` with leaf types | COMPLETED |
-| 77 | 0.77.0 | Move report and border types to domain | PLANNED |
+| 77 | 0.77.0 | Move report and border types to domain | COMPLETED |
 | 78 | 0.78.0 | Move movement types to domain | PLANNED |
 | 79 | 0.79.0 | Migrate `internal/tiles/` imports | PLANNED |
 | 80 | 0.80.0 | Migrate `internal/turns/` imports | PLANNED |
