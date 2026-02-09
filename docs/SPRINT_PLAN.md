@@ -5,7 +5,7 @@ cleanup sprints (dead code removal, dependency cleanup, documentation).
 Sprints 75-83 are refactoring sprints to separate the parser and render
 pipelines into independent packages with shared domain types.
 
-Current version: **0.74.0**
+Current version: **0.75.0**
 
 Each sprint bumps the minor version. Sprint numbering starts at 63.
 
@@ -416,6 +416,19 @@ analysis. No code changes in this sprint.
 - Run `go build` and `make test` (verify baseline still passes)
 - Version: **0.75.0**
 
+**Outcome:** Complete analysis delivered in `docs/REFACTOR_ANALYSIS.md`.
+Key findings: 13 shared types must move to `internal/domain/`, 24+
+parser-only types stay in `internal/parser/`. One constant
+(`LastTurnCurrentLocationObscured`) must move with `Turn_t`. All six
+`Report_t` merge methods must move with the type (they are called only
+by the parser, but Go binds methods to their receiver). `FoundItem_t`
+was reclassified from parser-only to shared because it is a field of
+`Report_t` and a parameter of `tiles.MergeItem()`. `Scry_t` introduces
+a dependency on `internal/unit_movement/` in the domain package. No
+circular import risks were identified. The generated `grammar.go` will
+need updates during alias removal (Sprint 82). The new parser pipeline
+(`internal/parsers/`) is completely independent and unaffected.
+
 ---
 
 ## Sprint 76 — Create `internal/domain/` with Leaf Types
@@ -707,7 +720,7 @@ imports — they communicate only through `internal/domain/` types.
 
 | Sprint | Version | Goal | Status |
 |--------|---------|------|--------|
-| 75 | 0.75.0 | Dependency analysis and migration plan | PLANNED |
+| 75 | 0.75.0 | Dependency analysis and migration plan | COMPLETED |
 | 76 | 0.76.0 | Create `internal/domain/` with leaf types | PLANNED |
 | 77 | 0.77.0 | Move report and border types to domain | PLANNED |
 | 78 | 0.78.0 | Move movement types to domain | PLANNED |
