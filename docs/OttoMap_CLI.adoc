@@ -1,107 +1,98 @@
 = OttoMap CLI Commands
 
-== Database Commands
+== Global Flags
 
-=== Initialize Database
+These flags are available on all commands:
 
-* *Command*: `ottomap db init`
-* *Description*: Initializes the database and sets up required paths. All paths are converted to absolute paths and verified before initializing the database. Any errors will end the process without creating the database.
-* *Example*:
+* `--debug`: Log debugging information.
+* `--log-file <path>`: Set log file path.
+* `--log-with-default-flags`: Log with default flags.
+* `--log-with-shortfile`: Log with short file name (default: true).
+* `--log-with-timestamp`: Log with timestamp.
+* `--quiet`: Log less information.
+* `--verbose`: Log more information.
+* `--show-version`: Show version.
 
-[source,bash]
+== render
+
+The primary command. Loads and parses turn report files from the `data/input` directory and generates a Worldographer `.wxx` map file in `data/output`.
+
 ----
-ottomap db init --assets /path/to/assets --templates /path/to/templates --data /path/to/data --secret mysecrettoken
-----
-
-* *Flags*:
-** `--path, -p`: Path for database location (defaults to current path).
-** `--force, -f`: Force the creation even if the database exists.
-** `--assets, -a`: Path to the assets directory (defaults to ./assets).
-** `--data, -d`: Path to the data files directory (defaults to ./data).
-** `--templates, -t`: Path to the templates directory (defaults to ./templates).
-** `--secret, -s`: Secret for signing tokens (defaults to a random value).
-
-=== Update Database Configuration
-
-* *Command*: `ottomap db update`
-* *Description*: Updates the database configuration. Only provided parameters will be updated. Paths are converted to absolute paths and verified before updating. Any errors will roll back all the changes.
-* *Example*:
-
-[source,bash]
-----
-ottomap db update --assets /new/path/to/assets --templates /new/path/to/templates
+ottomap render --clan-id 0138
 ----
 
-* *Flags*:
-** `--path, -p`: Optional path for database location.
-** `--assets, -a`: New path to the assets directory (optional).
-** `--templates, -t`: New path to the templates directory (optional).
-** `--data, -d`: New path to the data files directory (optional).
-** `--secret, -s`: New secret for signing tokens (optional).
-** `--random-secret`: Generate a new random secret for signing tokens (optional).
+=== Flags
 
-== User Commands
+* `--clan-id <id>`: Clan for output file names (required).
+* `--data <path>`: Path to root of data files (default: `data`).
+* `--max-turn <yyyy-mm>`: Last turn to map. Limits map generation to turns up to and including this date.
+* `--auto-eol`: Automatically convert line endings (default: true).
+* `--origin-grid <id>`: Grid ID to substitute for `##` in obscured starting hexes.
+* `--save-with-turn-id`: Add turn ID to output file name.
+* `--shift-map`: Shift map up and left to remove empty space (default: true).
+* `--show-grid-coords`: Show grid coordinates (XX CCRR) on the map.
+* `--show-grid-numbers`: Show grid numbers (CCRR) on the map.
+* `--show-origin`: Show origin hex on the map.
+* `--solo`: Limit parsing to a single clan.
+* `--solo-element <id>`: Limit parsing to a single element of a clan.
+* `--top-left <coord>`: Experimental: top left corner of rendered map.
+* `--bottom-right <coord>`: Experimental: bottom right corner of rendered map.
+* `--warn-on-invalid-grid`: Warn on invalid grid ID (default: true).
+* `--warn-on-new-settlement`: Warn on new settlement (default: true).
+* `--warn-on-terrain-change`: Warn when terrain changes (default: true).
 
-=== Create User
+=== Examples
 
-* *Command*: `ottomap user create`
-* *Description*: Creates a new user in the system.
-* *Example*:
+Render all turns for clan 0138:
 
-[source,bash]
 ----
-ottomap user create --clan 0138 --email alice@example.com --password secret
-----
-
-* *Flags*:
-** `--clan, -c`: Clan for the new user (mandatory, four digits, must be unique).
-** `--email, -e`: Email address (mandatory).
-** `--password, -p`: Password for the new user (defaults to random value).
-** `--role, -r`: User role, e.g., admin, user, etc. (defaults to user).
-
-=== Update User
-
-* *Command*: `ottomap user update`
-* *Description*: Updates user details.
-* *Example*:
-
-[source,bash]
-----
-ottomap user update --clan 0138 --email new@example.com
+ottomap render --clan-id 0138
 ----
 
-* *Flags*:
-** `--clan, -c`: Clan of the user to update (mandatory).
-** `--email, -e`: New email address (optional).
-** `--password, -p`: New password (optional).
-** `--role, -r`: New role (optional).
+Render up to a specific turn:
 
-=== Delete User
-
-* *Command*: `ottomap user delete`
-* *Description*: Deletes a user from the system.
-* *Example*:
-
-[source,bash]
 ----
-ottomap user delete --clan 0138
+ottomap render --clan-id 0138 --max-turn 0901-12
 ----
 
-* *Flags*:
-** `--clan, -c`: Clan of the user to delete (mandatory).
-** `--force, -f`: Force deletion without confirmation.
+Render with grid coordinates displayed:
 
-=== List Users
-
-* *Command*: `ottomap user list`
-* *Description*: Lists all users in the system.
-* *Example*:
-
-[source,bash]
 ----
-ottomap user list
+ottomap render --clan-id 0138 --show-grid-coords
 ----
 
-* *Flags*:
-** `--role, -r`: Filter users by role (optional).
-** `--limit, -l`: Limit the number of results (optional).
+== version
+
+Displays the current version of OttoMap.
+
+----
+ottomap version
+----
+
+== list
+
+List information about available turn data.
+
+=== list clans
+
+Lists all clans found in the data directory.
+
+----
+ottomap list clans
+----
+
+=== list turns
+
+Lists all turns found in the data directory.
+
+----
+ottomap list turns
+----
+
+== dump
+
+Dump internal data to a file. This is a diagnostic command used for debugging.
+
+----
+ottomap dump
+----

@@ -2,7 +2,7 @@
 
 == Introduction
 
-OttoMap is a tool that translates TribeNet turn report files into JSON data and generates maps. This manual provides detailed instructions for using OttoMap from the command line.
+OttoMap is a tool that converts TribeNet turn report files into Worldographer `.wxx` map files. This manual provides detailed instructions for using OttoMap from the command line.
 
 == Installation
 
