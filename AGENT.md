@@ -54,8 +54,11 @@ Please note that the `Build` member contains the Git commit information and stat
 When bumping the major version, reset the minor and patch levels back to 0.
 When bumping the minor version, reset the patch level back to 0.
 
-## Sqlite3
-Implementing a Sqlite3 data store is on the roadmap.
+## Sprint Plan
+Plans for upcoming tasks are detailed in `docs/SPRINT_PLAN.md`.
+That file tracks all completed and planned sprints, including the current
+Phase 2 refactoring work (separating parser and render pipelines via
+`internal/domain/`).
 
 ## Building and Deploying
 We are switching from a `build` folder to `dist` to make OttoMap be consistent with other projects.
