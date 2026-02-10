@@ -18,11 +18,13 @@
 .vscode/
 coverage.html
 coverage.out
+dist/local/parser
 follows.*.txt
 node_modules/
 ottomap
 package.json
 package-lock.json
+/parser
 
 testdata/
 !internal/parsers/ast/testdata

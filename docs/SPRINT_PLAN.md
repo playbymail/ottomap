@@ -5,7 +5,7 @@ cleanup sprints (dead code removal, dependency cleanup, documentation).
 Sprints 75-83 are refactoring sprints to separate the parser and render
 pipelines into independent packages with shared domain types.
 
-Current version: **0.80.0**
+Current version: **0.83.0**
 
 Each sprint bumps the minor version. Sprint numbering starts at 63.
 
@@ -601,6 +601,16 @@ accepts `parser.UnitId_t`.
 - Run `go build` and `make test`
 - Version: **0.79.0**
 
+**Outcome:** Replaced `internal/parser` import with `internal/domain` in
+all files under `internal/tiles/`. Updated all type references:
+`parser.Encounter_t` → `domain.Encounter_t`, `parser.Settlement_t` →
+`domain.Settlement_t`, `parser.Special_t` → `domain.Special_t`,
+`parser.UnitId_t` → `domain.UnitId_t`, `parser.Report_t` →
+`domain.Report_t`, `parser.Border_t` → `domain.Border_t`,
+`parser.FarHorizon_t` → `domain.FarHorizon_t`, `parser.FoundItem_t` →
+`domain.FoundItem_t`. Verified no remaining references to
+`internal/parser` in the package. Build passes.
+
 ---
 
 ## Sprint 80 — Migrate `internal/turns/` to Import `internal/domain/` [COMPLETED]
@@ -651,6 +661,14 @@ logic.
 - Run `go build` and `make test`
 - Version: **0.81.0**
 
+**Outcome:** Replaced `internal/parser` import with `internal/domain`
+in all files under `internal/wxx/` and `actions/`. Updated all type
+references: `parser.Encounter_t` → `domain.Encounter_t`,
+`parser.Settlement_t` → `domain.Settlement_t`, `parser.Special_t` →
+`domain.Special_t`, `parser.UnitId_t` → `domain.UnitId_t`. Verified no
+remaining references to `internal/parser` in either package. Build
+passes.
+
 ---
 
 ## Sprint 82 — Remove Type Aliases and Clean Up `internal/parser/` [COMPLETED]
@@ -684,9 +702,19 @@ aliases. This sprint completes the decoupling.
 consumer of `internal/parser/` types. Since these are under `internal/`,
 external access is already prohibited by Go's visibility rules.
 
+**Outcome:** Removed all type aliases from `internal/parser/types.go`
+and deleted the file entirely. Updated `render.go` to import
+`internal/domain/` for shared types (`Turn_t`, `Moves_t`, `Move_t`,
+`Special_t`, `UnitId_t`) and `internal/parser/` only for `ParseInput()`
+and `ParseConfig`. Moved parser-only types (`DirectionTerrain_t`,
+`Exhausted_t`, `ProhibitedFrom_t`, `NearHorizon_t`, `Neighbor_t`,
+`MissingEdge_t`, `Longhouse_t`, `Patrolled_t`, `FoundUnit_t`) into
+`internal/parser/parse_types.go`. Verified `internal/parser/` no longer
+exports any domain types. Build and all tests pass.
+
 ---
 
-## Sprint 83 — Verify Independence and Update Documentation
+## Sprint 83 — Verify Independence and Update Documentation [COMPLETED]
 
 **Goal:** Validate that the parser and render packages are fully
 independent, and update project documentation to reflect the new
@@ -720,6 +748,18 @@ imports — they communicate only through `internal/domain/` types.
 4. **Update this sprint plan** with outcomes for Sprints 75-83.
 
 - Version: **0.83.0**
+
+**Outcome:** Dependency verification confirmed full independence:
+`internal/parser/` does not import any render-side packages
+(`internal/turns/`, `internal/tiles/`, `internal/wxx/`, `actions/`), and
+none of those packages import `internal/parser/`. Both sides import
+`internal/domain/` for shared types. Integration tests pass: `go build`
+succeeds, `make test` (with race detector) passes, `make golden` confirms
+snapshots are current (golden snapshots were regenerated to reflect
+lexer token kind changes from Sprint 69). Updated CLAUDE.md with
+`internal/domain/` in Key Packages table, decoupled architecture
+description, dependency rules, and updated parser generation notes.
+Updated this sprint plan with outcomes for Sprints 79, 81, 82, and 83.
 
 ---
 
@@ -775,4 +815,4 @@ imports — they communicate only through `internal/domain/` types.
 | 80     | 0.80.0  | Migrate `internal/turns/` imports              | COMPLETED |
 | 81     | 0.81.0  | Migrate `internal/wxx/` and `actions/` imports | COMPLETED |
 | 82     | 0.82.0  | Remove aliases, clean up parser                | COMPLETED |
-| 83     | 0.83.0  | Verify independence, update docs               | PLANNED   |
+| 83     | 0.83.0  | Verify independence, update docs               | COMPLETED |

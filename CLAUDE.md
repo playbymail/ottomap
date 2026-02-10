@@ -10,7 +10,7 @@ OttoMap is a Go CLI tool that converts TribeNet play-by-mail game turn reports i
 
 **License:** AGPLv3
 
-**Version:** Stored in `main.go` as a `semver.Version` struct (currently v0.72.0).
+**Version:** Stored in `main.go` as a `semver.Version` struct (currently v0.83.0).
 
 ## Quick Reference
 
@@ -52,16 +52,31 @@ Turn report (.txt) -> Parse -> Walk hex movements -> Build world map -> Render .
 
 The main command is `render`, which orchestrates this full pipeline.
 
+The architecture is decoupled via `internal/domain/`:
+
+- The parser (`internal/parser/`) produces `domain.*` types
+- The render side (`internal/turns/`, `internal/tiles/`, `internal/wxx/`, `actions/`) consumes `domain.*` types
+- Neither side imports the other — they communicate only through `internal/domain/`
+
 ### Two Parser Generations
 
 There are **two parallel parser implementations**. The legacy parser is still used by the main `render` command. The new parser is under active development but not yet integrated into `render`.
 
-1. **Legacy parser** (`internal/parser/`): Pigeon PEG-based. Reports only the first error and quits. Poor error messages. Still powers the main `render` pipeline.
+1. **Legacy parser** (`internal/parser/`): Pigeon PEG-based. Reports only the first error and quits. Poor error messages. Still powers the main `render` pipeline. Shared types have been extracted to `internal/domain/`; this package now contains only parsing logic and parser-specific types.
 
 2. **New parser** (`internal/parsers/`): Three-stage Lexer -> CST -> AST architecture. Better error reporting and diagnostics. Not yet wired into the `render` command.
    - `internal/parsers/lexers/` - Tokenization
    - `internal/parsers/cst/` - Concrete Syntax Tree (lossless, preserves all source text)
    - `internal/parsers/ast/` - Abstract Syntax Tree (semantic, simplified for logic)
+
+### Dependency Rules
+
+The parser and render pipelines are fully decoupled:
+
+- `internal/parser/` does NOT import `internal/turns/`, `internal/tiles/`, `internal/wxx/`, or `actions/`
+- `internal/turns/`, `internal/tiles/`, `internal/wxx/`, and `actions/` do NOT import `internal/parser/`
+- Both sides import `internal/domain/` for shared types
+- `render.go` imports both `internal/parser/` (for `ParseInput()`) and `internal/domain/` (for shared types)
 
 ### New Pipeline (WIP)
 
@@ -79,6 +94,7 @@ This is the intended replacement for the legacy pipeline in `internal/turns/`.
 |---------|---------|
 | `main` (root `.go` files) | CLI commands via Cobra |
 | `internal/parser/` | Legacy Pigeon PEG parser (active) |
+| `internal/domain/` | Shared domain types (UnitId_t, Turn_t, Move_t, Report_t, etc.) used by both parser and render pipelines |
 | `internal/parsers/` | New Lexer/CST/AST parser (WIP) |
 | `internal/turns/` | Legacy turn processing pipeline |
 | `internal/reports/` | New turn report processing (WIP) |
