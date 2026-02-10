@@ -5,7 +5,7 @@ package wxx
 import (
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
-	"github.com/playbymail/ottomap/internal/parser"
+	"github.com/playbymail/ottomap/internal/domain"
 	"github.com/playbymail/ottomap/internal/resources"
 	"github.com/playbymail/ottomap/internal/terrain"
 )
@@ -81,10 +81,10 @@ type Features struct {
 
 	IsOrigin    bool // true for the clan's origin hex
 	Label       *Label
-	Encounters  []*parser.Encounter_t // other units in this tile
+	Encounters  []*domain.Encounter_t // other units in this tile
 	Resources   []resources.Resource_e
-	Settlements []*parser.Settlement_t // name of settlement
-	Special     []*parser.Special_t    // any special hex name
+	Settlements []*domain.Settlement_t // name of settlement
+	Special     []*domain.Special_t    // any special hex name
 }
 
 type Resources struct {
