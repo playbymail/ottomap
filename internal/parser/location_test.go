@@ -6,6 +6,7 @@ import (
 	"github.com/go-test/deep"
 	"github.com/playbymail/ottomap/internal/compass"
 	"github.com/playbymail/ottomap/internal/direction"
+	"github.com/playbymail/ottomap/internal/domain"
 	"github.com/playbymail/ottomap/internal/edges"
 	"github.com/playbymail/ottomap/internal/parser"
 	"github.com/playbymail/ottomap/internal/resources"
@@ -51,7 +52,7 @@ func TestCompassPoint(t *testing.T) {
 }
 
 func TestCrowsNestObservation(t *testing.T) {
-	var fh parser.FarHorizon_t
+	var fh domain.FarHorizon_t
 	for _, tc := range []struct {
 		id      string
 		line    string
@@ -66,7 +67,7 @@ func TestCrowsNestObservation(t *testing.T) {
 			t.Errorf("id %q: parse failed %v\n", tc.id, err)
 			continue
 		}
-		cno, ok := va.(parser.FarHorizon_t)
+		cno, ok := va.(domain.FarHorizon_t)
 		if !ok {
 			t.Errorf("id %q: type: want %T, got %T\n", tc.id, fh, va)
 			continue
@@ -82,7 +83,7 @@ func TestCrowsNestObservation(t *testing.T) {
 
 // clearNewMoveFields zeroes out fields added after the original tests were
 // written so the deep comparison focuses on the original parser behavior.
-func clearNewMoveFields(moves []*parser.Move_t) {
+func clearNewMoveFields(moves []*domain.Move_t) {
 	for _, m := range moves {
 		m.UnitId = ""
 		m.Debug.PriorMove = nil
@@ -97,16 +98,16 @@ func TestFleetMovementParse(t *testing.T) {
 	for _, tc := range []struct {
 		id     string
 		line   string
-		unitId parser.UnitId_t
-		moves  []*parser.Move_t
+		unitId domain.UnitId_t
+		moves  []*domain.Move_t
 		debug  bool
 	}{
 		{id: "900-05.0138f2",
 			line:   `STRONG S Fleet Movement: Move NW-GH,`,
 			unitId: "0138f2",
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("NW-GH"),
-					Result: results.Succeeded, Advance: direction.NorthWest, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.NorthWest, Report: &domain.Report_t{
 						Terrain: terrain.HillsGrassy,
 					},
 				},
@@ -115,11 +116,11 @@ func TestFleetMovementParse(t *testing.T) {
 		{id: "900-06.0138f4",
 			line:   `MILD NW Fleet Movement: Move NE-LCM,  Lcm NE, SE, S,\NE-LCM,  Lcm NE, SE, SW, S,\NE-LCM,  Lcm NE, SE, SW, S,\`,
 			unitId: "0138f4",
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("NE-LCM,  Lcm NE, SE, S"),
-					Result: results.Succeeded, Advance: direction.NorthEast, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.NorthEast, Report: &domain.Report_t{
 						Terrain: terrain.LowMountainsConifer,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.NorthEast, Terrain: terrain.LowMountainsConifer},
 							{Direction: direction.SouthEast, Terrain: terrain.LowMountainsConifer},
 							{Direction: direction.South, Terrain: terrain.LowMountainsConifer},
@@ -127,9 +128,9 @@ func TestFleetMovementParse(t *testing.T) {
 					},
 				},
 				{LineNo: 1, StepNo: 2, Line: []byte("NE-LCM,  Lcm NE, SE, SW, S"),
-					Result: results.Succeeded, Advance: direction.NorthEast, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.NorthEast, Report: &domain.Report_t{
 						Terrain: terrain.LowMountainsConifer,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.NorthEast, Terrain: terrain.LowMountainsConifer},
 							{Direction: direction.SouthEast, Terrain: terrain.LowMountainsConifer},
 							{Direction: direction.South, Terrain: terrain.LowMountainsConifer},
@@ -138,9 +139,9 @@ func TestFleetMovementParse(t *testing.T) {
 					},
 				},
 				{LineNo: 1, StepNo: 3, Line: []byte("NE-LCM,  Lcm NE, SE, SW, S"),
-					Result: results.Succeeded, Advance: direction.NorthEast, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.NorthEast, Report: &domain.Report_t{
 						Terrain: terrain.LowMountainsConifer,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.NorthEast, Terrain: terrain.LowMountainsConifer},
 							{Direction: direction.SouthEast, Terrain: terrain.LowMountainsConifer},
 							{Direction: direction.South, Terrain: terrain.LowMountainsConifer},
@@ -153,11 +154,11 @@ func TestFleetMovementParse(t *testing.T) {
 		{id: "900-06.0138f1",
 			line:   `MILD NW Fleet Movement: Move SE-O,-(NE O,  SE LCM,  N O,  S LCM,  SW O,  NW O,  )(Sight Water - N/N, Sight Land - N/NE)`,
 			unitId: "0138f1",
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("SE-O,-(NE O,  SE LCM,  N O,  S LCM,  SW O,  NW O,  )(Sight Water - N/N, Sight Land - N/NE)"),
-					Result: results.Succeeded, Advance: direction.SouthEast, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.SouthEast, Report: &domain.Report_t{
 						Terrain: terrain.WaterOcean,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.North, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthEast, Terrain: terrain.WaterOcean},
 							{Direction: direction.SouthEast, Terrain: terrain.LowMountainsConifer},
@@ -165,7 +166,7 @@ func TestFleetMovementParse(t *testing.T) {
 							{Direction: direction.SouthWest, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						FarHorizons: []*parser.FarHorizon_t{
+						FarHorizons: []*domain.FarHorizon_t{
 							{Point: compass.North, Terrain: terrain.UnknownWater},
 							{Point: compass.NorthNorthEast, Terrain: terrain.UnknownLand},
 						},
@@ -176,32 +177,32 @@ func TestFleetMovementParse(t *testing.T) {
 		{id: "900-06.0138f2",
 			line:   `MILD NW Fleet Movement: Move SE-O,-(NE O)(Sight Water - N/N, Sight Land - N/NE)\No River Adjacent to Hex to SW of HEX`,
 			unitId: "0138f1",
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("SE-O,-(NE O)(Sight Water - N/N, Sight Land - N/NE)"),
-					Result: results.Succeeded, Advance: direction.SouthEast, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.SouthEast, Report: &domain.Report_t{
 						Terrain: terrain.WaterOcean,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.NorthEast, Terrain: terrain.WaterOcean},
 						},
-						FarHorizons: []*parser.FarHorizon_t{
+						FarHorizons: []*domain.FarHorizon_t{
 							{Point: compass.North, Terrain: terrain.UnknownWater},
 							{Point: compass.NorthNorthEast, Terrain: terrain.UnknownLand},
 						},
 					},
 				},
 				{LineNo: 1, StepNo: 2, Line: []byte("No River Adjacent to Hex to SW of HEX"),
-					Result: results.Failed, Still: true, Advance: direction.SouthWest, Report: &parser.Report_t{},
+					Result: results.Failed, Still: true, Advance: direction.SouthWest, Report: &domain.Report_t{},
 				},
 			},
 		},
 		{id: "900-06.1138f7",
 			line:   `MILD N Fleet Movement: Move SW-PR The Dirty Squirrel-(NE GH,  SE O, N GH, S O, SW O, NW O, )(Sight Land - N/N,Sight Land - N/NE,Sight Land - N/NW,Sight Water - NE/NE,Sight Water - NE/SE,Sight Water - SE/SE,Sight Water - S/SE,Sight Water - S/S,Sight Water - S/SW,Sight Water - SW/SW,Sight Water - SW/NW,Sight Water - NW/NW, )\NW-O, -(NE GH, SE PR, N SW, S O, SW O, NW O, )(Sight Water - N/N,Sight Land - N/NE,Sight Water - N/NW,Sight Land - NE/NE,Sight Land - NE/SE,Sight Water - SE/SE,Sight Water - S/SE,Sight Water - S/S,Sight Water - S/SW,Sight Water - SW/SW,Sight Water - SW/NW,Sight Water - NW/NW, )\NW-O, -(NE SW, SE O, N O, S O, SW O, NW O, )(Sight Water - N/N,Sight Water - N/NE,Sight Water - N/NW,Sight Land - NE/NE,Sight Land - NE/SE,Sight Land - SE/SE,Sight Water - S/SE,Sight Water - S/S,Sight Water - S/SW,Sight Water - SW/SW,Sight Water - SW/NW,Sight Water - NW/NW, )\N-O, -(NE O, SE SW, N O, S O, SW O, NW O, )(Sight Land - N/N,Sight Land - N/NE,Sight Water - N/NW,Sight Land - NE/NE,Sight Land - NE/SE,Sight Land - SE/SE,Sight Water - S/SE,Sight Water - S/S,Sight Water - S/SW,Sight Water - SW/SW,Sight Water - SW/NW,Sight Water - NW/NW, )\N-O,  Lcm NE, N,-(NE LCM, SE O, N LCM, S O, SW O, NW O, )(Sight Land - N/N,Sight Land - N/NE,Sight Water - N/NW,Sight Land - NE/NE,Sight Land - NE/SE,Sight Land - SE/SE,Sight Land - S/SE,Sight Water - S/S,Sight Water - S/SW,Sight Water - SW/SW,Sight Water - SW/NW,Sight Water - NW/NW, )\N-LCM,  Lcm NE, SE,  Ensalada sin Tomate\`,
 			unitId: "0138f7",
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("SW-PR The Dirty Squirrel-(NE GH,  SE O, N GH, S O, SW O, NW O, )(Sight Land - N/N,Sight Land - N/NE,Sight Land - N/NW,Sight Water - NE/NE,Sight Water - NE/SE,Sight Water - SE/SE,Sight Water - S/SE,Sight Water - S/S,Sight Water - S/SW,Sight Water - SW/SW,Sight Water - SW/NW,Sight Water - NW/NW, )"),
-					Result: results.Succeeded, Advance: direction.SouthWest, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.SouthWest, Report: &domain.Report_t{
 						Terrain: terrain.FlatPrairie,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.North, Terrain: terrain.HillsGrassy},
 							{Direction: direction.NorthEast, Terrain: terrain.HillsGrassy},
 							{Direction: direction.SouthEast, Terrain: terrain.WaterOcean},
@@ -209,7 +210,7 @@ func TestFleetMovementParse(t *testing.T) {
 							{Direction: direction.SouthWest, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						FarHorizons: []*parser.FarHorizon_t{
+						FarHorizons: []*domain.FarHorizon_t{
 							{Point: compass.North, Terrain: terrain.UnknownLand},
 							{Point: compass.NorthNorthEast, Terrain: terrain.UnknownLand},
 							{Point: compass.NorthEast, Terrain: terrain.UnknownWater},
@@ -223,13 +224,13 @@ func TestFleetMovementParse(t *testing.T) {
 							{Point: compass.NorthWest, Terrain: terrain.UnknownWater},
 							{Point: compass.NorthNorthWest, Terrain: terrain.UnknownLand},
 						},
-						Settlements: []*parser.Settlement_t{{Name: "The Dirty Squirrel"}},
+						Settlements: []*domain.Settlement_t{{Name: "The Dirty Squirrel"}},
 					},
 				},
 				{LineNo: 1, StepNo: 2, Line: []byte("NW-O, -(NE GH, SE PR, N SW, S O, SW O, NW O, )(Sight Water - N/N,Sight Land - N/NE,Sight Water - N/NW,Sight Land - NE/NE,Sight Land - NE/SE,Sight Water - SE/SE,Sight Water - S/SE,Sight Water - S/S,Sight Water - S/SW,Sight Water - SW/SW,Sight Water - SW/NW,Sight Water - NW/NW, )"),
-					Result: results.Succeeded, Advance: direction.NorthWest, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.NorthWest, Report: &domain.Report_t{
 						Terrain: terrain.WaterOcean,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.North, Terrain: terrain.FlatSwamp},
 							{Direction: direction.NorthEast, Terrain: terrain.HillsGrassy},
 							{Direction: direction.SouthEast, Terrain: terrain.FlatPrairie},
@@ -237,7 +238,7 @@ func TestFleetMovementParse(t *testing.T) {
 							{Direction: direction.SouthWest, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						FarHorizons: []*parser.FarHorizon_t{
+						FarHorizons: []*domain.FarHorizon_t{
 							{Point: compass.North, Terrain: terrain.UnknownWater},
 							{Point: compass.NorthNorthEast, Terrain: terrain.UnknownLand},
 							{Point: compass.NorthEast, Terrain: terrain.UnknownLand},
@@ -254,9 +255,9 @@ func TestFleetMovementParse(t *testing.T) {
 					},
 				},
 				{LineNo: 1, StepNo: 3, Line: []byte("NW-O, -(NE SW, SE O, N O, S O, SW O, NW O, )(Sight Water - N/N,Sight Water - N/NE,Sight Water - N/NW,Sight Land - NE/NE,Sight Land - NE/SE,Sight Land - SE/SE,Sight Water - S/SE,Sight Water - S/S,Sight Water - S/SW,Sight Water - SW/SW,Sight Water - SW/NW,Sight Water - NW/NW, )"),
-					Result: results.Succeeded, Advance: direction.NorthWest, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.NorthWest, Report: &domain.Report_t{
 						Terrain: terrain.WaterOcean,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.North, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthEast, Terrain: terrain.FlatSwamp},
 							{Direction: direction.SouthEast, Terrain: terrain.WaterOcean},
@@ -264,7 +265,7 @@ func TestFleetMovementParse(t *testing.T) {
 							{Direction: direction.SouthWest, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						FarHorizons: []*parser.FarHorizon_t{
+						FarHorizons: []*domain.FarHorizon_t{
 							{Point: compass.North, Terrain: terrain.UnknownWater},
 							{Point: compass.NorthNorthEast, Terrain: terrain.UnknownWater},
 							{Point: compass.NorthEast, Terrain: terrain.UnknownLand},
@@ -281,9 +282,9 @@ func TestFleetMovementParse(t *testing.T) {
 					},
 				},
 				{LineNo: 1, StepNo: 4, Line: []byte("N-O, -(NE O, SE SW, N O, S O, SW O, NW O, )(Sight Land - N/N,Sight Land - N/NE,Sight Water - N/NW,Sight Land - NE/NE,Sight Land - NE/SE,Sight Land - SE/SE,Sight Water - S/SE,Sight Water - S/S,Sight Water - S/SW,Sight Water - SW/SW,Sight Water - SW/NW,Sight Water - NW/NW, )"),
-					Result: results.Succeeded, Advance: direction.North, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.North, Report: &domain.Report_t{
 						Terrain: terrain.WaterOcean,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.North, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthEast, Terrain: terrain.WaterOcean},
 							{Direction: direction.SouthEast, Terrain: terrain.FlatSwamp},
@@ -291,7 +292,7 @@ func TestFleetMovementParse(t *testing.T) {
 							{Direction: direction.SouthWest, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						FarHorizons: []*parser.FarHorizon_t{
+						FarHorizons: []*domain.FarHorizon_t{
 							{Point: compass.North, Terrain: terrain.UnknownLand},
 							{Point: compass.NorthNorthEast, Terrain: terrain.UnknownLand},
 							{Point: compass.NorthEast, Terrain: terrain.UnknownLand},
@@ -308,9 +309,9 @@ func TestFleetMovementParse(t *testing.T) {
 					},
 				},
 				{LineNo: 1, StepNo: 5, Line: []byte("N-O,  Lcm NE, N,-(NE LCM, SE O, N LCM, S O, SW O, NW O, )(Sight Land - N/N,Sight Land - N/NE,Sight Water - N/NW,Sight Land - NE/NE,Sight Land - NE/SE,Sight Land - SE/SE,Sight Land - S/SE,Sight Water - S/S,Sight Water - S/SW,Sight Water - SW/SW,Sight Water - SW/NW,Sight Water - NW/NW, )"),
-					Result: results.Succeeded, Advance: direction.North, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.North, Report: &domain.Report_t{
 						Terrain: terrain.WaterOcean,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.North, Terrain: terrain.LowMountainsConifer},
 							{Direction: direction.NorthEast, Terrain: terrain.LowMountainsConifer},
 							{Direction: direction.SouthEast, Terrain: terrain.WaterOcean},
@@ -318,7 +319,7 @@ func TestFleetMovementParse(t *testing.T) {
 							{Direction: direction.SouthWest, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						FarHorizons: []*parser.FarHorizon_t{
+						FarHorizons: []*domain.FarHorizon_t{
 							{Point: compass.North, Terrain: terrain.UnknownLand},
 							{Point: compass.NorthNorthEast, Terrain: terrain.UnknownLand},
 							{Point: compass.NorthEast, Terrain: terrain.UnknownLand},
@@ -335,13 +336,13 @@ func TestFleetMovementParse(t *testing.T) {
 					},
 				},
 				{LineNo: 1, StepNo: 6, Line: []byte("N-LCM,  Lcm NE, SE,  Ensalada sin Tomate"),
-					Result: results.Succeeded, Advance: direction.North, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.North, Report: &domain.Report_t{
 						Terrain: terrain.LowMountainsConifer,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.NorthEast, Terrain: terrain.LowMountainsConifer},
 							{Direction: direction.SouthEast, Terrain: terrain.LowMountainsConifer},
 						},
-						Settlements: []*parser.Settlement_t{{Name: "Ensalada sin Tomate"}},
+						Settlements: []*domain.Settlement_t{{Name: "Ensalada sin Tomate"}},
 					},
 				},
 			},
@@ -382,7 +383,7 @@ func TestLocationParse(t *testing.T) {
 	for _, tc := range []struct {
 		id      string
 		line    string
-		unitId  parser.UnitId_t
+		unitId  domain.UnitId_t
 		msg     string
 		currHex string
 		prevHex string
@@ -434,117 +435,117 @@ func TestScoutMovementParse(t *testing.T) {
 	for _, tc := range []struct {
 		id      string
 		line    string
-		unitId  parser.UnitId_t
+		unitId  domain.UnitId_t
 		scoutNo int
-		moves   []*parser.Move_t
+		moves   []*domain.Move_t
 		debug   bool
 	}{
 		{id: "900-05.0138e1s1",
 			line: `Scout 1:Scout N-PR,  \N-GH,  \N-RH,  O NW,  N, Find Iron Ore, 1590,  0138c2,  0138c3\ Can't Move on Ocean to N of HEX,  Patrolled and found 1590,  0138c2,  0138c3`, unitId: "0138e1s1", scoutNo: 1,
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("N-PR"),
-					Result: results.Succeeded, Advance: direction.North, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.North, Report: &domain.Report_t{
 						Terrain: terrain.FlatPrairie,
 					},
 				},
 				{LineNo: 1, StepNo: 2, Line: []byte("N-GH"),
-					Result: results.Succeeded, Advance: direction.North, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.North, Report: &domain.Report_t{
 						Terrain: terrain.HillsGrassy,
 					},
 				},
 				{LineNo: 1, StepNo: 3, Line: []byte("N-RH,  O NW,  N, Find Iron Ore, 1590,  0138c2,  0138c3"),
-					Result: results.Succeeded, Advance: direction.North, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.North, Report: &domain.Report_t{
 						Terrain: terrain.HillsRocky,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.North, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
 						Resources:  []resources.Resource_e{resources.IronOre},
-						Encounters: []*parser.Encounter_t{{UnitId: "1590"}, {UnitId: "0138c2"}, {UnitId: "0138c3"}},
+						Encounters: []*domain.Encounter_t{{UnitId: "1590"}, {UnitId: "0138c2"}, {UnitId: "0138c3"}},
 					},
 				},
 				{LineNo: 1, StepNo: 4, Line: []byte("Can't Move on Ocean to N of HEX,  Patrolled and found 1590,  0138c2,  0138c3"),
-					Result: results.Failed, Advance: direction.North, Report: &parser.Report_t{
-						Borders: []*parser.Border_t{
+					Result: results.Failed, Advance: direction.North, Report: &domain.Report_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.North, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []*parser.Encounter_t{{UnitId: "1590"}, {UnitId: "0138c2"}, {UnitId: "0138c3"}},
+						Encounters: []*domain.Encounter_t{{UnitId: "1590"}, {UnitId: "0138c2"}, {UnitId: "0138c3"}},
 					},
 				},
 			},
 		},
 		{id: "900-05.0138e1s3",
 			line: `Scout 3:Scout SE-PR,  River S, 0590\ Not enough M.P's to move to SE into ROCKY HILLS,  Patrolled and found 0590`, unitId: "0138e1s3", scoutNo: 3,
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("SE-PR,  River S, 0590"),
-					Result: results.Succeeded, Advance: direction.SouthEast, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.SouthEast, Report: &domain.Report_t{
 						Terrain: terrain.FlatPrairie,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.South, Edge: edges.River},
 						},
-						Encounters: []*parser.Encounter_t{{UnitId: "0590"}},
+						Encounters: []*domain.Encounter_t{{UnitId: "0590"}},
 					},
 				},
 				{LineNo: 1, StepNo: 2, Line: []byte("Not enough M.P's to move to SE into ROCKY HILLS,  Patrolled and found 0590"),
-					Result: results.Failed, Advance: direction.SouthEast, Report: &parser.Report_t{
-						Borders: []*parser.Border_t{
+					Result: results.Failed, Advance: direction.SouthEast, Report: &domain.Report_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.SouthEast, Terrain: terrain.HillsRocky},
 						},
-						Encounters: []*parser.Encounter_t{{UnitId: "0590"}},
+						Encounters: []*domain.Encounter_t{{UnitId: "0590"}},
 					},
 				},
 			},
 		},
 		{id: "900-05.0138e1s7",
 			line: `Scout 7:Scout N-PR,  O NW,  N,  River S, 3138\ Can't Move on Ocean to N of HEX,  Patrolled and found 3138`, unitId: "0138e1s7", scoutNo: 7,
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("N-PR,  O NW,  N,  River S, 3138"),
-					Result: results.Succeeded, Advance: direction.North, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.North, Report: &domain.Report_t{
 						Terrain: terrain.FlatPrairie,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.North, Terrain: terrain.WaterOcean},
 							{Direction: direction.South, Edge: edges.River},
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []*parser.Encounter_t{{UnitId: "3138"}},
+						Encounters: []*domain.Encounter_t{{UnitId: "3138"}},
 					},
 				},
 				{LineNo: 1, StepNo: 2, Line: []byte("Can't Move on Ocean to N of HEX,  Patrolled and found 3138"),
-					Result: results.Failed, Advance: direction.North, Report: &parser.Report_t{
-						Borders: []*parser.Border_t{
+					Result: results.Failed, Advance: direction.North, Report: &domain.Report_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.North, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []*parser.Encounter_t{{UnitId: "3138"}},
+						Encounters: []*domain.Encounter_t{{UnitId: "3138"}},
 					},
 				},
 			},
 		},
 		{id: "900-05.0138e1s8",
 			line: `Scout 8:Scout SW-GH,  \NW-PR,  \NW-PR,  \NW-PR,  \ Not enough M.P's to move to NW into PRAIRIE,  Nothing of interest found`, unitId: "0138e1s8", scoutNo: 8,
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("SW-GH"),
-					Result: results.Succeeded, Advance: direction.SouthWest, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.SouthWest, Report: &domain.Report_t{
 						Terrain: terrain.HillsGrassy,
 					},
 				},
 				{LineNo: 1, StepNo: 2, Line: []byte("NW-PR"),
-					Result: results.Succeeded, Advance: direction.NorthWest, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.NorthWest, Report: &domain.Report_t{
 						Terrain: terrain.FlatPrairie,
 					},
 				},
 				{LineNo: 1, StepNo: 3, Line: []byte("NW-PR"),
-					Result: results.Succeeded, Advance: direction.NorthWest, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.NorthWest, Report: &domain.Report_t{
 						Terrain: terrain.FlatPrairie,
 					},
 				},
 				{LineNo: 1, StepNo: 4, Line: []byte("NW-PR"),
-					Result: results.Succeeded, Advance: direction.NorthWest, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.NorthWest, Report: &domain.Report_t{
 						Terrain: terrain.FlatPrairie,
 					},
 				},
 				{LineNo: 1, StepNo: 5, Line: []byte("Not enough M.P's to move to NW into PRAIRIE,  Nothing of interest found"),
-					Result: results.Failed, Advance: direction.NorthWest, Report: &parser.Report_t{
-						Borders: []*parser.Border_t{
+					Result: results.Failed, Advance: direction.NorthWest, Report: &domain.Report_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.NorthWest, Terrain: terrain.FlatPrairie},
 						},
 					},
@@ -589,18 +590,18 @@ func TestStatusLine(t *testing.T) {
 	for _, tc := range []struct {
 		id     string
 		line   string
-		unitId parser.UnitId_t
-		moves  []*parser.Move_t
+		unitId domain.UnitId_t
+		moves  []*domain.Move_t
 		debug  bool
 	}{
 		{id: "899-12.0138.0138",
 			line:   `0138 Status: PRAIRIE, 0138`,
 			unitId: "0138",
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("PRAIRIE, 0138"),
-					Result: results.StatusLine, Still: true, Report: &parser.Report_t{
+					Result: results.StatusLine, Still: true, Report: &domain.Report_t{
 						Terrain:    terrain.FlatPrairie,
-						Encounters: []*parser.Encounter_t{{UnitId: "0138"}},
+						Encounters: []*domain.Encounter_t{{UnitId: "0138"}},
 					},
 				},
 			},
@@ -608,14 +609,14 @@ func TestStatusLine(t *testing.T) {
 		{id: "900-01.0138.0138e1",
 			line:   `0138e1 Status: PRAIRIE,River S, 0138e1`,
 			unitId: "0138e1",
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("PRAIRIE,River S, 0138e1"),
-					Result: results.StatusLine, Still: true, Report: &parser.Report_t{
+					Result: results.StatusLine, Still: true, Report: &domain.Report_t{
 						Terrain: terrain.FlatPrairie,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.South, Edge: edges.River},
 						},
-						Encounters: []*parser.Encounter_t{{UnitId: "0138e1"}},
+						Encounters: []*domain.Encounter_t{{UnitId: "0138e1"}},
 					},
 				},
 			},
@@ -623,15 +624,15 @@ func TestStatusLine(t *testing.T) {
 		{id: "900-02.0138.0138",
 			line:   `0138 Status: PRAIRIE, O S,Ford SE, 2138, 0138`,
 			unitId: "0138",
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("PRAIRIE, O S,Ford SE, 2138, 0138"),
-					Result: results.StatusLine, Still: true, Report: &parser.Report_t{
+					Result: results.StatusLine, Still: true, Report: &domain.Report_t{
 						Terrain: terrain.FlatPrairie,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.SouthEast, Edge: edges.Ford},
 							{Direction: direction.South, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []*parser.Encounter_t{{UnitId: "2138"}, {UnitId: "0138"}},
+						Encounters: []*domain.Encounter_t{{UnitId: "2138"}, {UnitId: "0138"}},
 					},
 				},
 			},
@@ -639,14 +640,14 @@ func TestStatusLine(t *testing.T) {
 		{id: "900-02.0138.0138e1",
 			line:   `0138e1 Status: PRAIRIE, O NW, 0138e1`,
 			unitId: "0138e1",
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("PRAIRIE, O NW, 0138e1"),
-					Result: results.StatusLine, Still: true, Report: &parser.Report_t{
+					Result: results.StatusLine, Still: true, Report: &domain.Report_t{
 						Terrain: terrain.FlatPrairie,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []*parser.Encounter_t{{UnitId: "0138e1"}},
+						Encounters: []*domain.Encounter_t{{UnitId: "0138e1"}},
 					},
 				},
 			},
@@ -654,16 +655,16 @@ func TestStatusLine(t *testing.T) {
 		{id: "900-04.0138.0138",
 			line:   `0138 Status: CONIFER HILLS, O SW, NW, S, 2138, 0138c1, 0138, 1138`,
 			unitId: "0138",
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("CONIFER HILLS, O SW, NW, S, 2138, 0138c1, 0138, 1138"),
-					Result: results.StatusLine, Still: true, Report: &parser.Report_t{
+					Result: results.StatusLine, Still: true, Report: &domain.Report_t{
 						Terrain: terrain.HillsConifer,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.South, Terrain: terrain.WaterOcean},
 							{Direction: direction.SouthWest, Terrain: terrain.WaterOcean},
 							{Direction: direction.NorthWest, Terrain: terrain.WaterOcean},
 						},
-						Encounters: []*parser.Encounter_t{{UnitId: "2138"}, {UnitId: "0138c1"}, {UnitId: "0138"}, {UnitId: "1138"}},
+						Encounters: []*domain.Encounter_t{{UnitId: "2138"}, {UnitId: "0138c1"}, {UnitId: "0138"}, {UnitId: "1138"}},
 					},
 				},
 			},
@@ -703,8 +704,8 @@ func TestTribeFollowsParse(t *testing.T) {
 	for _, tc := range []struct {
 		id      string
 		line    string
-		unitId  parser.UnitId_t
-		follows parser.UnitId_t
+		unitId  domain.UnitId_t
+		follows domain.UnitId_t
 		debug   bool
 	}{
 		{id: "1812", line: "Tribe Follows 1812", follows: "1812"},
@@ -725,7 +726,7 @@ func TestTribeGoesParse(t *testing.T) {
 	for _, tc := range []struct {
 		id     string
 		line   string
-		unitId parser.UnitId_t
+		unitId domain.UnitId_t
 		goesTo string
 		debug  bool
 	}{
@@ -748,23 +749,23 @@ func TestTribeMovementParse(t *testing.T) {
 	for _, tc := range []struct {
 		id     string
 		line   string
-		unitId parser.UnitId_t
-		moves  []*parser.Move_t
+		unitId domain.UnitId_t
+		moves  []*domain.Move_t
 		debug  bool
 	}{
 		{id: "900-01.0138",
 			line: `Tribe Movement: Move \`,
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte{},
-					Result: results.Succeeded, Still: true, Report: &parser.Report_t{},
+					Result: results.Succeeded, Still: true, Report: &domain.Report_t{},
 				},
 			},
 		},
 		{id: "900-02.0138",
 			line: "Tribe Movement: Move NW-GH,",
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("NW-GH"),
-					Result: results.Succeeded, Advance: direction.NorthWest, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.NorthWest, Report: &domain.Report_t{
 						Terrain: terrain.HillsGrassy,
 					},
 				},
@@ -772,21 +773,21 @@ func TestTribeMovementParse(t *testing.T) {
 		},
 		{id: "900-02.0138f1",
 			line: `Tribe Movement: Move SW-PR The Dirty Squirrel\N-LCM,  Lcm NE, SE,  Ensalada sin Tomate\`,
-			moves: []*parser.Move_t{
+			moves: []*domain.Move_t{
 				{LineNo: 1, StepNo: 1, Line: []byte("SW-PR The Dirty Squirrel"),
-					Result: results.Succeeded, Advance: direction.SouthWest, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.SouthWest, Report: &domain.Report_t{
 						Terrain:     terrain.FlatPrairie,
-						Settlements: []*parser.Settlement_t{{Name: "The Dirty Squirrel"}},
+						Settlements: []*domain.Settlement_t{{Name: "The Dirty Squirrel"}},
 					},
 				},
 				{LineNo: 1, StepNo: 2, Line: []byte("N-LCM,  Lcm NE, SE,  Ensalada sin Tomate"),
-					Result: results.Succeeded, Advance: direction.North, Report: &parser.Report_t{
+					Result: results.Succeeded, Advance: direction.North, Report: &domain.Report_t{
 						Terrain: terrain.LowMountainsConifer,
-						Borders: []*parser.Border_t{
+						Borders: []*domain.Border_t{
 							{Direction: direction.NorthEast, Terrain: terrain.LowMountainsConifer},
 							{Direction: direction.SouthEast, Terrain: terrain.LowMountainsConifer},
 						},
-						Settlements: []*parser.Settlement_t{{Name: "Ensalada sin Tomate"}},
+						Settlements: []*domain.Settlement_t{{Name: "Ensalada sin Tomate"}},
 					},
 				},
 			},
@@ -864,9 +865,9 @@ func TestTurnInfoParse(t *testing.T) {
 	}
 }
 
-func diffBorderSets(set1, set2 []*parser.Border_t) ([]*parser.Border_t, []*parser.Border_t) {
-	map1 := map[string]*parser.Border_t{}
-	map2 := map[string]*parser.Border_t{}
+func diffBorderSets(set1, set2 []*domain.Border_t) ([]*domain.Border_t, []*domain.Border_t) {
+	map1 := map[string]*domain.Border_t{}
+	map2 := map[string]*domain.Border_t{}
 
 	// Fill map1 with elements from set1
 	for _, i := range set1 {
@@ -879,7 +880,7 @@ func diffBorderSets(set1, set2 []*parser.Border_t) ([]*parser.Border_t, []*parse
 	}
 
 	// Find elements in set1 but not in set2
-	var onlyInSet1 []*parser.Border_t
+	var onlyInSet1 []*domain.Border_t
 	for k, v := range map1 {
 		if _, found := map2[k]; !found {
 			onlyInSet1 = append(onlyInSet1, v)
@@ -887,7 +888,7 @@ func diffBorderSets(set1, set2 []*parser.Border_t) ([]*parser.Border_t, []*parse
 	}
 
 	// Find elements in set2 but not in set1
-	var onlyInSet2 []*parser.Border_t
+	var onlyInSet2 []*domain.Border_t
 	for k, v := range map2 {
 		if _, found := map1[k]; !found {
 			onlyInSet2 = append(onlyInSet2, v)
@@ -897,10 +898,10 @@ func diffBorderSets(set1, set2 []*parser.Border_t) ([]*parser.Border_t, []*parse
 	return onlyInSet1, onlyInSet2
 }
 
-func diffUnitSets(set1, set2 []parser.UnitId_t) ([]parser.UnitId_t, []parser.UnitId_t) {
+func diffUnitSets(set1, set2 []domain.UnitId_t) ([]domain.UnitId_t, []domain.UnitId_t) {
 	// Create maps to store the presence of UnitIDs in each slice
-	map1 := map[parser.UnitId_t]bool{}
-	map2 := map[parser.UnitId_t]bool{}
+	map1 := map[domain.UnitId_t]bool{}
+	map2 := map[domain.UnitId_t]bool{}
 
 	// Fill map1 with elements from set1
 	for _, id := range set1 {
@@ -913,7 +914,7 @@ func diffUnitSets(set1, set2 []parser.UnitId_t) ([]parser.UnitId_t, []parser.Uni
 	}
 
 	// Find elements in set1 but not in set2
-	var onlyInSet1 []parser.UnitId_t
+	var onlyInSet1 []domain.UnitId_t
 	for id := range map1 {
 		if _, found := map2[id]; !found {
 			onlyInSet1 = append(onlyInSet1, id)
@@ -921,7 +922,7 @@ func diffUnitSets(set1, set2 []parser.UnitId_t) ([]parser.UnitId_t, []parser.Uni
 	}
 
 	// Find elements in set2 but not in set1
-	var onlyInSet2 []parser.UnitId_t
+	var onlyInSet2 []domain.UnitId_t
 	for id := range map2 {
 		if _, found := map1[id]; !found {
 			onlyInSet2 = append(onlyInSet2, id)

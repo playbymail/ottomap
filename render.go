@@ -15,6 +15,7 @@ import (
 
 	"github.com/playbymail/ottomap/actions"
 	"github.com/playbymail/ottomap/internal/coords"
+	"github.com/playbymail/ottomap/internal/domain"
 	"github.com/playbymail/ottomap/internal/edges"
 	"github.com/playbymail/ottomap/internal/parser"
 	"github.com/playbymail/ottomap/internal/results"
@@ -216,7 +217,7 @@ var cmdRender = &cobra.Command{
 			upperLeft, lowerRight := worldMap.Bounds()
 			log.Printf("map: upper left %q: lower  right %q\n", upperLeft, lowerRight)
 
-			wxxMap, err := actions.MapWorld(worldMap, map[string]*parser.Special_t{}, parser.UnitId_t(argsRender.clanId), argsRender.mapper, globalConfig)
+			wxxMap, err := actions.MapWorld(worldMap, map[string]*domain.Special_t{}, domain.UnitId_t(argsRender.clanId), argsRender.mapper, globalConfig)
 			if err != nil {
 				log.Fatalf("error: %v\n", err)
 			}
@@ -248,7 +249,7 @@ var cmdRender = &cobra.Command{
 		log.Printf("inputs: found %d turn reports\n", len(inputs))
 
 		// allTurns holds the turn and move data and allows multiple clans to be loaded.
-		allTurns := map[string][]*parser.Turn_t{}
+		allTurns := map[string][]*domain.Turn_t{}
 		totalUnitMoves := 0
 		var turnId, maxTurnId string // will be set to the last/maximum turnId we process
 		for _, i := range inputs {
@@ -311,8 +312,8 @@ var cmdRender = &cobra.Command{
 		log.Printf("parsed %d inputs in to %d turns and %d units in %v\n", len(inputs), len(allTurns), totalUnitMoves, time.Since(started))
 
 		// consolidate the turns, then sort by year and month
-		var consolidatedTurns []*parser.Turn_t
-		consolidatedSpecialNames := map[string]*parser.Special_t{}
+		var consolidatedTurns []*domain.Turn_t
+		consolidatedSpecialNames := map[string]*domain.Special_t{}
 		foundDuplicates := false
 		for _, unitTurns := range allTurns {
 			if len(unitTurns) == 0 {
@@ -320,11 +321,11 @@ var cmdRender = &cobra.Command{
 				continue
 			}
 			// create a new turn to hold the consolidated unit moves for the turn
-			turn := &parser.Turn_t{
+			turn := &domain.Turn_t{
 				Id:        fmt.Sprintf("%04d-%02d", unitTurns[0].Year, unitTurns[0].Month),
 				Year:      unitTurns[0].Year,
 				Month:     unitTurns[0].Month,
-				UnitMoves: map[parser.UnitId_t]*parser.Moves_t{},
+				UnitMoves: map[domain.UnitId_t]*domain.Moves_t{},
 			}
 			consolidatedTurns = append(consolidatedTurns, turn)
 
@@ -463,11 +464,11 @@ var cmdRender = &cobra.Command{
 		updatedCurrentLinks, updatedPreviousLinks := 0, 0
 		for _, turn := range consolidatedTurns {
 			for _, unitMoves := range turn.UnitMoves {
-				var prevTurnMoves *parser.Moves_t
+				var prevTurnMoves *domain.Moves_t
 				if turn.Prev != nil {
 					prevTurnMoves = turn.Prev.UnitMoves[unitMoves.UnitId]
 				}
-				var nextTurnMoves *parser.Moves_t
+				var nextTurnMoves *domain.Moves_t
 				if turn.Next != nil {
 					nextTurnMoves = turn.Next.UnitMoves[unitMoves.UnitId]
 				}
@@ -622,7 +623,7 @@ var cmdRender = &cobra.Command{
 		// map the data
 		upperLeft, lowerRight := worldMap.Bounds()
 		log.Printf("map: upper left %4d: lower right %4d\n", upperLeft, lowerRight)
-		wxxMap, err := actions.MapWorld(worldMap, consolidatedSpecialNames, parser.UnitId_t(argsRender.clanId), argsRender.mapper, globalConfig)
+		wxxMap, err := actions.MapWorld(worldMap, consolidatedSpecialNames, domain.UnitId_t(argsRender.clanId), argsRender.mapper, globalConfig)
 		if err != nil {
 			log.Fatalf("error: %v\n", err)
 		}
@@ -656,7 +657,7 @@ var cmdRender = &cobra.Command{
 			log.Printf("solo: %s:%s: creating %s\n", turnId, unit, mapName)
 			upperLeft, lowerRight := soloMap.Bounds()
 			log.Printf("solo: %s:%s: upper left %4d: lower right %4d\n", turnId, unit, upperLeft, lowerRight)
-			wxxMap, err := actions.MapWorld(soloMap, consolidatedSpecialNames, parser.UnitId_t(argsRender.clanId), argsRender.mapper, globalConfig)
+			wxxMap, err := actions.MapWorld(soloMap, consolidatedSpecialNames, domain.UnitId_t(argsRender.clanId), argsRender.mapper, globalConfig)
 			if err != nil {
 				log.Fatalf("error: %v\n", err)
 			}
