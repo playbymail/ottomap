@@ -11,7 +11,7 @@ import (
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/edges"
-	"github.com/playbymail/ottomap/internal/parser"
+	"github.com/playbymail/ottomap/internal/domain"
 	"github.com/playbymail/ottomap/internal/tiles"
 	"github.com/playbymail/ottomap/internal/wxx"
 )
@@ -35,7 +35,7 @@ type MapConfig struct {
 	}
 }
 
-func MapWorld(allTiles *tiles.Map_t, allSpecialNames map[string]*parser.Special_t, clan parser.UnitId_t, cfg MapConfig, gcfg *config.Config, options ...wxx.Option) (*wxx.WXX, error) {
+func MapWorld(allTiles *tiles.Map_t, allSpecialNames map[string]*domain.Special_t, clan domain.UnitId_t, cfg MapConfig, gcfg *config.Config, options ...wxx.Option) (*wxx.WXX, error) {
 	if allTiles.Length() == 0 {
 		log.Fatalf("error: no tiles to map\n")
 	}

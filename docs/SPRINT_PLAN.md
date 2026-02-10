@@ -631,7 +631,7 @@ remaining references to `internal/parser` in the package. Build passes.
 
 ---
 
-## Sprint 81 — Migrate `internal/wxx/` and `actions/` to Import `internal/domain/`
+## Sprint 81 — Migrate `internal/wxx/` and `actions/` to Import `internal/domain/` [COMPLETED]
 
 **Goal:** Update the final two downstream packages to import from
 `internal/domain/` instead of `internal/parser/`.
@@ -725,17 +725,17 @@ imports — they communicate only through `internal/domain/` types.
 
 ## Phase 2 Sprint Summary
 
-| Sprint | Version | Goal | Risk | Est. Files Changed |
-|--------|---------|------|------|--------------------|
-| 75 | 0.75.0 | Dependency analysis and migration plan | None | 0 (docs only) |
-| 76 | 0.76.0 | Create `internal/domain/` with leaf types | Low | ~6 created/modified |
-| 77 | 0.77.0 | Move report and border types to domain | Low | ~4 modified |
-| 78 | 0.78.0 | Move movement types to domain | Medium | ~6 modified |
-| 79 | 0.79.0 | Migrate `internal/tiles/` imports | Low | 2 modified |
-| 80 | 0.80.0 | Migrate `internal/turns/` imports | Low | ~5 modified |
-| 81 | 0.81.0 | Migrate `internal/wxx/` and `actions/` imports | Low | ~4 modified |
-| 82 | 0.82.0 | Remove aliases, clean up parser | Medium | ~5 modified |
-| 83 | 0.83.0 | Verify independence, update docs | None | ~2 modified |
+| Sprint | Version | Goal                                           | Risk   | Est. Files Changed  |
+|--------|---------|------------------------------------------------|--------|---------------------|
+| 75     | 0.75.0  | Dependency analysis and migration plan         | None   | 0 (docs only)       |
+| 76     | 0.76.0  | Create `internal/domain/` with leaf types      | Low    | ~6 created/modified |
+| 77     | 0.77.0  | Move report and border types to domain         | Low    | ~4 modified         |
+| 78     | 0.78.0  | Move movement types to domain                  | Medium | ~6 modified         |
+| 79     | 0.79.0  | Migrate `internal/tiles/` imports              | Low    | 2 modified          |
+| 80     | 0.80.0  | Migrate `internal/turns/` imports              | Low    | ~5 modified         |
+| 81     | 0.81.0  | Migrate `internal/wxx/` and `actions/` imports | Low    | ~4 modified         |
+| 82     | 0.82.0  | Remove aliases, clean up parser                | Medium | ~5 modified         |
+| 83     | 0.83.0  | Verify independence, update docs               | None   | ~2 modified         |
 
 **Risk levels:**
 - **None** — Analysis or documentation only
@@ -773,6 +773,6 @@ imports — they communicate only through `internal/domain/` types.
 | 78     | 0.78.0  | Move movement types to domain                  | COMPLETED |
 | 79     | 0.79.0  | Migrate `internal/tiles/` imports              | COMPLETED |
 | 80     | 0.80.0  | Migrate `internal/turns/` imports              | COMPLETED |
-| 81     | 0.81.0  | Migrate `internal/wxx/` and `actions/` imports | PLANNED   |
+| 81     | 0.81.0  | Migrate `internal/wxx/` and `actions/` imports | COMPLETED |
 | 82     | 0.82.0  | Remove aliases, clean up parser                | PLANNED   |
 | 83     | 0.83.0  | Verify independence, update docs               | PLANNED   |
