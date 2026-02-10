@@ -5,7 +5,7 @@ cleanup sprints (dead code removal, dependency cleanup, documentation).
 Sprints 75-83 are refactoring sprints to separate the parser and render
 pipelines into independent packages with shared domain types.
 
-Current version: **0.78.0**
+Current version: **0.80.0**
 
 Each sprint bumps the minor version. Sprint numbering starts at 63.
 
@@ -603,7 +603,7 @@ accepts `parser.UnitId_t`.
 
 ---
 
-## Sprint 80 — Migrate `internal/turns/` to Import `internal/domain/`
+## Sprint 80 — Migrate `internal/turns/` to Import `internal/domain/` [COMPLETED]
 
 **Goal:** Update `internal/turns/` to import types from
 `internal/domain/` instead of `internal/parser/`.
@@ -620,6 +620,14 @@ The `Walk()` function takes `[]*parser.Turn_t` as input and processes
 - Verify no remaining references to `internal/parser` in the package
 - Run `go build` and `make test`
 - Version: **0.80.0**
+
+**Outcome:** Replaced `internal/parser` import with `internal/domain` in
+two files (`walk.go` and `steps.go`). Updated all type references:
+`parser.Turn_t` → `domain.Turn_t`, `parser.Special_t` →
+`domain.Special_t`, `parser.UnitId_t` → `domain.UnitId_t`,
+`parser.Moves_t` → `domain.Moves_t`, `parser.Scout_t` →
+`domain.Scout_t`, `parser.Move_t` → `domain.Move_t`. Verified no
+remaining references to `internal/parser` in the package. Build passes.
 
 ---
 
@@ -764,7 +772,7 @@ imports — they communicate only through `internal/domain/` types.
 | 77     | 0.77.0  | Move report and border types to domain         | COMPLETED |
 | 78     | 0.78.0  | Move movement types to domain                  | COMPLETED |
 | 79     | 0.79.0  | Migrate `internal/tiles/` imports              | COMPLETED |
-| 80     | 0.80.0  | Migrate `internal/turns/` imports              | PLANNED   |
+| 80     | 0.80.0  | Migrate `internal/turns/` imports              | COMPLETED |
 | 81     | 0.81.0  | Migrate `internal/wxx/` and `actions/` imports | PLANNED   |
 | 82     | 0.82.0  | Remove aliases, clean up parser                | PLANNED   |
 | 83     | 0.83.0  | Verify independence, update docs               | PLANNED   |
