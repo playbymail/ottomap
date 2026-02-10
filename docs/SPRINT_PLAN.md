@@ -346,7 +346,7 @@ render.go
 
 ---
 
-## Sprint 75 — Dependency Analysis and Migration Plan
+## Sprint 75 — Dependency Analysis and Migration Plan [COMPLETED]
 
 **Goal:** Produce a complete, field-level analysis of every type that
 crosses the parser/render boundary, and validate the migration strategy
@@ -431,7 +431,7 @@ need updates during alias removal (Sprint 82). The new parser pipeline
 
 ---
 
-## Sprint 76 — Create `internal/domain/` with Leaf Types
+## Sprint 76 — Create `internal/domain/` with Leaf Types [COMPLETED]
 
 **Goal:** Create the `internal/domain/` package and move the simplest
 shared types into it — types with no dependencies on other parser types.
@@ -477,7 +477,7 @@ tests pass.
 
 ---
 
-## Sprint 77 — Move Report and Border Types to `internal/domain/`
+## Sprint 77 — Move Report and Border Types to `internal/domain/` [COMPLETED]
 
 **Goal:** Move the observation types that bridge parser output and tile
 merging into `internal/domain/`.
@@ -522,7 +522,7 @@ failures in the new parser pipeline are unrelated).
 
 ---
 
-## Sprint 78 — Move Movement Types to `internal/domain/`
+## Sprint 78 — Move Movement Types to `internal/domain/` [COMPLETED]
 
 **Goal:** Move `Move_t`, `Scout_t`, `Scry_t`, `Moves_t`, and `Turn_t`
 into `internal/domain/`, completing the shared type migration.
@@ -580,7 +580,7 @@ are unrelated).
 
 ---
 
-## Sprint 79 — Migrate `internal/tiles/` to Import `internal/domain/`
+## Sprint 79 — Migrate `internal/tiles/` to Import `internal/domain/` [COMPLETED]
 
 **Goal:** Update `internal/tiles/` to import types from
 `internal/domain/` instead of `internal/parser/`.
@@ -740,31 +740,31 @@ imports — they communicate only through `internal/domain/` types.
 
 ### Phase 1: Cleanup (Sprints 63-74) [ALL COMPLETED]
 
-| Sprint | Version | Goal | Status |
-|--------|---------|------|--------|
-| 63 | 0.63.0 | Remove `internal/stores/office/` | COMPLETED |
-| 64 | 0.64.0 | Remove `internal/hexes/` | COMPLETED |
-| 65 | 0.65.0 | Remove `db` command + SQLite infrastructure | COMPLETED |
-| 66 | 0.66.0 | Remove `load.go` + `parse` command | COMPLETED |
-| 67 | 0.67.0 | Clean commented-out code | COMPLETED |
-| 68 | 0.68.0 | Remove empty `internal/stores/` | COMPLETED |
-| 69 | 0.69.0 | Audit/remove `winds` and `items` | COMPLETED |
-| 70 | 0.70.0 | Evaluate `tndocx` dependency | COMPLETED |
-| 71 | 0.71.0 | Clean stale indirect dependency | COMPLETED |
-| 72 | 0.72.0 | Update CLAUDE.md | COMPLETED |
-| 73 | 0.73.0 | Add package doc comments | COMPLETED |
-| 74 | 0.74.0 | Update user documentation | COMPLETED |
+| Sprint | Version | Goal                                        | Status    |
+|--------|---------|---------------------------------------------|-----------|
+| 63     | 0.63.0  | Remove `internal/stores/office/`            | COMPLETED |
+| 64     | 0.64.0  | Remove `internal/hexes/`                    | COMPLETED |
+| 65     | 0.65.0  | Remove `db` command + SQLite infrastructure | COMPLETED |
+| 66     | 0.66.0  | Remove `load.go` + `parse` command          | COMPLETED |
+| 67     | 0.67.0  | Clean commented-out code                    | COMPLETED |
+| 68     | 0.68.0  | Remove empty `internal/stores/`             | COMPLETED |
+| 69     | 0.69.0  | Audit/remove `winds` and `items`            | COMPLETED |
+| 70     | 0.70.0  | Evaluate `tndocx` dependency                | COMPLETED |
+| 71     | 0.71.0  | Clean stale indirect dependency             | COMPLETED |
+| 72     | 0.72.0  | Update CLAUDE.md                            | COMPLETED |
+| 73     | 0.73.0  | Add package doc comments                    | COMPLETED |
+| 74     | 0.74.0  | Update user documentation                   | COMPLETED |
 
 ### Phase 2: Parser/Render Refactoring (Sprints 75-83)
 
-| Sprint | Version | Goal | Status |
-|--------|---------|------|--------|
-| 75 | 0.75.0 | Dependency analysis and migration plan | COMPLETED |
-| 76 | 0.76.0 | Create `internal/domain/` with leaf types | COMPLETED |
-| 77 | 0.77.0 | Move report and border types to domain | COMPLETED |
-| 78 | 0.78.0 | Move movement types to domain | COMPLETED |
-| 79 | 0.79.0 | Migrate `internal/tiles/` imports | PLANNED |
-| 80 | 0.80.0 | Migrate `internal/turns/` imports | PLANNED |
-| 81 | 0.81.0 | Migrate `internal/wxx/` and `actions/` imports | PLANNED |
-| 82 | 0.82.0 | Remove aliases, clean up parser | PLANNED |
-| 83 | 0.83.0 | Verify independence, update docs | PLANNED |
+| Sprint | Version | Goal                                           | Status    |
+|--------|---------|------------------------------------------------|-----------|
+| 75     | 0.75.0  | Dependency analysis and migration plan         | COMPLETED |
+| 76     | 0.76.0  | Create `internal/domain/` with leaf types      | COMPLETED |
+| 77     | 0.77.0  | Move report and border types to domain         | COMPLETED |
+| 78     | 0.78.0  | Move movement types to domain                  | COMPLETED |
+| 79     | 0.79.0  | Migrate `internal/tiles/` imports              | COMPLETED |
+| 80     | 0.80.0  | Migrate `internal/turns/` imports              | PLANNED   |
+| 81     | 0.81.0  | Migrate `internal/wxx/` and `actions/` imports | PLANNED   |
+| 82     | 0.82.0  | Remove aliases, clean up parser                | PLANNED   |
+| 83     | 0.83.0  | Verify independence, update docs               | PLANNED   |

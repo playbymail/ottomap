@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/playbymail/ottomap/internal/coords"
-	"github.com/playbymail/ottomap/internal/parser"
+	"github.com/playbymail/ottomap/internal/domain"
 )
 
 // Map_t represents a map of tiles.
@@ -87,7 +87,7 @@ func (m *Map_t) Length() int {
 
 // FetchTile returns the tile at the given location.
 // If the tile does not exist, it is created.
-func (m *Map_t) FetchTile(unitId parser.UnitId_t, location coords.Map, coordinates coords.WorldMapCoord) *Tile_t {
+func (m *Map_t) FetchTile(unitId domain.UnitId_t, location coords.Map, coordinates coords.WorldMapCoord) *Tile_t {
 	if tile, ok := m.Tiles[location]; ok {
 		return tile
 	}

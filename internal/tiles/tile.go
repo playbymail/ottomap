@@ -11,7 +11,7 @@ import (
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/edges"
-	"github.com/playbymail/ottomap/internal/parser"
+	"github.com/playbymail/ottomap/internal/domain"
 	"github.com/playbymail/ottomap/internal/resources"
 	"github.com/playbymail/ottomap/internal/terrain"
 )
@@ -32,10 +32,10 @@ type Tile_t struct {
 	Edges   [direction.NumDirections][]edges.Edge_e
 
 	// transient items in this tile
-	Encounters  []*parser.Encounter_t // other units in this tile
+	Encounters  []*domain.Encounter_t // other units in this tile
 	Resources   []resources.Resource_e
-	Settlements []*parser.Settlement_t
-	Special     []*parser.Special_t
+	Settlements []*domain.Settlement_t
+	Special     []*domain.Special_t
 
 	// map of elements that are responsible for this tile.
 	// does not work for fleets!
@@ -58,7 +58,7 @@ func (t *Tile_t) Dump() {
 }
 
 // MergeReports merges the reports from two tiles.
-func (t *Tile_t) MergeReports(turnId string, report *parser.Report_t, worldMap *Map_t, specialNames map[string]*parser.Special_t, scouting, warnOnNewSettlement, warnOnTerrainChange bool) error {
+func (t *Tile_t) MergeReports(turnId string, report *domain.Report_t, worldMap *Map_t, specialNames map[string]*domain.Special_t, scouting, warnOnNewSettlement, warnOnTerrainChange bool) error {
 	// update flags for visited and scouted.
 	// panic if the input is not sorted by turn.
 	if !(t.Visited <= turnId) {
@@ -95,7 +95,7 @@ func (t *Tile_t) MergeReports(turnId string, report *parser.Report_t, worldMap *
 }
 
 // MergeBorder merges a new border into the tile.
-func (t *Tile_t) MergeBorder(unitId parser.UnitId_t, border *parser.Border_t, worldMap *Map_t, warnOnTerrainChange bool) {
+func (t *Tile_t) MergeBorder(unitId domain.UnitId_t, border *domain.Border_t, worldMap *Map_t, warnOnTerrainChange bool) {
 	if border.Terrain == terrain.Blank {
 		return
 	}
@@ -120,7 +120,7 @@ func (t *Tile_t) MergeEdge(d direction.Direction_e, e edges.Edge_e) {
 }
 
 // MergeEncounter merges a new encounter into the tile.
-func (t *Tile_t) MergeEncounter(e *parser.Encounter_t) {
+func (t *Tile_t) MergeEncounter(e *domain.Encounter_t) {
 	for _, l := range t.Encounters {
 		if l.TurnId == e.TurnId && l.UnitId == e.UnitId {
 			return
@@ -130,7 +130,7 @@ func (t *Tile_t) MergeEncounter(e *parser.Encounter_t) {
 }
 
 // MergeFarHorizon merges the far horizon from two tiles.
-func (t *Tile_t) MergeFarHorizon(unitId parser.UnitId_t, fh *parser.FarHorizon_t, worldMap *Map_t, warnOnTerrainChange bool) {
+func (t *Tile_t) MergeFarHorizon(unitId domain.UnitId_t, fh *domain.FarHorizon_t, worldMap *Map_t, warnOnTerrainChange bool) {
 	if fh == nil {
 		return
 	}
@@ -192,7 +192,7 @@ func (t *Tile_t) MergeFarHorizon(unitId parser.UnitId_t, fh *parser.FarHorizon_t
 }
 
 // MergeItem merges a new item into the tile.
-func (t *Tile_t) MergeItem(f *parser.FoundItem_t) {
+func (t *Tile_t) MergeItem(f *domain.FoundItem_t) {
 	// this is currently a no-op since we don't track items
 }
 
@@ -210,7 +210,7 @@ func (t *Tile_t) MergeResource(r resources.Resource_e) {
 }
 
 // MergeSettlement merges a new settlement into the tile.
-func (t *Tile_t) MergeSettlement(s *parser.Settlement_t, specialNames map[string]*parser.Special_t, warnOnNewSettlement bool) {
+func (t *Tile_t) MergeSettlement(s *domain.Settlement_t, specialNames map[string]*domain.Special_t, warnOnNewSettlement bool) {
 	if s == nil {
 		return
 	}
