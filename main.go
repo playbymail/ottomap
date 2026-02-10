@@ -19,7 +19,7 @@ import (
 var (
 	version = semver.Version{
 		Major: 0,
-		Minor: 79,
+		Minor: 80,
 		Patch: 0,
 		Build: semver.Commit(),
 	}

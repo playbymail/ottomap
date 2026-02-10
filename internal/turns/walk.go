@@ -11,17 +11,17 @@ import (
 
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
-	"github.com/playbymail/ottomap/internal/parser"
+	"github.com/playbymail/ottomap/internal/domain"
 	"github.com/playbymail/ottomap/internal/tiles"
 )
 
-func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, originGrid string, quitOnInvalidGrid, warnOnInvalidGrid, warnOnNewSettlement, warnOnTerrainChange, debug bool, reverseWalker bool) (*tiles.Map_t, error) {
+func Walk(input []*domain.Turn_t, specialNames map[string]*domain.Special_t, originGrid string, quitOnInvalidGrid, warnOnInvalidGrid, warnOnNewSettlement, warnOnTerrainChange, debug bool, reverseWalker bool) (*tiles.Map_t, error) {
 	started := time.Now()
 	log.Printf("walk: input: %8d turns\n", len(input))
 
 	// last seen is a map containing the last seen location for each unit
-	lastSeen := map[parser.UnitId_t]coords.Map{}
-	lastSeenAt := map[parser.UnitId_t]coords.WorldMapCoord{}
+	lastSeen := map[domain.UnitId_t]coords.Map{}
+	lastSeenAt := map[domain.UnitId_t]coords.WorldMapCoord{}
 
 	worldMap := tiles.NewMap()
 	for _, turn := range input {
@@ -198,7 +198,7 @@ func Walk(input []*parser.Turn_t, specialNames map[string]*parser.Special_t, ori
 type Step_t struct {
 	ReportId string          // report that contains the step
 	TurnId   string          // turn the step was taken
-	UnitId   parser.UnitId_t // unit that took the step
+	UnitId   domain.UnitId_t // unit that took the step
 
 	// From and To are the hexes that the step started and ended up in.
 	// If the unit didn't move, then both will have the same value.
@@ -218,7 +218,7 @@ type Step_t struct {
 // It returns a slice containing all the steps taken in the turn.
 //
 // The steps for a unit may not be complete. In general, if we find an error we will stop walking the unit.
-func WalkTurn(input *parser.Turn_t, specialNames map[string]*parser.Special_t, debug bool) ([]*Step_t, error) {
+func WalkTurn(input *domain.Turn_t, specialNames map[string]*domain.Special_t, debug bool) ([]*Step_t, error) {
 	started := time.Now()
 	log.Printf("%s: walk: units %6d\n", input.Id, len(input.MovesSortedByElement))
 
@@ -239,7 +239,7 @@ func WalkTurn(input *parser.Turn_t, specialNames map[string]*parser.Special_t, d
 	return steps, nil
 }
 
-func walkUnit(moves *parser.Moves_t) ([]*Step_t, error) {
+func walkUnit(moves *domain.Moves_t) ([]*Step_t, error) {
 	log.Printf("%s: walk: unit %-8s: from  %q  to  %q\n", moves.TurnId, moves.UnitId, moves.FromHex, moves.ToHex)
 	from, err := coords.NewWorldMapCoord(moves.FromHex)
 	if err != nil {
@@ -287,7 +287,7 @@ func walkUnit(moves *parser.Moves_t) ([]*Step_t, error) {
 	}
 	for _, scout := range moves.Scouts {
 		if scout != nil {
-			results, err := walkScout(parser.UnitId_t(fmt.Sprintf("%ss%d", moves.UnitId, scout.No)), from, scout)
+			results, err := walkScout(domain.UnitId_t(fmt.Sprintf("%ss%d", moves.UnitId, scout.No)), from, scout)
 			if err != nil {
 				log.Printf("error %q\n", err)
 			} else if results != nil {
@@ -298,7 +298,7 @@ func walkUnit(moves *parser.Moves_t) ([]*Step_t, error) {
 	return steps, nil
 }
 
-func walkScout(scoutId parser.UnitId_t, from coords.WorldMapCoord, scout *parser.Scout_t) ([]*Step_t, error) {
+func walkScout(scoutId domain.UnitId_t, from coords.WorldMapCoord, scout *domain.Scout_t) ([]*Step_t, error) {
 	log.Printf("%s: walk: unit %-8s: start %q\n", scout.TurnId, scoutId, from)
 	var steps []*Step_t
 	for i, move := range scout.Moves {

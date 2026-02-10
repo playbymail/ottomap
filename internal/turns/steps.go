@@ -9,7 +9,7 @@ import (
 
 	"github.com/playbymail/ottomap/internal/coords"
 	"github.com/playbymail/ottomap/internal/direction"
-	"github.com/playbymail/ottomap/internal/parser"
+	"github.com/playbymail/ottomap/internal/domain"
 	"github.com/playbymail/ottomap/internal/results"
 	"github.com/playbymail/ottomap/internal/tiles"
 )
@@ -26,7 +26,7 @@ func errslug(text []byte, width int) string {
 
 // Step processes a single step from a unit's move.
 // It returns the final location of the unit.
-func Step(turnId string, move *parser.Move_t, location, leader coords.Map, coordinates, leaderCoordinates coords.WorldMapCoord, worldMap *tiles.Map_t, specialNames map[string]*parser.Special_t, scouting, warnOnNewSettlement, warnOnTerrainChange, debug bool) (coords.Map, error) {
+func Step(turnId string, move *domain.Move_t, location, leader coords.Map, coordinates, leaderCoordinates coords.WorldMapCoord, worldMap *tiles.Map_t, specialNames map[string]*domain.Special_t, scouting, warnOnNewSettlement, warnOnTerrainChange, debug bool) (coords.Map, error) {
 	// return an error if the starting location is obscured.
 	if location.IsZero() {
 		return location, fmt.Errorf("missing location")
@@ -96,14 +96,14 @@ func Step(turnId string, move *parser.Move_t, location, leader coords.Map, coord
 
 // stepFailed processes a single step from a unit's move.
 // It returns the final location of the unit.
-func stepFailed(turnId string, move *parser.Move_t, from *tiles.Tile_t, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
+func stepFailed(turnId string, move *domain.Move_t, from *tiles.Tile_t, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
 	// stays in the current hex
 	return from, nil
 }
 
 // stepFollows processes a single step from a unit's move.
 // It returns the final location of the unit.
-func stepFollows(turnId string, move *parser.Move_t, from *tiles.Tile_t, leader coords.Map, leaderCoordinates coords.WorldMapCoord, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
+func stepFollows(turnId string, move *domain.Move_t, from *tiles.Tile_t, leader coords.Map, leaderCoordinates coords.WorldMapCoord, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
 	// the new hex will be the leader's location
 	to := worldMap.FetchTile(move.UnitId, leader, leaderCoordinates)
 	if to == nil {
@@ -115,7 +115,7 @@ func stepFollows(turnId string, move *parser.Move_t, from *tiles.Tile_t, leader 
 
 // stepGoto processes a single step from a unit's move.
 // It returns the final location of the unit.
-func stepGoto(turnId string, move *parser.Move_t, from *tiles.Tile_t, goesTo string, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
+func stepGoto(turnId string, move *domain.Move_t, from *tiles.Tile_t, goesTo string, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
 	// unit is going to a specific location, so update the location to that location
 	goesToCoordinates, err := coords.NewWorldMapCoord(goesTo)
 	if err != nil {
@@ -139,21 +139,21 @@ func stepGoto(turnId string, move *parser.Move_t, from *tiles.Tile_t, goesTo str
 
 // stepStatus processes a single step from a unit's move.
 // It returns the final location of the unit.
-func stepStatus(turnId string, move *parser.Move_t, from *tiles.Tile_t, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
+func stepStatus(turnId string, move *domain.Move_t, from *tiles.Tile_t, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
 	// status line always stays in the current hex
 	return from, nil
 }
 
 // stepStill processes a single step from a unit's move.
 // It returns the final location of the unit.
-func stepStill(turnId string, move *parser.Move_t, from *tiles.Tile_t, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
+func stepStill(turnId string, move *domain.Move_t, from *tiles.Tile_t, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
 	// stays in the current hex
 	return from, nil
 }
 
 // stepSucceeded processes a single step from a unit's move.
 // It returns the final location of the unit.
-func stepSucceeded(turnId string, move *parser.Move_t, from *tiles.Tile_t, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
+func stepSucceeded(turnId string, move *domain.Move_t, from *tiles.Tile_t, worldMap *tiles.Map_t, scouting, debug bool) (*tiles.Tile_t, error) {
 	// update current hex based on the direction
 	var movesToCoordinates coords.WorldMapCoord
 	movesFromCoordinates, err := coords.NewWorldMapCoord(from.Location.GridString())
