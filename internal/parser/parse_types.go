@@ -10,28 +10,6 @@ import (
 	"github.com/playbymail/ottomap/internal/terrain"
 )
 
-// Type aliases for backward compatibility during migration.
-// These allow downstream packages to continue using parser.UnitId_t, etc.
-// without changes until they are migrated to import domain directly.
-type UnitId_t = domain.UnitId_t
-type Encounter_t = domain.Encounter_t
-type Settlement_t = domain.Settlement_t
-type Special_t = domain.Special_t
-type Border_t = domain.Border_t
-type FarHorizon_t = domain.FarHorizon_t
-type FoundItem_t = domain.FoundItem_t
-type Report_t = domain.Report_t
-type Turn_t = domain.Turn_t
-type Moves_t = domain.Moves_t
-type Move_t = domain.Move_t
-type Scout_t = domain.Scout_t
-type Scry_t = domain.Scry_t
-
-// Constant alias for backward compatibility during migration.
-const LastTurnCurrentLocationObscured = domain.LastTurnCurrentLocationObscured
-
-// These are the parser-only types not shared with other packages.
-
 // DirectionTerrain_t is the first component returned from a successful step.
 type DirectionTerrain_t struct {
 	Direction direction.Direction_e
@@ -56,7 +34,7 @@ func (e *Exhausted_t) String() string {
 }
 
 type FoundUnit_t struct {
-	Id UnitId_t
+	Id domain.UnitId_t
 }
 
 type Patrolled_t struct {

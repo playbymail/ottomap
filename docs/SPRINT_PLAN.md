@@ -653,7 +653,7 @@ logic.
 
 ---
 
-## Sprint 82 — Remove Type Aliases and Clean Up `internal/parser/`
+## Sprint 82 — Remove Type Aliases and Clean Up `internal/parser/` [COMPLETED]
 
 **Goal:** Remove the backward-compatibility type aliases from
 `internal/parser/types.go` and update `render.go` to import from
@@ -774,5 +774,5 @@ imports — they communicate only through `internal/domain/` types.
 | 79     | 0.79.0  | Migrate `internal/tiles/` imports              | COMPLETED |
 | 80     | 0.80.0  | Migrate `internal/turns/` imports              | COMPLETED |
 | 81     | 0.81.0  | Migrate `internal/wxx/` and `actions/` imports | COMPLETED |
-| 82     | 0.82.0  | Remove aliases, clean up parser                | PLANNED   |
+| 82     | 0.82.0  | Remove aliases, clean up parser                | COMPLETED |
 | 83     | 0.83.0  | Verify independence, update docs               | PLANNED   |

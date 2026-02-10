@@ -15,6 +15,7 @@ import (
 
 	"github.com/maloquacious/semver"
 	"github.com/playbymail/ottomap/internal/coords"
+	"github.com/playbymail/ottomap/internal/domain"
 	"github.com/playbymail/ottomap/internal/direction"
 	"github.com/playbymail/ottomap/internal/edges"
 	"github.com/playbymail/ottomap/internal/norm"
@@ -47,7 +48,7 @@ type ParseConfig struct {
 	}
 }
 
-func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debugSections, debugSteps, debugNodes, debugFleetMovement bool, experimentalUnitSplit, experimentalScoutStill bool, cfg ParseConfig) (*Turn_t, error) {
+func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debugSections, debugSteps, debugNodes, debugFleetMovement bool, experimentalUnitSplit, experimentalScoutStill bool, cfg ParseConfig) (*domain.Turn_t, error) {
 	//if tid == "0903-04" {
 	//	debugParser = true
 	//	debugSections = true
@@ -71,11 +72,11 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 	}
 	debugp("%s: parser: %8d bytes\n", fid, len(input))
 
-	t := &Turn_t{
-		UnitMoves: map[UnitId_t]*Moves_t{},
+	t := &domain.Turn_t{
+		UnitMoves: map[domain.UnitId_t]*domain.Moves_t{},
 	}
-	var unitId UnitId_t // current unit being parsed
-	var moves *Moves_t  // current move being parsed
+	var unitId domain.UnitId_t // current unit being parsed
+	var moves *domain.Moves_t  // current move being parsed
 
 	var scriesLinePrefix, statusLinePrefix []byte
 	for n, line := range bytes.Split(input, []byte("\n")) {
@@ -85,7 +86,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 		lineNo := n + 1
 
 		if rxCourierSection.Match(line) {
-			unitId = UnitId_t(line[8:14])
+			unitId = domain.UnitId_t(line[8:14])
 			debugs("%s: %d: found %q\n", fid, lineNo, unitId)
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
@@ -94,17 +95,17 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			} else if _, ok := t.UnitMoves[unitId]; ok {
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 14))
 				return t, fmt.Errorf("duplicate unit in turn")
-			} else if t.Id > LastTurnCurrentLocationObscured && strings.HasPrefix(location.CurrentHex, "##") {
-				log.Printf("info: last turn current location is obscured is %s\n", LastTurnCurrentLocationObscured)
+			} else if t.Id > domain.LastTurnCurrentLocationObscured && strings.HasPrefix(location.CurrentHex, "##") {
+				log.Printf("info: last turn current location is obscured is %s\n", domain.LastTurnCurrentLocationObscured)
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, location.CurrentHex)
 				return t, fmt.Errorf("current location is obscured")
 			}
-			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
+			moves = &domain.Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
 			t.UnitMoves[moves.UnitId] = moves
 			scriesLinePrefix = []byte(fmt.Sprintf("%s Scry: ", unitId))
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if rxElementSection.Match(line) {
-			unitId = UnitId_t(line[8:14])
+			unitId = domain.UnitId_t(line[8:14])
 			debugs("%s: %d: found %q\n", fid, lineNo, unitId)
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
@@ -114,12 +115,12 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 14))
 				return t, fmt.Errorf("duplicate unit in turn")
 			}
-			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
+			moves = &domain.Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
 			t.UnitMoves[moves.UnitId] = moves
 			scriesLinePrefix = []byte(fmt.Sprintf("%s Scry: ", unitId))
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if rxFleetSection.Match(line) {
-			unitId = UnitId_t(line[6:12])
+			unitId = domain.UnitId_t(line[6:12])
 			debugs("%s: %d: found %q\n", fid, lineNo, unitId)
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
@@ -129,11 +130,11 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 12))
 				return t, fmt.Errorf("duplicate unit in turn")
 			}
-			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
+			moves = &domain.Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
 			t.UnitMoves[moves.UnitId] = moves
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if rxGarrisonSection.Match(line) {
-			unitId = UnitId_t(line[9:15])
+			unitId = domain.UnitId_t(line[9:15])
 			debugs("%s: %d: found %q\n", fid, lineNo, unitId)
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
@@ -143,12 +144,12 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 15))
 				return t, fmt.Errorf("duplicate unit in turn")
 			}
-			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
+			moves = &domain.Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
 			t.UnitMoves[moves.UnitId] = moves
 			scriesLinePrefix = []byte(fmt.Sprintf("%s Scry: ", unitId))
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
 		} else if rxTribeSection.Match(line) {
-			unitId = UnitId_t(line[6:10])
+			unitId = domain.UnitId_t(line[6:10])
 			debugs("%s: %d: found %q\n", fid, lineNo, unitId)
 			location, err := ParseLocationLine(fid, tid, unitId, lineNo, line, debugParser)
 			if err != nil {
@@ -158,7 +159,7 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 				log.Printf("%s: %s: %d: location %q\n", fid, unitId, lineNo, slug(line, 10))
 				return t, fmt.Errorf("duplicate unit in turn")
 			}
-			moves = &Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
+			moves = &domain.Moves_t{TurnId: t.Id, UnitId: unitId, FromHex: location.PreviousHex, ToHex: location.CurrentHex}
 			t.UnitMoves[moves.UnitId] = moves
 			scriesLinePrefix = []byte(fmt.Sprintf("%s Scry: ", unitId))
 			statusLinePrefix = []byte(fmt.Sprintf("%s Status: ", unitId))
@@ -196,9 +197,9 @@ func ParseInput(fid, tid string, input []byte, acceptLoneDash, debugParser, debu
 			//log.Printf("%s: %s: %d: current turn: %04d-%02d", fid, unitId, lineNo, t.Year, t.Month)
 			log.Printf("%s: %s: %d: special name: %q -> %q", fid, unitId, lineNo, id, name)
 			if t.SpecialNames == nil {
-				t.SpecialNames = make(map[string]*Special_t)
+				t.SpecialNames = make(map[string]*domain.Special_t)
 			}
-			t.SpecialNames[string(id)] = &Special_t{
+			t.SpecialNames[string(id)] = &domain.Special_t{
 				TurnId: t.Id,
 				Id:     string(id),
 				Name:   string(name),
@@ -318,7 +319,7 @@ type Movement_t struct {
 	TurnReportId string
 	LineNo       int
 
-	UnitId  UnitId_t
+	UnitId  domain.UnitId_t
 	ScoutNo int
 	Type    unit_movement.Type_e
 
@@ -334,7 +335,7 @@ type Movement_t struct {
 	}
 
 	// movement results
-	Follows UnitId_t
+	Follows domain.UnitId_t
 	GoesTo  string
 	Steps   []*Step_t
 
@@ -344,7 +345,7 @@ type Movement_t struct {
 type Step_t struct {
 	Movement *Movement_t
 	TurnId   string
-	UnitId   UnitId_t
+	UnitId   domain.UnitId_t
 	No       int // original step number, indexed from 1
 
 	// Attempted direction is the direction the unit tried to move.
@@ -368,15 +369,15 @@ type Step_t struct {
 	Neighbors        []*Neighbor_t
 	ProhibitedFrom   *ProhibitedFrom_t
 	Resources        resources.Resource_e
-	Settlement       *Settlement_t
-	Units            []UnitId_t
+	Settlement       *domain.Settlement_t
+	Units            []domain.UnitId_t
 	CrowsNestTerrain []string // indexed by step, then compass.Point_e
 	Text             []byte
 }
 
 // ParseFleetMovementLine parses a fleet movement line.
 // It returns the generic struct that covers all the known movement steps and cases.
-func ParseFleetMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes, debugFleetMoves bool, experimentalUnitSplit bool) ([]*Move_t, error) {
+func ParseFleetMovementLine(fid, tid string, unitId domain.UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes, debugFleetMoves bool, experimentalUnitSplit bool) ([]*domain.Move_t, error) {
 	if va, err := Parse(fid, line, Entrypoint("FleetMovement")); err != nil {
 		return nil, err
 	} else if mt, ok := va.(Movement_t); !ok {
@@ -400,7 +401,7 @@ func ParseFleetMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line [
 	return parseMovementLine(fid, tid, unitId, lineNo, line, false, acceptLoneDash, debugSteps, debugNodes, debugFleetMoves, experimentalUnitSplit, false)
 }
 
-func ParseLocationLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, debug bool) (Location_t, error) {
+func ParseLocationLine(fid, tid string, unitId domain.UnitId_t, lineNo int, line []byte, debug bool) (Location_t, error) {
 	if va, err := Parse(fid, line, Entrypoint("Location")); err != nil {
 		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, slug(line, 14))
 		return Location_t{}, err
@@ -414,8 +415,8 @@ func ParseLocationLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte
 	}
 }
 
-func ParseScoutMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes bool, experimentalUnitSplit, cleanUpScoutStill bool) (*Scout_t, error) {
-	scout := &Scout_t{
+func ParseScoutMovementLine(fid, tid string, unitId domain.UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes bool, experimentalUnitSplit, cleanUpScoutStill bool) (*domain.Scout_t, error) {
+	scout := &domain.Scout_t{
 		TurnId: tid,
 		LineNo: lineNo,
 		Line:   bdup(line),
@@ -467,7 +468,7 @@ func ParseScoutMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line [
 }
 
 // ParseScryLine expects input to be like a Status line or Scout line.
-func ParseScryLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes, experimentalUnitSplit, experimentalScoutStill bool) (*Scry_t, error) {
+func ParseScryLine(fid, tid string, unitId domain.UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes, experimentalUnitSplit, experimentalScoutStill bool) (*domain.Scry_t, error) {
 	log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, line)
 	va, err := Parse(fid, line, Entrypoint("ScryLine"))
 	if err != nil {
@@ -475,10 +476,10 @@ func ParseScryLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, ac
 		log.Printf("status %v\n", err)
 		return nil, err
 	}
-	s, ok := va.(*Scry_t)
+	s, ok := va.(*domain.Scry_t)
 	if !ok {
 		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, line)
-		log.Printf("error: want *Scry_t, got %T\n", va)
+		log.Printf("error: want *domain.Scry_t, got %T\n", va)
 		log.Printf("please report this error\n")
 		panic(fmt.Errorf("unexpected type %T\n", va))
 	}
@@ -511,7 +512,7 @@ func ParseScryLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, ac
 	return s, err
 }
 
-func ParseStatusLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes bool, experimentalUnitSplit bool) ([]*Move_t, error) {
+func ParseStatusLine(fid, tid string, unitId domain.UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes bool, experimentalUnitSplit bool) ([]*domain.Move_t, error) {
 	if debugSteps {
 		log.Printf("%s: %s: %d: %q\n", fid, unitId, lineNo, line)
 	}
@@ -562,8 +563,8 @@ func ParseStatusLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, 
 	return moves, err
 }
 
-func ParseTribeFollowsLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, debug bool) (*Move_t, error) {
-	var follows UnitId_t
+func ParseTribeFollowsLine(fid, tid string, unitId domain.UnitId_t, lineNo int, line []byte, debug bool) (*domain.Move_t, error) {
+	var follows domain.UnitId_t
 	if va, err := Parse(fid, line, Entrypoint("TribeFollows")); err != nil {
 		return nil, err
 	} else if mt, ok := va.(Movement_t); !ok {
@@ -578,10 +579,10 @@ func ParseTribeFollowsLine(fid, tid string, unitId UnitId_t, lineNo int, line []
 		log.Printf("parser: %s: %s: %d: follows %q\n", fid, unitId, lineNo, follows)
 	}
 
-	return &Move_t{
+	return &domain.Move_t{
 		UnitId:  unitId,
 		Follows: follows,
-		Report:  &Report_t{TurnId: tid, UnitId: unitId},
+		Report:  &domain.Report_t{TurnId: tid, UnitId: unitId},
 		LineNo:  lineNo,
 		StepNo:  1,
 		Line:    bdup(line),
@@ -589,7 +590,7 @@ func ParseTribeFollowsLine(fid, tid string, unitId UnitId_t, lineNo int, line []
 	}, nil
 }
 
-func ParseTribeGoesToLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, debug bool) (*Move_t, error) {
+func ParseTribeGoesToLine(fid, tid string, unitId domain.UnitId_t, lineNo int, line []byte, debug bool) (*domain.Move_t, error) {
 	var goesTo string
 	if va, err := Parse(fid, line, Entrypoint("TribeGoesTo")); err != nil {
 		return nil, err
@@ -605,10 +606,10 @@ func ParseTribeGoesToLine(fid, tid string, unitId UnitId_t, lineNo int, line []b
 		log.Printf("%s: %s: %d: goes to %q\n", fid, unitId, lineNo, goesTo)
 	}
 
-	return &Move_t{
+	return &domain.Move_t{
 		UnitId: unitId,
 		GoesTo: goesTo,
-		Report: &Report_t{TurnId: tid, UnitId: unitId},
+		Report: &domain.Report_t{TurnId: tid, UnitId: unitId},
 		LineNo: lineNo,
 		StepNo: 1,
 		Line:   bdup(line),
@@ -616,7 +617,7 @@ func ParseTribeGoesToLine(fid, tid string, unitId UnitId_t, lineNo int, line []b
 	}, nil
 }
 
-func ParseTribeMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes bool, experimentalUnitSplit bool) ([]*Move_t, error) {
+func ParseTribeMovementLine(fid, tid string, unitId domain.UnitId_t, lineNo int, line []byte, acceptLoneDash, debugSteps, debugNodes bool, experimentalUnitSplit bool) ([]*domain.Move_t, error) {
 	if va, err := Parse(fid, line, Entrypoint("TribeMovement")); err != nil {
 		return nil, err
 	} else if mt, ok := va.(Movement_t); !ok {
@@ -654,8 +655,8 @@ func ParseTribeMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line [
 
 // parseMovementLine parses all the moves on a single line.
 // it returns a slice containing the results for each move or an error.
-func parseMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte, isScout bool, acceptLoneDash, debugSteps, debugNodes, debugFleetMoves bool, experimentalUnitSplit, scoutStill bool) ([]*Move_t, error) {
-	var moves []*Move_t
+func parseMovementLine(fid, tid string, unitId domain.UnitId_t, lineNo int, line []byte, isScout bool, acceptLoneDash, debugSteps, debugNodes, debugFleetMoves bool, experimentalUnitSplit, scoutStill bool) ([]*domain.Move_t, error) {
+	var moves []*domain.Move_t
 
 	//doLog := bytes.Contains(line, []byte{'0', '9', '8', '7'}) || bytes.Contains(line, []byte(`Pass SW 0134`))
 	// scrub the line and fix the things that we can
@@ -673,10 +674,10 @@ func parseMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte
 	// but scouts can be Still step (\ step)*.
 	if bytes.Equal(line, []byte{'\\'}) {
 		// "Move \" should be treated as a stay in place
-		m := []*Move_t{
+		m := []*domain.Move_t{
 			{UnitId: unitId,
 				LineNo: lineNo, StepNo: 1, Line: []byte{},
-				Still: true, Result: results.Succeeded, Report: &Report_t{TurnId: tid, UnitId: unitId}},
+				Still: true, Result: results.Succeeded, Report: &domain.Report_t{TurnId: tid, UnitId: unitId}},
 		}
 		m[0].Debug.FleetMoves = debugFleetMoves
 		return m, nil
@@ -767,7 +768,7 @@ func parseMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte
 					log.Printf("please report this error\n")
 					panic(fmt.Sprintf("unexpected type %T", va))
 				} else {
-					move.Report.MergeBorders(&Border_t{
+					move.Report.MergeBorders(&domain.Border_t{
 						Direction: deckObservation.Point,
 						Terrain:   deckObservation.Terrain,
 					})
@@ -792,9 +793,9 @@ func parseMovementLine(fid, tid string, unitId UnitId_t, lineNo int, line []byte
 				if va, err := Parse(fid, orStep, Entrypoint("CrowsNestObservation")); err != nil {
 					log.Printf("%s: %s: %d: step %d: crow %d: %q\n", fid, unitId, lineNo, move.StepNo, crowNo, orStep)
 					return nil, err
-				} else if fh, ok := va.(FarHorizon_t); !ok {
+				} else if fh, ok := va.(domain.FarHorizon_t); !ok {
 					log.Printf("%s: %s: %d: step %d: crow %d: %q\n", fid, unitId, lineNo, move.StepNo, crowNo, orStep)
-					log.Printf("error: want FarHorizon_t, got %T", va)
+					log.Printf("error: want domain.FarHorizon_t, got %T", va)
 					log.Printf("please report this error")
 					panic(fmt.Errorf("unexpected type %T", va))
 				} else {
@@ -861,7 +862,7 @@ func errslug(text []byte, width int) string {
 }
 
 // parseMove parses a single step of a move, returning the results or an error
-func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte, isScout bool, acceptLoneDash, debugSteps, debugNodes, debugFleetMoves bool, experimentalUnitSplit bool) (*Move_t, error) {
+func parseMove(fid, tid string, unitId domain.UnitId_t, lineNo, stepNo int, line []byte, isScout bool, acceptLoneDash, debugSteps, debugNodes, debugFleetMoves bool, experimentalUnitSplit bool) (*domain.Move_t, error) {
 
 	//debugSteps, debugNodes = true, true
 	line = bytes.TrimSpace(bytes.TrimRight(line, ","))
@@ -869,11 +870,11 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 		log.Printf("%s: %s: %d: step %d: %q\n", fid, unitId, lineNo, stepNo, line)
 	}
 
-	m := &Move_t{UnitId: unitId, LineNo: lineNo, StepNo: stepNo, Line: line, Report: &Report_t{TurnId: tid, UnitId: unitId}}
+	m := &domain.Move_t{UnitId: unitId, LineNo: lineNo, StepNo: stepNo, Line: line, Report: &domain.Report_t{TurnId: tid, UnitId: unitId}}
 	m.Debug.FleetMoves = debugFleetMoves
 
 	// each move should find at most one settlement
-	var settlement *Settlement_t
+	var settlement *domain.Settlement_t
 
 	root := hexReportToNodes(line, debugNodes, experimentalUnitSplit)
 	steps, err := nodesToSteps(root)
@@ -921,7 +922,7 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 				// if it is the first thing after the direction-terrain code
 				if m.Result != results.Unknown {
 					if r, _ := utf8.DecodeRune(subStep); unicode.IsUpper(r) || r == '_' {
-						obj, err = &Settlement_t{Name: string(subStep)}, nil
+						obj, err = &domain.Settlement_t{Name: string(subStep)}, nil
 					}
 				}
 			}
@@ -939,7 +940,7 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 			}
 			m.Advance = v.Direction
 			m.Result = results.Failed
-			m.Report.MergeBorders(&Border_t{
+			m.Report.MergeBorders(&domain.Border_t{
 				Direction: v.Direction,
 				Edge:      v.Edge,
 			})
@@ -959,7 +960,7 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 				return nil, fmt.Errorf("edges forbidden at beginning of step")
 			}
 			for _, edge := range v {
-				m.Report.MergeBorders(&Border_t{
+				m.Report.MergeBorders(&domain.Border_t{
 					Direction: edge.Direction,
 					Edge:      edge.Edge,
 				})
@@ -977,12 +978,12 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 			if v.Direction == direction.Unknown && v.Terrain == terrain.Blank {
 				log.Printf("%s: %s: %d: step %d: sub %d: %q: fleet exhausted?\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
 			} else {
-				m.Report.MergeBorders(&Border_t{
+				m.Report.MergeBorders(&domain.Border_t{
 					Direction: v.Direction,
 					Terrain:   v.Terrain,
 				})
 			}
-		case FoundItem_t: // ignore
+		case domain.FoundItem_t: // ignore
 			// log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
 		case FoundNothing_t:
 			// mostly ignore, except for the case of where this is the entire step
@@ -995,14 +996,14 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 				log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
 				return m, fmt.Errorf("units forbidden at beginning of step")
 			}
-			m.Report.MergeEncounters(&Encounter_t{TurnId: tid, UnitId: v.Id})
+			m.Report.MergeEncounters(&domain.Encounter_t{TurnId: tid, UnitId: v.Id})
 		case []FoundUnit_t:
 			if m.Result == results.Unknown {
 				log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
 				return nil, fmt.Errorf("units forbidden at beginning of step")
 			}
 			for _, unit := range v {
-				m.Report.MergeEncounters(&Encounter_t{TurnId: tid, UnitId: unit.Id})
+				m.Report.MergeEncounters(&domain.Encounter_t{TurnId: tid, UnitId: unit.Id})
 			}
 		case InsufficientCapacity_t: // ignore
 			//log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
@@ -1016,7 +1017,7 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 				return nil, fmt.Errorf("neighbors forbidden at beginning of step")
 			}
 			for _, neighbor := range v {
-				m.Report.MergeBorders(&Border_t{
+				m.Report.MergeBorders(&domain.Border_t{
 					Direction: neighbor.Direction,
 					Terrain:   neighbor.Terrain,
 				})
@@ -1028,7 +1029,7 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 				m.Result = results.Succeeded
 			}
 			for _, foundUnit := range v.FoundUnits {
-				m.Report.MergeEncounters(&Encounter_t{TurnId: tid, UnitId: foundUnit.Id})
+				m.Report.MergeEncounters(&domain.Encounter_t{TurnId: tid, UnitId: foundUnit.Id})
 			}
 		case *ProhibitedFrom_t:
 			if m.Result != results.Unknown { // only allowed at the beginning of the step
@@ -1037,7 +1038,7 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 			}
 			m.Advance = v.Direction
 			m.Result = results.Failed
-			m.Report.MergeBorders(&Border_t{
+			m.Report.MergeBorders(&domain.Border_t{
 				Direction: v.Direction,
 				Terrain:   v.Terrain,
 			})
@@ -1047,7 +1048,7 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 				return nil, fmt.Errorf("resources forbidden at beginning of step")
 			}
 			m.Report.MergeResources(v)
-		case *Settlement_t:
+		case *domain.Settlement_t:
 			if m.Result == results.Unknown {
 				log.Printf("%s: %s: %d: step %d: sub %d: %q\n", fid, unitId, lineNo, stepNo, subStepNo, subStep)
 				return nil, fmt.Errorf("settlement forbidden at beginning of step")
@@ -1078,15 +1079,15 @@ func parseMove(fid, tid string, unitId UnitId_t, lineNo, stepNo int, line []byte
 
 // splitMoves splits the line into individual moves. moves are separated by backslashes.
 // leading and trailing spaces and any trailing commas are from each move.
-func splitMoves(fid, tid string, unitId UnitId_t, lineNo int, line []byte) (moves []*Move_t) {
+func splitMoves(fid, tid string, unitId domain.UnitId_t, lineNo int, line []byte) (moves []*domain.Move_t) {
 	line = bytes.TrimSpace(bytes.TrimRight(line, " \t\\,"))
 	if len(line) == 0 {
 		return nil
 	}
-	var pm *Move_t
+	var pm *domain.Move_t
 	for n, text := range bytes.Split(line, []byte{'\\'}) {
 		text = bytes.TrimSpace(bytes.TrimRight(text, ", \t"))
-		move := &Move_t{UnitId: unitId, LineNo: lineNo, StepNo: n + 1, Line: bdup(text), Report: &Report_t{TurnId: tid, UnitId: unitId}}
+		move := &domain.Move_t{UnitId: unitId, LineNo: lineNo, StepNo: n + 1, Line: bdup(text), Report: &domain.Report_t{TurnId: tid, UnitId: unitId}}
 		move.Debug.PriorMove = pm
 		moves = append(moves, move)
 		pm = move
@@ -1165,7 +1166,7 @@ func (f *FoundNothing_t) String() string {
 type InsufficientCapacity_t struct{}
 
 type Location_t struct {
-	UnitId      UnitId_t
+	UnitId      domain.UnitId_t
 	Message     string
 	CurrentHex  string
 	PreviousHex string
