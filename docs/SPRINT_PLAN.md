@@ -5,7 +5,7 @@ cleanup sprints (dead code removal, dependency cleanup, documentation).
 Sprints 75-83 are refactoring sprints to separate the parser and render
 pipelines into independent packages with shared domain types.
 
-Current version: **0.83.0**
+Current version: **0.84.12**
 
 Each sprint bumps the minor version. Sprint numbering starts at 63.
 
@@ -763,6 +763,446 @@ Updated this sprint plan with outcomes for Sprints 79, 81, 82, and 83.
 
 ---
 
+# Phase 3: Standalone Render Pipeline
+
+## Sprint 84 — Standalone JSON Render Pipeline (Version 0.84.0)
+
+**Goal:** Implement `cmd/render/main.go` as a standalone CLI that loads
+parser-generated JSON Documents (`internal/tniif/schema.go`), merges
+them with deterministic conflict resolution, and produces a
+Worldographer WXX map file using the existing `internal/wxx` package.
+
+**Context:** Phases 1-2 cleaned up the codebase and decoupled the parser
+from the renderer via `internal/domain/` types. The parser CLI
+(`cmd/parser`) now produces JSON Documents conforming to the TNIIF
+schema. This sprint builds the other half: a render CLI that consumes
+those Documents and generates maps — without any dependency on the
+legacy `turns.Walk()` pipeline.
+
+**Architecture:** All new code lives in `cmd/render/` (package `main`).
+No existing OttoMap code is modified. The pipeline stages are:
+
+```
+Load JSON files → Validate → Flatten to observation events →
+Sort (Turn, Clan-owning-last, Unit) → Merge (last-writer-wins) →
+Convert to wxx.Hex → wxx.Create() → .wxx output
+```
+
+**Verification command:**
+```sh
+go run ./cmd/render testdata/0300.*.json --clan 0249 \
+  --output testdata/0300.0904-05.0249.wxx
+```
+
+---
+
+### Task 84.1 — Cobra CLI skeleton [COMPLETED]
+
+**Goal:** Create the command-line interface matching `cmd/parser/main.go`
+style.
+
+**Steps:**
+1. Replace the stub `cmd/render/main.go` with a Cobra root command:
+   - `Use: "render [json-files...]"` (positional file args)
+   - `Args: cobra.MinimumNArgs(1)`
+2. Add required flags:
+   - `--clan` (string, required; validate as 4-digit `"0xxx"` format)
+3. Add optional flags:
+   - `--output` (string, optional; path for the WXX output file)
+4. Add logging flags consistent with parser:
+   - `--debug`, `--quiet`, `--log-level`, `--log-source`
+5. Add `version` subcommand.
+6. Set the render CLI version to `0.84.0` using
+   `github.com/maloquacious/semver` with `semver.Commit()`.
+
+Note: If the **--output** flag is not provided, the command will load and validate the input and stop. It will not attempt to create a map file.
+
+**Verification:**
+- `go run ./cmd/render --help` prints usage with flags
+- `go run ./cmd/render version` prints `0.84.0`
+- `go build -o dist/local/render ./cmd/render` succeeds
+
+---
+
+### Task 84.2 — Load JSON Documents from positional args [COMPLETED]
+
+**Goal:** Read and unmarshal all input files into `[]schema.Document`.
+
+**Steps:**
+1. Resolve each positional arg to an absolute path.
+2. For each path:
+   - `os.Stat` — must be a regular file
+   - `os.ReadFile` — read contents
+   - `json.Unmarshal` into `schema.Document`
+3. Return `[]schema.Document` preserving argument order.
+4. Log: `"loaded %d documents"` at debug level.
+
+**Implementation:** Create `loadDocuments(paths []string) ([]schema.Document, error)`.
+
+**Verification:**
+- Unit test: create temp JSON file, load, assert `Schema`/`Game`/`Turn` fields parsed correctly.
+- Manual: `go run ./cmd/render testdata/0300.*.json --clan 0249 --debug` logs document count.
+
+---
+
+### Task 84.3 — Validate all Documents before rendering [COMPLETED]
+
+**Goal:** Collect all validation errors, log them, and stop before any
+rendering begins.
+
+**Validation rules (per document):**
+- `doc.Schema == schema.Version` (`"tn-map.v0"`)
+- Required fields: `doc.Game`, `doc.Turn`, `doc.Clan` must be non-empty
+- `doc.Turn` matches `YYYY-MM` format (length 7, `-` at index 4,
+  numeric year and month)
+- For each `doc.Clans[i]`: `clan.ID` must be non-empty
+- For each `unit`: `unit.ID` must be non-empty
+- Coordinate validity: `coords.HexToMap(string(loc))` must succeed for:
+  - `unit.EndingLocation`
+  - `step.EndingLocation` (for each move step)
+  - `obs.Location` (for each observation)
+- Edge direction validity: `schema.Direction.Validate()` for each edge
+- Compass bearing validity: `schema.Bearing.Validate()` for each
+  compass point
+
+**Cross-document validation:**
+- All documents must have the same `Game` value
+
+**Implementation:** Create `validateDocuments(docs []schema.Document)
+[]error`. In `RunE`, if any errors, log each with file context and
+return `fmt.Errorf("validation failed (%d errors)", len(errs))`.
+
+**Verification:**
+- Unit test: invalid schema version → error
+- Unit test: invalid coordinate → error
+- Unit test: mismatched game IDs → error
+- Manual: corrupt one JSON field; confirm renderer logs error and exits
+  non-zero.
+
+---
+
+### Task 84.4 — Define observation event type and flatten Documents [COMPLETED]
+
+**Goal:** Convert all Documents into a flat list of observation events,
+avoiding any `turns.Walk` logic.
+
+**Define:**
+```go
+type obsEvent_t struct {
+    Turn       schema.TurnID
+    Clan       schema.ClanID
+    Unit       string          // UnitID or ScoutID as string
+    Loc        coords.Map
+    Obs        *schema.Observation
+    WasVisited bool
+    WasScouted bool
+}
+```
+
+**Flatten rules:**
+- Walk `doc.Clans[] → clan.Units[] → unit.Moves[] → moves.Steps[]`
+  - For each step with a non-nil `Observation`:
+    - `Turn` = `doc.Turn`
+    - `Clan` = containing `clan.ID` (not `doc.Clan`)
+    - `Unit` = `string(unit.ID)`
+    - `Loc` = `coords.HexToMap(string(obs.Location))`
+    - `WasVisited` = `obs.WasVisited`
+    - `WasScouted` = `obs.WasScouted`
+- Walk `unit.Scouts[] → scout.Steps[]`
+  - Same as above but `Unit` = `string(scout.ID)`
+  - `WasScouted` = true (scouts always scout)
+
+**Implementation:** Create `flattenEvents(docs []schema.Document)
+[]obsEvent_t`.
+
+**Verification:**
+- Unit test: synthetic document with 2 clans, 3 units, and scout runs;
+  assert event count and correct `Clan`/`Unit` keys.
+
+---
+
+### Task 84.5 — Sort events with owning-clan-last semantics [COMPLETED]
+
+**Goal:** Deterministic sort order that ensures the owning clan's
+observations are applied last.
+
+**Sort comparator (stable sort):**
+1. `Turn` ascending (lexicographic — `YYYY-MM` sorts correctly)
+2. `Clan` ascending, except the owning clan (from `--clan`) sorts last:
+   - `clanRank(clan) = 1 if clan == owningClan, else 0`
+   - Compare rank first, then clan ID
+3. `Unit` ascending (lexicographic)
+
+**Implementation:** Create `sortEvents(events []obsEvent_t, owningClan
+schema.ClanID)` — in-place stable sort.
+
+**Verification:**
+- Unit test: events from turns 0901-01 and 0902-01, clans 0249 and
+  0331, units 1249e1 and 2331e2. With owning clan 0249:
+  - 0901-01/0331 events come before 0901-01/0249 events
+  - 0902-01/0331 events come before 0902-01/0249 events
+  - Within same turn+clan, units sorted ascending
+
+---
+
+### Task 84.6 — Merge sorted events into per-tile state (last-writer-wins) [COMPLETED]
+
+**Goal:** Fold the sorted event stream into a final map state where
+conflicts are resolved by using the most recent value.
+
+**Define per-tile accumulator:**
+```go
+type tileState_t struct {
+    Loc        coords.Map
+    Terrain    schema.Terrain
+    Edges      map[schema.Direction]schema.Edge
+    Resources  []schema.Resource
+    Settlements []schema.Settlement
+    Encounters []schema.Encounter
+    CompassPoints []schema.CompassPoint
+    WasVisited bool
+    WasScouted bool
+    Notes      []schema.Note
+}
+```
+
+**Merge semantics (applied in sorted order = last-writer-wins):**
+- `Terrain`: overwrite if `obs.Terrain != ""`
+- `WasVisited` / `WasScouted`: logical OR across all events
+- `Edges`: per-direction overwrite when new edge has non-empty fields
+- `Resources`: overwrite entire slice if `obs.Resources != nil`
+- `Settlements`: overwrite entire slice if `obs.Settlements != nil`
+- `Encounters`: overwrite entire slice if `obs.Encounters != nil`
+- `CompassPoints`: overwrite entire slice if `obs.CompassPoints != nil`
+- `Notes`: append (never overwrite)
+
+This ensures a newer observation can clear a field (empty slice) or
+leave a prior value intact (nil/omitted field).
+
+**Implementation:** Create `mergeTiles(events []obsEvent_t)
+map[coords.Map]*tileState_t`.
+
+**Verification:**
+- Unit test: two events same tile, conflicting terrain → later wins
+- Unit test: newer obs with `nil` settlements → older settlements
+  preserved; newer obs with empty `[]` settlements → settlements cleared
+- Unit test: edge merge overwrites only affected direction
+
+---
+
+### Task 84.7 — Convert merged tile state to `wxx.Hex` structs [COMPLETED]
+
+**Goal:** Map from schema string types to the internal enum types used
+by `internal/wxx`.
+
+**String → enum mappings needed:**
+- `schema.Terrain` → `terrain.Terrain_e` (invert `terrain.EnumToString`)
+- `schema.Direction` → `direction.Direction_e` (invert
+  `direction.EnumToString`)
+- `schema.Feature` → `edges.Edge_e` (invert `edges.EnumToString`)
+- `schema.Resource` → `resources.Resource_e` (invert
+  `resources.EnumToString`)
+
+**Build inverted maps at init time.** Validation (Task 3) ensures all
+strings are known, so conversion should not fail at this stage.
+
+**Convert each `tileState_t` → `wxx.Hex`:**
+- `Location` and `RenderAt` (after offset — Task 8)
+- `Terrain`: mapped enum
+- `WasVisited` / `WasScouted`: direct copy
+- `Features.Edges.*`: group by edge feature type (Canal, Ford, Pass,
+  River, StoneRoad)
+- `Features.Resources`: `[]resources.Resource_e`
+- `Features.Settlements`: `[]*domain.Settlement_t`
+- `Features.Encounters`: `[]*domain.Encounter_t` (mark friendly using
+  `domain.UnitId_t.InClan(clan)`)
+
+**Implementation:** Create `convertTileToHex(state *tileState_t,
+renderOffset coords.Map, owningClan schema.ClanID) *wxx.Hex`.
+
+**Verification:**
+- Unit test: tile with "River" edge on "NE" → `hex.Features.Edges.River`
+  contains `direction.NE`
+- Unit test: resource string maps to expected enum
+
+---
+
+### Task 84.8 — Compute map bounds and render offset [COMPLETED]
+
+**Goal:** Determine the bounding box and shift offset so the rendered
+map is reasonably sized.
+
+**Steps:**
+1. Iterate all merged tiles to find:
+   - `upperLeft = (min(Column), min(Row))`
+   - `lowerRight = (max(Column), max(Row))`
+2. Compute `renderOffset` (matching `actions/map_world.go` logic):
+   - `borderWidth = 4`, `borderHeight = 4`
+   - If `upperLeft.Column > borderWidth`:
+     offset = `upperLeft.Column - borderWidth` (make even if odd)
+   - If `upperLeft.Row > borderHeight`:
+     offset = `upperLeft.Row - borderHeight`
+3. Set `hex.RenderAt = coords.Map{Column: loc.Column - offset.Column,
+   Row: loc.Row - offset.Row}` for each hex.
+
+The TribeNet coordinates of the top-left corner of the bounding box must have an odd column and odd row (e.g., "AA 0101") or the map will not render correctly in Worldographer.
+
+Note: The rule above is for the TribeNet coordinates. The `coords.Map` location uses 0-based columns and rows, so 
+- If the loc.Row is **odd**, move the corner North one step.
+- If the loc.Column is **odd**, move the corner Northwest one step.
+If you apply the moves in this order, you do not need to worry about moving to an invalid location.
+
+Examples (using TribeNet coordinates):
+- "AA 0101" would not move since both row and column are odd.
+- "AA 0102" would move to "AA 0101". It would move N because the row is even.
+- "AA 0201" would move to "AA 0101". It would move NW because the column is even.
+- "AA 0202" would move to "AA 0101". It would first move N because the row is even, then move NW because the column is even.
+
+**Implementation:** Create `computeBoundsAndOffset(tiles
+map[coords.Map]*tileState_t) (upperLeft, lowerRight, offset
+coords.Map)`.
+
+**Verification:**
+- Unit test: known tile positions produce expected bounds and even
+  column offset.
+- Manual: debug log prints bounds and offsets.
+
+---
+
+### Task 84.9 — Merge SpecialHexes into tile features [COMPLETED]
+
+**Goal:** Replicate the "special settlement labeling" mechanism.
+
+**Steps:**
+1. Collect `SpecialHexes` across all documents into
+   `map[string]*domain.Special_t` keyed by `strings.ToLower(name)`.
+2. For each final hex:
+   - For each settlement name, if `strings.ToLower(name)` exists in the
+     special map, move it from `Features.Settlements` to
+     `Features.Special` (avoid duplicates).
+
+**Implementation:** Create `applySpecialHexes(hexes []*wxx.Hex,
+specials map[string]*domain.Special_t)`.
+
+**Verification:**
+- Unit test: settlement "Foo" + special hex "Foo" → one `Special` entry,
+  zero `Settlements` entries for that name.
+
+---
+
+### Task 84.10 — Build WXX and write output file [COMPLETED]
+
+**Goal:** Wire everything together and produce the `.wxx` file.
+
+**Steps:**
+1. Load default config: `gcfg := config.Default()`
+2. Create WXX: `w, err := wxx.NewWXX(gcfg)`
+3. For each final `wxx.Hex` (iterate in deterministic order, e.g.,
+   sorted by `Location`):
+   - Call `w.MergeHex(hex)` exactly once per tile
+4. Determine `maxTurn` = lexicographic max of all `doc.Turn` values
+5. Set up `wxx.RenderConfig`:
+   - `Version` = render CLI version (0.84.0)
+   - `Meta.IncludeMeta = true`
+   - `Meta.IncludeOrigin = true`
+6. Call `w.Create(outputPath, string(maxTurn), upperLeft, lowerRight,
+   renderCfg, gcfg)`
+
+**Verification:**
+- End-to-end manual test:
+  ```sh
+  go run ./cmd/render testdata/0300.*.json --clan 0249 \
+    --output testdata/0300.0904-05.0249.wxx
+  ```
+- Output file exists and has non-zero size
+- `gunzip -t testdata/0300.0904-05.0249.wxx` succeeds (valid gzip)
+
+---
+
+### Task 84.11 — Unit tests for the render pipeline [COMPLETED]
+
+**Goal:** Focused tests covering the pipeline logic. All tests live in
+`cmd/render/` only.
+
+**Test files:**
+- `cmd/render/sort_test.go`:
+  - `TestSortOrder_OwningClanLast`
+  - `TestSortOrder_MultipleTurns`
+- `cmd/render/merge_test.go`:
+  - `TestMerge_LWW_Terrain`
+  - `TestMerge_NilVsEmptySlices`
+  - `TestMerge_EdgePerDirection`
+- `cmd/render/validate_test.go`:
+  - `TestValidate_InvalidCoords`
+  - `TestValidate_MismatchedGame`
+  - `TestValidate_InvalidSchema`
+- `cmd/render/convert_test.go`:
+  - `TestConvert_TerrainMapping`
+  - `TestConvert_EdgeFeatureMapping`
+- `cmd/render/integration_test.go`:
+  - `TestIntegration_RenderSmallDoc` — create 1-2 tiny synthetic docs,
+    run full pipeline to a temp `.wxx`, assert output is valid gzip
+
+Note: Tests should write to an in-memory filesystem (like Afero) rather than creating files in `tmp` or scratch folders.
+
+**Verification:**
+- `go test ./cmd/render/...`
+
+---
+
+### Task 84.12 — Developer ergonomics and error quality [COMPLETED]
+
+**Goal:** Ensure errors are actionable and debugging is easy.
+
+**Steps:**
+- Error messages must include: file name, unit ID, and field path
+  (e.g., `"0300.0901-01.0249.json: unit 1249e1: step 3:
+  invalid coordinate \"## 1316\""`)
+- Add `--dump-merged` optional flag that writes merged tile state as
+  JSON to stdout (defer if time is short)
+- Log elapsed time at end of pipeline
+
+**Verification:**
+- Run with deliberately bad input; confirm error messages identify the
+  exact file and field.
+
+**Outcome:** Introduced `loadedDoc_t` struct pairing each document with
+its source file name. Updated `loadDocuments`, `validateDocuments`,
+`flattenEvents`, and `collectSpecialHexes` to thread file names through
+the pipeline. Error messages now use the format
+`"filename.json: unit 0987: step 3: observation: location \"## 1316\""`.
+Added `--dump-merged` flag that serializes merged tile state as sorted
+JSON to stdout for debugging. Added elapsed time logging at end of
+pipeline (following parser CLI pattern). All 124 tests updated and
+passing. Version: 0.84.12.
+
+---
+
+### Scope
+
+- **In scope:** Tasks 84.1-84.12 above (CLI, load, validate, flatten, sort,
+  merge, convert, bounds, specials, write, tests, errors)
+- **Out of scope for Sprint 84:**
+  - Player-specific config loading (`--config` flag)
+  - Solo maps
+  - Mentee maps
+  - Movement cost labels
+  - Visited/scouted labels (can be added in Sprint 85)
+  - Blank map generation
+
+### Risk Assessment
+
+| Risk                                      | Mitigation                                     |
+|-------------------------------------------|------------------------------------------------|
+| Enum string mapping gaps (terrain/edges)  | Task 84.3 validation fails fast on unknowns    |
+| `wxx.MergeHex` panics on terrain change   | Task 84.6 merges to one final state per tile   |
+| Silent data loss from overwrite semantics | Task 84.6 tests cover nil vs empty slice cases |
+| Coordinate out-of-bounds                  | Task 84.3 validates all coords before merge    |
+
+### Version: **0.84.0**
+
+---
+
 ## Phase 2 Sprint Summary
 
 | Sprint | Version | Goal                                           | Risk   | Est. Files Changed  |
@@ -816,3 +1256,9 @@ Updated this sprint plan with outcomes for Sprints 79, 81, 82, and 83.
 | 81     | 0.81.0  | Migrate `internal/wxx/` and `actions/` imports | COMPLETED |
 | 82     | 0.82.0  | Remove aliases, clean up parser                | COMPLETED |
 | 83     | 0.83.0  | Verify independence, update docs               | COMPLETED |
+
+### Phase 3: Standalone Render Pipeline (Sprints 84+)
+
+| Sprint | Version | Goal                                           | Status    |
+|--------|---------|------------------------------------------------|-----------|
+| 84     | 0.84.0  | Standalone JSON render pipeline (`cmd/render`) | COMPLETED |

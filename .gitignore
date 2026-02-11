@@ -19,12 +19,14 @@
 coverage.html
 coverage.out
 dist/local/parser
+dist/local/render
 follows.*.txt
 node_modules/
 ottomap
 package.json
 package-lock.json
 /parser
+/render
 
 testdata/
 !internal/parsers/ast/testdata
